@@ -1,8 +1,11 @@
 {
     "name": "pirabyte/laravel-lexware-office",
-    "description": "Laravel API Client für Lexware-Office",
-    "version": "0.1.0",
+    "description": "Laravel API Client für Lexware Office - Einfache Integration der Lexware Office API in Laravel Anwendungen",
     "type": "library",
+    "keywords": ["laravel", "lexware", "api", "lexoffice", "buchhaltung", "invoice"],
+    "homepage": "https://github.com/pirabyte/laravel-lexware-office",
+    "license": "MIT",
+    "version": "0.1.0",
     "require": {
         "php": "^8.3|^8.4",
         "illuminate/support": "^11.0|^12.0",
@@ -15,7 +18,6 @@
         "friendsofphp/php-cs-fixer": "^3.14",
         "mockery/mockery": "^1.5"
     },
-    "license": "MIT",
     "autoload": {
         "psr-4": {
             "Pirabyte\\LaravelLexwareOffice\\": "src/"
