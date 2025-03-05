@@ -32,41 +32,41 @@ $contact = LexwareOffice::contacts()->get('kontakt-id-hier');
 
 ## API-Endpunkte
 
-| Bereich | Endpunkt | Implementiert | Methode |
-|---------|----------|--------------|---------|
-| **Kontakte** |  |  |  |
-|  | Kontakt erstellen | ✅ | `LexwareOffice::contacts()->create($data)` |
-|  | Kontakt abrufen | ✅ | `LexwareOffice::contacts()->get($id)` |
-|  | Kontakte auflisten | ✅ | `LexwareOffice::contacts()->list($filter)` |
-|  | Kontakt aktualisieren | ✅ | `LexwareOffice::contacts()->update($id, $data)` |
-| **Rechnungen** |  |  |  |
-|  | Rechnung erstellen | ❌ |  |
-|  | Rechnung abrufen | ❌ |  |
-|  | Rechnungen auflisten | ❌ |  |
-|  | Rechnung aktualisieren | ❌ |  |
-| **Angebote** |  |  |  |
-|  | Angebot erstellen | ❌ |  |
-|  | Angebot abrufen | ❌ |  |
-|  | Angebote auflisten | ❌ |  |
-| **Lieferscheine** |  |  |  |
-|  | Lieferschein erstellen | ❌ |  |
-|  | Lieferschein abrufen | ❌ |  |
-|  | Lieferscheine auflisten | ❌ |  |
-| **Bestellungen** |  |  |  |
-|  | Bestellung erstellen | ❌ |  |
-|  | Bestellung abrufen | ❌ |  |
-|  | Bestellungen auflisten | ❌ |  |
-| **Gutschriften** |  |  |  |
-|  | Gutschrift erstellen | ❌ |  |
-|  | Gutschrift abrufen | ❌ |  |
-|  | Gutschriften auflisten | ❌ |  |
-| **Artikel** |  |  |  |
-|  | Artikel abrufen | ❌ |  |
-|  | Artikel auflisten | ❌ |  |
-| **Dateien** |  |  |  |
-|  | Datei hochladen | ❌ |  |
-|  | Datei abrufen | ❌ |  |
-| **Buchungen** |  |  |  |
-|  | Buchung erstellen | ❌ |  |
-|  | Buchung abrufen | ❌ |  |
-|  | Buchungen auflisten | ❌ |  |
+| Bereich | Endpunkt | Implementiert 
+|---------|----------|--------------|
+| **Kontakte** |  |  |
+|  | Kontakt erstellen | ✅ |
+|  | Kontakt abrufen | ✅ |
+|  | Kontakte auflisten | ✅ |
+|  | Kontakt aktualisieren | ✅ |
+| **Rechnungen** |  |  |
+|  | Rechnung erstellen | ❌ |
+|  | Rechnung abrufen | ❌ |
+|  | Rechnungen auflisten | ❌ |
+|  | Rechnung aktualisieren | ❌ |
+| **Angebote** |  |  |
+|  | Angebot erstellen | ❌ |
+|  | Angebot abrufen | ❌ |
+|  | Angebote auflisten | ❌ |
+| **Lieferscheine** |  |  |
+|  | Lieferschein erstellen | ❌ |
+|  | Lieferschein abrufen | ❌ |
+|  | Lieferscheine auflisten | ❌ |
+| **Bestellungen** |  |  |
+|  | Bestellung erstellen | ❌ |
+|  | Bestellung abrufen | ❌ |
+|  | Bestellungen auflisten | ❌ |
+| **Gutschriften** |  |  |
+|  | Gutschrift erstellen | ❌ |
+|  | Gutschrift abrufen | ❌ |
+|  | Gutschriften auflisten | ❌ |
+| **Artikel** |  |  |
+|  | Artikel abrufen | ❌ |
+|  | Artikel auflisten | ❌ |
+| **Dateien** |  |  |
+|  | Datei hochladen | ❌ |
+|  | Datei abrufen | ❌ |
+| **Buchungen** |  |  |
+|  | Buchung erstellen | ❌ |
+|  | Buchung abrufen | ❌ |
+|  | Buchungen auflisten | ❌ |
