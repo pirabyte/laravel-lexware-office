@@ -1,0 +1,53 @@
+{
+    "name": "pirabyte/laravel-lexware-office",
+    "description": "Laravel API Client für Lexware-Office",
+    "version": "0.1.0",
+    "type": "library",
+    "require": {
+        "php": "^8.3|^8.4",
+        "illuminate/support": "^11.0|^12.0",
+        "guzzlehttp/guzzle": "^7.5"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "orchestra/testbench": "^8.0|^9.0",
+        "phpstan/phpstan": "^1.10",
+        "friendsofphp/php-cs-fixer": "^3.14",
+        "mockery/mockery": "^1.5"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Pirabyte\\LaravelLexwareOffice\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Pirabyte\\LaravelLexwareOffice\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Pirabyte\\LaravelLexwareOffice\\LexwareOfficeServiceProvider"
+            ],
+            "aliases": {
+                "LexwareOffice": "Pirabyte\\LaravelLexwareOffice\\Facades\\LexwareOffice"
+            }
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit --testdox",
+        "cs": "vendor/bin/php-cs-fixer fix --dry-run --diff",
+        "cs-fix": "vendor/bin/php-cs-fixer fix",
+        "phpstan": "vendor/bin/phpstan analyse"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "authors": [
+        {
+            "name": "Felix Deibert",
+            "email": "24978665+felix-exon@users.noreply.github.com"
+        }
+    ]
+}
