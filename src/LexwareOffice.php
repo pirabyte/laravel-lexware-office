@@ -111,11 +111,11 @@ class LexwareOffice
     public function post(string $endpoint, array $data): array
     {
         try {
-            $response = $this->client->post($endpoint, [
-                'json' => $data
-            ]);
-
-            return json_decode($response->getBody()->getContents(), true);
+            return $this->makeRequest(function () use ($endpoint, $data) {
+                return $this->client->post($endpoint, [
+                    'json' => $data
+                ]);
+            });
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -132,11 +132,11 @@ class LexwareOffice
     public function put(string $endpoint, array $data): array
     {
         try {
-            $response = $this->client->put($endpoint, [
-                'json' => $data
-            ]);
-
-            return json_decode($response->getBody()->getContents(), true);
+            return $this->makeRequest(function () use ($endpoint, $data) {
+                return $this->client->put($endpoint, [
+                    'json' => $data
+                ]);
+            });
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }

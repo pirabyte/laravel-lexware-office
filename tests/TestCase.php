@@ -22,4 +22,12 @@ class TestCase extends Orchestra
         $app['config']->set('lexware-office.base_url', 'https://test-api.lexoffice.de/v1');
         $app['config']->set('lexware-office.api_key', 'test-api-key');
     }
+    
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // Mockery für die Facade im Test vorbereiten
+        $this->withoutMockingConsoleOutput();
+    }
 }
