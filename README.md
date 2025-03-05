@@ -2,6 +2,8 @@
 
 Laravel package für die Lexware Office API.
 
+[![Tests](https://github.com/pirabyte/laravel-lexware-office/actions/workflows/tests.yml/badge.svg)](https://github.com/pirabyte/laravel-lexware-office/actions/workflows/tests.yml)
+
 ## Installation
 
 ```bash
