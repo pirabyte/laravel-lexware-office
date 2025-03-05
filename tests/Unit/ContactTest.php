@@ -160,4 +160,170 @@ class ContactTest extends TestCase
         $this->assertEquals(1, $updatedContact->getVersion());
         $this->assertEquals('Maximilian', $updatedContact->getPerson()->getFirstName());
     }
+    
+    /** @test */
+    public function it_can_filter_contacts(): void
+    {
+        // Mock-Response erstellen
+        $contactsData = [
+            'content' => [
+                [
+                    'id' => '123e4567-e89b-12d3-a456-426614174000',
+                    'version' => 0,
+                    'roles' => [
+                        'customer' => [
+                            'number' => 'K-00001'
+                        ]
+                    ],
+                    'person' => [
+                        'salutation' => 'Herr',
+                        'firstName' => 'Max',
+                        'lastName' => 'Mustermann'
+                    ]
+                ],
+                [
+                    'id' => '223e4567-e89b-12d3-a456-426614174001',
+                    'version' => 0,
+                    'roles' => [
+                        'customer' => [
+                            'number' => 'K-00002'
+                        ]
+                    ],
+                    'company' => [
+                        'name' => 'Musterfirma GmbH'
+                    ]
+                ]
+            ],
+            'page' => 0,
+            'size' => 25,
+            'totalElements' => 2,
+            'totalPages' => 1,
+            'numberOfElements' => 2
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($contactsData))
+        ]);
+
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // LexwareOffice-Client erstellen
+        /* @var LexwareOffice $instance */
+        $instance = $this->app->make('lexware-office');
+
+        // Methode setClient ist geschützt, also nutzen wir Reflection
+        $reflectionClass = new \ReflectionClass($instance);
+        $reflectionProperty = $reflectionClass->getProperty('client');
+        $reflectionProperty->setValue($instance, $client);
+
+        // Kontakte filtern
+        $result = $instance->contacts()->filter([
+            'customer' => true,
+            'name' => 'Muster'
+        ]);
+
+        // Assertions
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('content', $result);
+        $this->assertArrayHasKey('pagination', $result);
+        $this->assertCount(2, $result['content']);
+        $this->assertEquals('123e4567-e89b-12d3-a456-426614174000', $result['content'][0]->getId());
+        $this->assertEquals('223e4567-e89b-12d3-a456-426614174001', $result['content'][1]->getId());
+        $this->assertEquals(0, $result['pagination']['page']);
+        $this->assertEquals(25, $result['pagination']['size']);
+        $this->assertEquals(1, $result['pagination']['totalPages']);
+        $this->assertEquals(2, $result['pagination']['totalElements']);
+    }
+    
+    /** @test */
+    public function it_can_get_all_contacts(): void
+    {
+        // Mock-Response erstellen
+        $contactsData = [
+            'content' => [
+                [
+                    'id' => '123e4567-e89b-12d3-a456-426614174000',
+                    'version' => 0,
+                    'roles' => [
+                        'customer' => [
+                            'number' => 'K-00001'
+                        ]
+                    ],
+                    'person' => [
+                        'salutation' => 'Herr',
+                        'firstName' => 'Max',
+                        'lastName' => 'Mustermann'
+                    ]
+                ],
+                [
+                    'id' => '223e4567-e89b-12d3-a456-426614174001',
+                    'version' => 0,
+                    'roles' => [
+                        'vendor' => [
+                            'number' => 'L-00001'
+                        ]
+                    ],
+                    'company' => [
+                        'name' => 'Musterfirma GmbH'
+                    ]
+                ],
+                [
+                    'id' => '323e4567-e89b-12d3-a456-426614174002',
+                    'version' => 0,
+                    'roles' => [
+                        'customer' => [
+                            'number' => 'K-00003'
+                        ]
+                    ],
+                    'person' => [
+                        'salutation' => 'Frau',
+                        'firstName' => 'Erika',
+                        'lastName' => 'Musterfrau'
+                    ]
+                ]
+            ],
+            'page' => 0,
+            'size' => 25,
+            'totalElements' => 3,
+            'totalPages' => 1,
+            'numberOfElements' => 3
+        ];
+
+        // Two responses for both method calls
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($contactsData)),
+            new Response(200, ['Content-Type' => 'application/json'], json_encode(array_merge($contactsData, ['size' => 10])))
+        ]);
+
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // LexwareOffice-Client erstellen
+        /* @var LexwareOffice $instance */
+        $instance = $this->app->make('lexware-office');
+
+        // Methode setClient ist geschützt, also nutzen wir Reflection
+        $reflectionClass = new \ReflectionClass($instance);
+        $reflectionProperty = $reflectionClass->getProperty('client');
+        $reflectionProperty->setValue($instance, $client);
+
+        // Alle Kontakte abrufen
+        $result = $instance->contacts()->all();
+
+        // Assertions
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('content', $result);
+        $this->assertArrayHasKey('pagination', $result);
+        $this->assertCount(3, $result['content']);
+        $this->assertEquals(0, $result['pagination']['page']);
+        $this->assertEquals(25, $result['pagination']['size']);
+        $this->assertEquals(1, $result['pagination']['totalPages']);
+        $this->assertEquals(3, $result['pagination']['totalElements']);
+        
+        // Test für Begrenzung der Ergebnisse pro Seite
+        $result2 = $instance->contacts()->all(0, 10);
+        $this->assertEquals(0, $result2['pagination']['page']);
+        $this->assertEquals(10, $result2['pagination']['size']);
+    }
 }
