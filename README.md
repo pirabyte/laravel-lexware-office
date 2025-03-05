@@ -19,7 +19,7 @@ php artisan vendor:publish --provider="Pirabyte\LexwareOffice\LexwareOfficeServi
 use Pirabyte\LaravelLexwareOffice\Facades\LexwareOffice;
 
 // API-Methoden nutzen
-
+$contact = LexwareOffice::contacts()->get('kontakt-id-hier');
 
 ```
 
