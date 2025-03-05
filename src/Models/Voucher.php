@@ -4,29 +4,108 @@ namespace Pirabyte\LaravelLexwareOffice\Models;
 
 class Voucher implements \JsonSerializable
 {
+    #region Properties
+    /**
+     * Die ID des Vouchers.
+     */
     private ?string $id = null;
-    private ?string $organizationId = null;
-    private int $version;
-    private string $type;
-    private ?string $voucherNumber = null;
-    private ?string $voucherDate = null;
-    private array $totalAmount = [];
-    private ?array $taxAmount = null;
-    private array $taxItems = [];
-    private array $remark = [];
-    private array $voucherItems = [];
-    private ?array $files = null;
-    private ?string $createdDate = null;
-    private ?string $updatedDate = null;
-    private ?array $address = null;
-    private ?string $dueDate = null;
-    private ?array $contact = null;
 
     /**
-     * Erstellt ein Voucher-Objekt aus einem Array
+     * Die Organizations-ID des Vouchers.
+     */
+    private ?string $organizationId = null;
+
+    /**
+     * Die Version des Vouchers.
+     */
+    private int $version;
+
+    /**
+     * Der Typ des Vouchers (z.B. salesinvoice, purchaseinvoice, salescreditnote, purchasecreditnote, ...).
+     */
+    private string $type;
+
+    /**
+     * Die Belegnummer des Vouchers.
+     */
+    private ?string $voucherNumber = null;
+
+    /**
+     * Das Belegdatum des Vouchers.
+     */
+    private ?string $voucherDate = null;
+
+    /**
+     * Der Gesamtbetrag (brutto) des Vouchers.
+     */
+    private ?float $totalGrossAmount;
+
+    /**
+     * Der Steuerbetrag des Vouchers.
+     */
+    private ?float $totalTaxAmount = null;
+
+    /**
+     * Der Steuertyp des Vouchers (brutto/netto).
+     */
+    private string $taxType = 'gross';
+
+    /**
+     * Die Bemerkung zum Voucher.
+     */
+    private ?string $remark;
+
+    /**
+     * Die Belegpositionen des Vouchers.
      *
-     * @param array $data
-     * @return self
+     * @var array<int, array>
+     */
+    private array $voucherItems = [];
+
+    /**
+     * Gibt an, ob ein Sammelkontakt verwendet werden soll.
+     */
+    private bool $useCollectiveContact = false;
+
+    /**
+     * Der Status des Vouchers (open, paid, cancelled, ...).
+     */
+    private string $voucherStatus = 'open';
+
+    /**
+     * Die Dateien des Vouchers.
+     *
+     * @var array<int, mixed>|null
+     */
+    private ?array $files = null;
+
+    /**
+     * Das Erstellungsdatum des Vouchers.
+     */
+    private ?string $createdDate = null;
+
+    /**
+     * Das Aktualisierungsdatum des Vouchers.
+     */
+    private ?string $updatedDate = null;
+
+    /**
+     * Das Fälligkeitsdatum des Vouchers.
+     */
+    private ?string $dueDate = null;
+
+    /**
+     * Die Kontakt-ID des Vouchers.
+     */
+    private ?string $contactId = null;
+    #endregion
+
+    #region Factory Methods
+    /**
+     * Erstellt ein Voucher-Objekt aus einem Array.
+     *
+     * @param array<string, mixed> $data Die Daten aus denen das Voucher-Objekt erstellt werden soll
+     * @return self Das erstellte Voucher-Objekt
      */
     public static function fromArray(array $data): self
     {
@@ -48,6 +127,10 @@ class Voucher implements \JsonSerializable
             $voucher->setType($data['type']);
         }
 
+        if (isset($data['taxType'])) {
+            $voucher->setTaxType($data['taxType']);
+        }
+
         if (isset($data['voucherNumber'])) {
             $voucher->setVoucherNumber($data['voucherNumber']);
         }
@@ -56,16 +139,16 @@ class Voucher implements \JsonSerializable
             $voucher->setVoucherDate($data['voucherDate']);
         }
 
-        if (isset($data['totalAmount'])) {
-            $voucher->setTotalAmount($data['totalAmount']);
+        if (isset($data['totalGrossAmount'])) {
+            $voucher->setTotalGrossAmount($data['totalGrossAmount']);
         }
 
-        if (isset($data['taxAmount'])) {
-            $voucher->setTaxAmount($data['taxAmount']);
+        if (isset($data['totalTaxAmount'])) {
+            $voucher->setTotalTaxAmount($data['totalTaxAmount']);
         }
 
-        if (isset($data['taxItems'])) {
-            $voucher->setTaxItems($data['taxItems']);
+        if (isset($data['useCollectiveContact'])) {
+            $voucher->setUseCollectiveContact($data['useCollectiveContact']);
         }
 
         if (isset($data['remark'])) {
@@ -88,25 +171,27 @@ class Voucher implements \JsonSerializable
             $voucher->setUpdatedDate($data['updatedDate']);
         }
 
-        if (isset($data['address'])) {
-            $voucher->setAddress($data['address']);
+        if (isset($data['voucherStatus'])) {
+            $voucher->setVoucherStatus($data['voucherStatus']);
         }
 
         if (isset($data['dueDate'])) {
             $voucher->setDueDate($data['dueDate']);
         }
 
-        if (isset($data['contact'])) {
-            $voucher->setContact($data['contact']);
+        if (isset($data['contactId'])) {
+            $voucher->setContactId($data['contactId']);
         }
 
         return $voucher;
     }
+    #endregion
 
+    #region ID Methods
     /**
-     * Setzt die ID des Vouchers
+     * Setzt die ID des Vouchers.
      *
-     * @param string $id
+     * @param string $id Die ID des Vouchers
      * @return void
      */
     private function setId(string $id): void
@@ -115,19 +200,21 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt die ID des Vouchers zurück
+     * Gibt die ID des Vouchers zurück.
      *
-     * @return string|null
+     * @return string|null Die ID des Vouchers oder null, falls keine ID gesetzt ist
      */
     public function getId(): ?string
     {
         return $this->id;
     }
+    #endregion
 
+    #region Organization Methods
     /**
-     * Setzt die Organizations-ID
+     * Setzt die Organizations-ID.
      *
-     * @param string $organizationId
+     * @param string $organizationId Die Organizations-ID
      * @return void
      */
     private function setOrganizationId(string $organizationId): void
@@ -136,19 +223,21 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt die Organizations-ID zurück
+     * Gibt die Organizations-ID zurück.
      *
-     * @return string|null
+     * @return string|null Die Organizations-ID oder null, falls keine ID gesetzt ist
      */
     public function getOrganizationId(): ?string
     {
         return $this->organizationId;
     }
+    #endregion
 
+    #region Version Methods
     /**
-     * Setzt die Version
+     * Setzt die Version.
      *
-     * @param int $version
+     * @param int $version Die Version
      * @return void
      */
     private function setVersion(int $version): void
@@ -157,20 +246,22 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt die Version zurück
+     * Gibt die Version zurück.
      *
-     * @return int
+     * @return int Die Version
      */
     public function getVersion(): int
     {
         return $this->version;
     }
+    #endregion
 
+    #region Type Methods
     /**
      * Setzt den Typ des Vouchers
-     * (z.B. salesinvoice, purchaseinvoice, salescreditnote, purchasecreditnote, ...)
+     * (z.B. salesinvoice, purchaseinvoice, salescreditnote, purchasecreditnote, ...).
      *
-     * @param string $type
+     * @param string $type Der Typ des Vouchers
      * @return void
      */
     private function setType(string $type): void
@@ -179,19 +270,21 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt den Typ des Vouchers zurück
+     * Gibt den Typ des Vouchers zurück.
      *
-     * @return string
+     * @return string Der Typ des Vouchers
      */
     public function getType(): string
     {
         return $this->type;
     }
+    #endregion
 
+    #region Voucher Number Methods
     /**
-     * Setzt die Belegnummer
+     * Setzt die Belegnummer.
      *
-     * @param string|null $voucherNumber
+     * @param string|null $voucherNumber Die Belegnummer oder null
      * @return void
      */
     public function setVoucherNumber(?string $voucherNumber): void
@@ -200,19 +293,21 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt die Belegnummer zurück
+     * Gibt die Belegnummer zurück.
      *
-     * @return string|null
+     * @return string|null Die Belegnummer oder null
      */
     public function getVoucherNumber(): ?string
     {
         return $this->voucherNumber;
     }
+    #endregion
 
+    #region Voucher Date Methods
     /**
-     * Setzt das Belegdatum
+     * Setzt das Belegdatum.
      *
-     * @param string|null $voucherDate
+     * @param string|null $voucherDate Das Belegdatum im Format YYYY-MM-DD oder null
      * @return void
      */
     public function setVoucherDate(?string $voucherDate): void
@@ -221,103 +316,111 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt das Belegdatum zurück
+     * Gibt das Belegdatum zurück.
      *
-     * @return string|null
+     * @return string|null Das Belegdatum oder null
      */
     public function getVoucherDate(): ?string
     {
         return $this->voucherDate;
     }
+    #endregion
 
+    #region Amount Methods
     /**
-     * Setzt den Gesamtbetrag
+     * Setzt den Gesamtbetrag (brutto).
      *
-     * @param array $totalAmount
+     * @param float $totalGrossAmount Der Gesamtbetrag
      * @return void
      */
-    public function setTotalAmount(array $totalAmount): void
+    public function setTotalGrossAmount(float $totalGrossAmount): void
     {
-        $this->totalAmount = $totalAmount;
+        $this->totalGrossAmount = $totalGrossAmount;
     }
 
     /**
-     * Gibt den Gesamtbetrag zurück
+     * Gibt den Gesamtbetrag (brutto) zurück.
      *
-     * @return array
+     * @return float|null Der Gesamtbetrag oder null
      */
-    public function getTotalAmount(): array
+    public function getTotalGrossAmount(): ?float
     {
-        return $this->totalAmount;
+        return $this->totalGrossAmount;
     }
 
     /**
-     * Setzt den Steuerbetrag
+     * Setzt den Steuerbetrag.
      *
-     * @param array|null $taxAmount
+     * @param float|null $totalTaxAmount Der Steuerbetrag oder null
      * @return void
      */
-    public function setTaxAmount(?array $taxAmount): void
+    public function setTotalTaxAmount(?float $totalTaxAmount): void
     {
-        $this->taxAmount = $taxAmount;
+        $this->totalTaxAmount = $totalTaxAmount;
     }
 
     /**
-     * Gibt den Steuerbetrag zurück
+     * Gibt den Steuerbetrag zurück.
      *
-     * @return array|null
+     * @return float|null Der Steuerbetrag oder null
      */
-    public function getTaxAmount(): ?array
+    public function getTotalTaxAmount(): ?float
     {
-        return $this->taxAmount;
+        return $this->totalTaxAmount;
     }
+    #endregion
 
+    #region Tax Type Methods
     /**
-     * Setzt die Steuerelemente
+     * Setzt den Steuertyp (brutto/netto).
      *
-     * @param array $taxItems
+     * @param string $taxType Der Steuertyp
      * @return void
      */
-    public function setTaxItems(array $taxItems): void
+    private function setTaxType(string $taxType): void
     {
-        $this->taxItems = $taxItems;
+        $this->taxType = $taxType;
     }
 
     /**
-     * Gibt die Steuerelemente zurück
+     * Gibt den Steuertyp zurück.
      *
-     * @return array
+     * @return string Der Steuertyp
      */
-    public function getTaxItems(): array
+    public function getTaxType(): string
     {
-        return $this->taxItems;
+        return $this->taxType;
     }
+    #endregion
 
+    #region Remark Methods
     /**
-     * Setzt die Bemerkung
+     * Setzt die Bemerkung.
      *
-     * @param array $remark
+     * @param string|null $remark Die Bemerkung oder null
      * @return void
      */
-    public function setRemark(array $remark): void
+    public function setRemark(?string $remark): void
     {
         $this->remark = $remark;
     }
 
     /**
-     * Gibt die Bemerkung zurück
+     * Gibt die Bemerkung zurück.
      *
-     * @return array
+     * @return string|null Die Bemerkung oder null
      */
-    public function getRemark(): array
+    public function getRemark(): ?string
     {
         return $this->remark;
     }
+    #endregion
 
+    #region Voucher Items Methods
     /**
-     * Setzt die Belegpositionen
+     * Setzt die Belegpositionen.
      *
-     * @param array $voucherItems
+     * @param array<int, array> $voucherItems Die Belegpositionen
      * @return void
      */
     public function setVoucherItems(array $voucherItems): void
@@ -326,19 +429,21 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt die Belegpositionen zurück
+     * Gibt die Belegpositionen zurück.
      *
-     * @return array
+     * @return array<int, array> Die Belegpositionen
      */
     public function getVoucherItems(): array
     {
         return $this->voucherItems;
     }
+    #endregion
 
+    #region Files Methods
     /**
-     * Setzt die Dateien
+     * Setzt die Dateien.
      *
-     * @param array|null $files
+     * @param array<int, mixed>|null $files Die Dateien oder null
      * @return void
      */
     public function setFiles(?array $files): void
@@ -347,19 +452,21 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt die Dateien zurück
+     * Gibt die Dateien zurück.
      *
-     * @return array|null
+     * @return array<int, mixed>|null Die Dateien oder null
      */
     public function getFiles(): ?array
     {
         return $this->files;
     }
+    #endregion
 
+    #region Date Methods
     /**
-     * Setzt das Erstellungsdatum
+     * Setzt das Erstellungsdatum.
      *
-     * @param string|null $createdDate
+     * @param string|null $createdDate Das Erstellungsdatum oder null
      * @return void
      */
     private function setCreatedDate(?string $createdDate): void
@@ -368,9 +475,9 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt das Erstellungsdatum zurück
+     * Gibt das Erstellungsdatum zurück.
      *
-     * @return string|null
+     * @return string|null Das Erstellungsdatum oder null
      */
     public function getCreatedDate(): ?string
     {
@@ -378,9 +485,9 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Setzt das Aktualisierungsdatum
+     * Setzt das Aktualisierungsdatum.
      *
-     * @param string|null $updatedDate
+     * @param string|null $updatedDate Das Aktualisierungsdatum oder null
      * @return void
      */
     private function setUpdatedDate(?string $updatedDate): void
@@ -389,9 +496,9 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt das Aktualisierungsdatum zurück
+     * Gibt das Aktualisierungsdatum zurück.
      *
-     * @return string|null
+     * @return string|null Das Aktualisierungsdatum oder null
      */
     public function getUpdatedDate(): ?string
     {
@@ -399,30 +506,9 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Setzt die Adresse
+     * Setzt das Fälligkeitsdatum.
      *
-     * @param array|null $address
-     * @return void
-     */
-    public function setAddress(?array $address): void
-    {
-        $this->address = $address;
-    }
-
-    /**
-     * Gibt die Adresse zurück
-     *
-     * @return array|null
-     */
-    public function getAddress(): ?array
-    {
-        return $this->address;
-    }
-
-    /**
-     * Setzt das Fälligkeitsdatum
-     *
-     * @param string|null $dueDate
+     * @param string|null $dueDate Das Fälligkeitsdatum oder null
      * @return void
      */
     public function setDueDate(?string $dueDate): void
@@ -431,40 +517,90 @@ class Voucher implements \JsonSerializable
     }
 
     /**
-     * Gibt das Fälligkeitsdatum zurück
+     * Gibt das Fälligkeitsdatum zurück.
      *
-     * @return string|null
+     * @return string|null Das Fälligkeitsdatum oder null
      */
     public function getDueDate(): ?string
     {
         return $this->dueDate;
     }
+    #endregion
 
+    #region Contact Methods
     /**
-     * Setzt den Kontakt
+     * Setzt die Kontakt-ID.
      *
-     * @param array|null $contact
+     * @param string|null $contactId Die Kontakt-ID oder null
      * @return void
      */
-    public function setContact(?array $contact): void
+    public function setContactId(?string $contactId): void
     {
-        $this->contact = $contact;
+        $this->contactId = $contactId;
     }
 
     /**
-     * Gibt den Kontakt zurück
+     * Gibt die Kontakt-ID zurück.
      *
-     * @return array|null
+     * @return string|null Die Kontakt-ID oder null
      */
-    public function getContact(): ?array
+    public function getContactId(): ?string
     {
-        return $this->contact;
+        return $this->contactId;
+    }
+    #endregion
+
+    #region Status Methods
+    /**
+     * Setzt den Status des Vouchers.
+     *
+     * @param string $voucherStatus Der Status des Vouchers
+     * @return void
+     */
+    private function setVoucherStatus(string $voucherStatus): void
+    {
+        $this->voucherStatus = $voucherStatus;
     }
 
     /**
-     * Konvertiert das Objekt in ein Array für die JSON-Serialisierung
+     * Gibt den Status des Vouchers zurück.
      *
-     * @return array
+     * @return string Der Status des Vouchers
+     */
+    public function getVoucherStatus(): string
+    {
+        return $this->voucherStatus;
+    }
+    #endregion
+
+    #region Collective Contact Methods
+    /**
+     * Setzt, ob ein Sammelkontakt verwendet werden soll.
+     *
+     * @param bool $useCollectiveContact Gibt an, ob ein Sammelkontakt verwendet werden soll
+     * @return void
+     */
+    private function setUseCollectiveContact(bool $useCollectiveContact): void
+    {
+        $this->useCollectiveContact = $useCollectiveContact;
+    }
+
+    /**
+     * Gibt zurück, ob ein Sammelkontakt verwendet werden soll.
+     *
+     * @return bool True, wenn ein Sammelkontakt verwendet werden soll, sonst false
+     */
+    public function getUseCollectiveContact(): bool
+    {
+        return $this->useCollectiveContact;
+    }
+    #endregion
+
+    #region Serialization
+    /**
+     * Konvertiert das Objekt in ein Array für die JSON-Serialisierung.
+     *
+     * @return array<string, mixed> Das Array für die JSON-Serialisierung
      */
     public function jsonSerialize(): array
     {
@@ -489,12 +625,12 @@ class Voucher implements \JsonSerializable
             $data['voucherDate'] = $this->voucherDate;
         }
 
-        if (!empty($this->totalAmount)) {
-            $data['totalAmount'] = $this->totalAmount;
+        if (!empty($this->totalGrossAmount)) {
+            $data['totalGrossAmount'] = $this->totalGrossAmount;
         }
 
-        if ($this->taxAmount) {
-            $data['taxAmount'] = $this->taxAmount;
+        if ($this->totalTaxAmount) {
+            $data['totalTaxAmount'] = $this->totalTaxAmount;
         }
 
         if (!empty($this->taxItems)) {
@@ -509,18 +645,19 @@ class Voucher implements \JsonSerializable
             $data['files'] = $this->files;
         }
 
-        if ($this->address) {
-            $data['address'] = $this->address;
+        if ($this->voucherStatus) {
+            $data['voucherStatus'] = $this->voucherStatus;
         }
 
         if ($this->dueDate) {
             $data['dueDate'] = $this->dueDate;
         }
 
-        if ($this->contact) {
-            $data['contact'] = $this->contact;
+        if ($this->contactId) {
+            $data['contactId'] = $this->contactId;
         }
 
         return $data;
     }
+    #endregion
 }
