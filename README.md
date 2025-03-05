@@ -70,3 +70,9 @@ $contact = LexwareOffice::contacts()->get('kontakt-id-hier');
 |  | Buchung erstellen | ❌ |
 |  | Buchung abrufen | ❌ |
 |  | Buchungen auflisten | ❌ |
+| **Belege** |  |  |
+|  | Beleg erstellen | ✅ |
+|  | Beleg abrufen | ✅ |
+|  | Belege auflisten | ✅ |
+|  | Beleg aktualisieren | ✅ |
+|  | Beleg-Dokument generieren | ✅ |

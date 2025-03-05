@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\RateLimiter;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
+use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
 
 class LexwareOffice
 {
@@ -22,6 +23,11 @@ class LexwareOffice
      * @var ContactResource
      */
     protected ContactResource $contacts;
+
+    /**
+     * @var VoucherResource
+     */
+    protected VoucherResource $vouchers;
 
     public function __construct(string $baseUrl, string $apiKey)
     {
@@ -38,6 +44,7 @@ class LexwareOffice
         ]);
 
         $this->contacts = new ContactResource($this);
+        $this->vouchers = new VoucherResource($this);
     }
 
     #region Contacts
@@ -53,6 +60,26 @@ class LexwareOffice
 
         return $this->contacts;
     }
+
+    #endregion Contacts
+
+    #region Vouchers
+
+    /**
+     * Beleg-Ressource abrufen
+     */
+    public function vouchers(): VoucherResource
+    {
+        if (!$this->vouchers) {
+            $this->vouchers = new VoucherResource($this);
+        }
+
+        return $this->vouchers;
+    }
+
+    #endregion Vouchers
+
+    #region Requests
 
     /**
      * GET-Anfrage
@@ -115,7 +142,7 @@ class LexwareOffice
         }
     }
 
-    #endregion Contacts
+    #endregion Requests
 
     #region Helper
 
