@@ -6,14 +6,14 @@ use Illuminate\Support\ServiceProvider;
 
 class LexwareOfficeServiceProvider extends ServiceProvider
 {
-    public function boot()
+    public function boot(): void
     {
         $this->publishes([
             __DIR__.'/../config/lexware-office.php' => config_path('lexware-office.php'),
         ], 'config');
     }
 
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/lexware-office.php', 'lexware-office');
         $this->app->singleton('lexware-office', function ($app) {

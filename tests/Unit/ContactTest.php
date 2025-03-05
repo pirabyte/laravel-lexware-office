@@ -55,7 +55,7 @@ class ContactTest extends TestCase
         ];
 
         // API aufrufen
-        $response = $instance->contacts->create($contactData);
+        $response = $instance->contacts()->create($contactData);
 
         // Assertions
         $this->assertEquals('123e4567-e89b-12d3-a456-426614174000', $response['id']);

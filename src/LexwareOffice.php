@@ -21,7 +21,7 @@ class LexwareOffice
     /**
      * @var ContactResource
      */
-    public ContactResource $contacts;
+    protected ContactResource $contacts;
 
     public function __construct(string $baseUrl, string $apiKey)
     {
@@ -41,6 +41,18 @@ class LexwareOffice
     }
 
     #region Contacts
+
+    /**
+     * Kontakt-Ressource abrufen
+     */
+    public function contacts(): ContactResource
+    {
+        if (!$this->contacts) {
+            $this->contacts = new ContactResource($this);
+        }
+
+        return $this->contacts;
+    }
 
     /**
      * GET-Anfrage
