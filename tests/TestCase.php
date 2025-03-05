@@ -5,6 +5,9 @@ namespace Pirabyte\LaravelLexwareOffice\Tests;
 use Pirabyte\LaravelLexwareOffice\LexwareOfficeServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
+/**
+ * @method setUp()
+ */
 class TestCase extends Orchestra
 {
     protected function getPackageProviders($app)

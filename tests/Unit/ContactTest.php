@@ -3,16 +3,24 @@
 namespace Pirabyte\LaravelLexwareOffice\Tests\Unit;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
+use Pirabyte\LaravelLexwareOffice\Models\Contact;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
+/**
+ * @property $app
+ * @method assertEquals(string $string, string $getId)
+ */
 class ContactTest extends TestCase
 {
+
     /** @test */
-    public function it_can_create_a_contact()
+    public function it_can_create_a_contact(): void
     {
         // Mock-Response erstellen
         $responseData = [
@@ -31,16 +39,16 @@ class ContactTest extends TestCase
         $client = new Client(['handler' => $handlerStack]);
 
         // LexwareOffice-Client erstellen
+        /* @var LexwareOffice $instance */
         $instance = $this->app->make('lexware-office');
 
         // Methode setClient ist geschützt, also nutzen wir Reflection
         $reflectionClass = new \ReflectionClass($instance);
         $reflectionProperty = $reflectionClass->getProperty('client');
-        $reflectionProperty->setAccessible(true);
         $reflectionProperty->setValue($instance, $client);
 
         // Kontaktdaten
-        $contactData = [
+        $contactToCreate = Contact::fromArray([
             'version' => 0,
             'roles' => [
                 'customer' => [
@@ -52,13 +60,12 @@ class ContactTest extends TestCase
                 'firstName' => 'Max',
                 'lastName' => 'Mustermann'
             ]
-        ];
+        ]);
 
         // API aufrufen
-        $response = $instance->contacts()->create($contactData);
+        $contact = $instance->contacts()->create($contactToCreate);
 
         // Assertions
-        $this->assertEquals('123e4567-e89b-12d3-a456-426614174000', $response['id']);
-        $this->assertEquals(0, $response['version']);
+        $this->assertEquals('123e4567-e89b-12d3-a456-426614174000', $contact->getId());
     }
 }

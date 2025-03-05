@@ -23,6 +23,11 @@ $contact = LexwareOffice::contacts()->get('kontakt-id-hier');
 
 ```
 
+## Feaures
+
+- Strong Typed API-Methoden
+- Automatisches Rate-Limiting
+
 ## API-Endpunkte
 
 | Bereich | Endpunkt | Implementiert | Methode |

@@ -5,6 +5,7 @@ namespace Pirabyte\LaravelLexwareOffice\Resources;
 use GuzzleHttp\Exception\GuzzleException;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
+use Pirabyte\LaravelLexwareOffice\Models\Contact;
 
 class ContactResource
 {
@@ -18,26 +19,39 @@ class ContactResource
     /**
      * Erstellt einen neuen Kontakt
      *
-     * @param array $data
-     * @return array
+     * @param Contact $contact
+     * @return Contact
      * @throws LexwareOfficeApiException
      * @throws GuzzleException
      */
-    public function create(array $data): array
+    public function create(Contact $contact): Contact
     {
-        return $this->client->post('contacts', $data);
+        $data = $contact->jsonSerialize();
+        $response = $this->client->post('contacts', $data);
+
+        // Holen des kompletten Kontakts wenn ID vorhanden
+        if (isset($response['id'])) {
+            try {
+                return $this->get($response['id']);
+            } catch (\Exception $e) {
+                // Fallback zur Datenzusammenführung wenn Get fehlschlägt
+            }
+        }
+
+        return Contact::fromArray(array_merge($data, $response));
     }
 
     /**
      * Ruft einen Kontakt anhand der ID ab
      *
      * @param string $id
-     * @return array
+     * @return Contact
      * @throws LexwareOfficeApiException
      */
-    public function get(string $id): array
+    public function get(string $id): Contact
     {
-        return $this->client->get("contacts/{$id}");
+        $response = $this->client->get("contacts/{$id}");
+        return Contact::fromArray($response);
     }
 
 
