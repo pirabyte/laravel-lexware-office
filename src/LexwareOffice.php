@@ -54,10 +54,6 @@ class LexwareOffice
      */
     public function contacts(): ContactResource
     {
-        if (!$this->contacts) {
-            $this->contacts = new ContactResource($this);
-        }
-
         return $this->contacts;
     }
 
@@ -70,10 +66,6 @@ class LexwareOffice
      */
     public function vouchers(): VoucherResource
     {
-        if (!$this->vouchers) {
-            $this->vouchers = new VoucherResource($this);
-        }
-
         return $this->vouchers;
     }
 
