@@ -94,6 +94,27 @@ class LexwareOffice
         }
     }
 
+    /**
+     * PUT-Anfrage
+     *
+     * @param string $endpoint
+     * @param array $data
+     * @return array
+     * @throws LexwareOfficeApiException|GuzzleException
+     */
+    public function put(string $endpoint, array $data): array
+    {
+        try {
+            $response = $this->client->put($endpoint, [
+                'json' => $data
+            ]);
+
+            return json_decode($response->getBody()->getContents(), true);
+        } catch (RequestException $e) {
+            throw $this->handleRequestException($e);
+        }
+    }
+
     #endregion Contacts
 
     #region Helper

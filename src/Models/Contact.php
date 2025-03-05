@@ -264,4 +264,9 @@ class Contact implements \JsonSerializable
     {
         return $this->roles;
     }
+    
+    public function getVersion(): int
+    {
+        return $this->version;
+    }
 }

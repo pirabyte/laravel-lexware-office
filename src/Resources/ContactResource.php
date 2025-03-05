@@ -54,5 +54,29 @@ class ContactResource
         return Contact::fromArray($response);
     }
 
+    /**
+     * Aktualisiert einen bestehenden Kontakt
+     *
+     * @param string $id
+     * @param Contact $contact
+     * @return Contact
+     * @throws LexwareOfficeApiException
+     * @throws GuzzleException
+     */
+    public function update(string $id, Contact $contact): Contact
+    {
+        $data = $contact->jsonSerialize();
+        $response = $this->client->put("contacts/{$id}", $data);
 
+        // Holen des kompletten Kontakts wenn erfolgreich
+        if (isset($response['id'])) {
+            try {
+                return $this->get($response['id']);
+            } catch (\Exception $e) {
+                // Fallback zur Datenzusammenführung wenn Get fehlschlägt
+            }
+        }
+
+        return Contact::fromArray(array_merge($data, $response));
+    }
 }
