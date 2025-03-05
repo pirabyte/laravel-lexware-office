@@ -24,5 +24,6 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_ORG_TOKEN }}
+        with:
+          token: ${{ secrets.CODECOV_ORG_TOKEN }}
+          slug: pirabyte/laravel-lexware-office
