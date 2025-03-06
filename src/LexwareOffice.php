@@ -13,6 +13,7 @@ use Pirabyte\LaravelLexwareOffice\Resources\FinancialAccountResource;
 use Pirabyte\LaravelLexwareOffice\Resources\FinancialTransactionResource;
 use Pirabyte\LaravelLexwareOffice\Resources\PostingCategoryResource;
 use Pirabyte\LaravelLexwareOffice\Resources\ProfileResource;
+use Pirabyte\LaravelLexwareOffice\Resources\TransactionAssignmentHintResource;
 use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
 
 class LexwareOffice
@@ -58,6 +59,11 @@ class LexwareOffice
      * @var FinancialTransactionResource
      */
     protected FinancialTransactionResource $financialTransactions;
+    
+    /**
+     * @var TransactionAssignmentHintResource
+     */
+    protected TransactionAssignmentHintResource $transactionAssignmentHints;
 
     public function __construct(string $baseUrl, string $apiKey)
     {
@@ -82,6 +88,7 @@ class LexwareOffice
         $this->countries = new CountryResource($this);
         $this->financialAccounts = new FinancialAccountResource($this);
         $this->financialTransactions = new FinancialTransactionResource($this);
+        $this->transactionAssignmentHints = new TransactionAssignmentHintResource($this);
     }
 
     #region Contacts
@@ -167,6 +174,18 @@ class LexwareOffice
     }
 
     #endregion FinancialTransactions
+    
+    #region TransactionAssignmentHints
+    
+    /**
+     * TransactionAssignmentHint-Ressource abrufen
+     */
+    public function transactionAssignmentHints(): TransactionAssignmentHintResource
+    {
+        return $this->transactionAssignmentHints;
+    }
+    
+    #endregion TransactionAssignmentHints
 
     #region Requests
 

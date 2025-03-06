@@ -9,6 +9,7 @@ use Pirabyte\LaravelLexwareOffice\Resources\FinancialAccountResource;
 use Pirabyte\LaravelLexwareOffice\Resources\FinancialTransactionResource;
 use Pirabyte\LaravelLexwareOffice\Resources\PostingCategoryResource;
 use Pirabyte\LaravelLexwareOffice\Resources\ProfileResource;
+use Pirabyte\LaravelLexwareOffice\Resources\TransactionAssignmentHintResource;
 use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
 
 /**
@@ -19,6 +20,7 @@ use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
  * @method static CountryResource countries()
  * @method static FinancialAccountResource financialAccounts()
  * @method static FinancialTransactionResource financialTransactions()
+ * @method static TransactionAssignmentHintResource transactionAssignmentHints()
  */
 class LexwareOffice extends Facade
 {
