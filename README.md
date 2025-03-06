@@ -94,3 +94,8 @@ Wenn das Rate-Limit erreicht wird, wird eine `LexwareOfficeApiException` mit dem
 - Transaktion löschen
 - Neueste Transaktionen abrufen
 - Belegzuweisungen abrufen
+
+### Transaktionszuweisungshinweise
+- Transaktionszuweisungshinweis erstellen
+
+<iframe src="https://github.com/sponsors/pirabyte/button" title="Sponsor pirabyte" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
