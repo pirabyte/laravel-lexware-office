@@ -20,10 +20,16 @@ jobs:
         run: composer self-update && composer install && composer dump-autoload
 
       - name: Execute tests
-        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_ORG_TOKEN }}
           slug: pirabyte/laravel-lexware-office
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_ORG_TOKEN }}
