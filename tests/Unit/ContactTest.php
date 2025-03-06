@@ -7,6 +7,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use Pirabyte\LaravelLexwareOffice\Classes\PaginatedResource;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Contact;
@@ -224,16 +225,16 @@ class ContactTest extends TestCase
         ]);
 
         // Assertions
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('content', $result);
-        $this->assertArrayHasKey('pagination', $result);
-        $this->assertCount(2, $result['content']);
-        $this->assertEquals('123e4567-e89b-12d3-a456-426614174000', $result['content'][0]->getId());
-        $this->assertEquals('223e4567-e89b-12d3-a456-426614174001', $result['content'][1]->getId());
-        $this->assertEquals(0, $result['pagination']['page']);
-        $this->assertEquals(25, $result['pagination']['size']);
-        $this->assertEquals(1, $result['pagination']['totalPages']);
-        $this->assertEquals(2, $result['pagination']['totalElements']);
+        $this->assertInstanceOf(PaginatedResource::class, $result);
+        $resultArray = $result->jsonSerialize();
+        $this->assertArrayHasKey('content', $resultArray);
+        $this->assertCount(2, $resultArray['content']);
+        $this->assertEquals('123e4567-e89b-12d3-a456-426614174000', $resultArray['content'][0]->getId());
+        $this->assertEquals('223e4567-e89b-12d3-a456-426614174001', $resultArray['content'][1]->getId());
+        $this->assertEquals(0, $resultArray['number']);
+        $this->assertEquals(25, $resultArray['size']);
+        $this->assertEquals(1, $resultArray['totalPages']);
+        $this->assertEquals(2, $resultArray['totalElements']);
     }
     
     /** @test */
@@ -312,18 +313,274 @@ class ContactTest extends TestCase
         $result = $instance->contacts()->all();
 
         // Assertions
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('content', $result);
-        $this->assertArrayHasKey('pagination', $result);
-        $this->assertCount(3, $result['content']);
-        $this->assertEquals(0, $result['pagination']['page']);
-        $this->assertEquals(25, $result['pagination']['size']);
-        $this->assertEquals(1, $result['pagination']['totalPages']);
-        $this->assertEquals(3, $result['pagination']['totalElements']);
+        $this->assertInstanceOf(PaginatedResource::class, $result);
+        $resultArray = $result->jsonSerialize();
+        $this->assertArrayHasKey('content', $resultArray);
+        $this->assertCount(3, $resultArray['content']);
+        $this->assertEquals(0, $resultArray['number']);
+        $this->assertEquals(25, $resultArray['size']);
+        $this->assertEquals(1, $resultArray['totalPages']);
+        $this->assertEquals(3, $resultArray['totalElements']);
         
         // Test für Begrenzung der Ergebnisse pro Seite
         $result2 = $instance->contacts()->all(0, 10);
-        $this->assertEquals(0, $result2['pagination']['page']);
-        $this->assertEquals(10, $result2['pagination']['size']);
+        $resultArray2 = $result2->jsonSerialize();
+        $this->assertEquals(0, $resultArray2['number']);
+        $this->assertEquals(10, $resultArray2['size']);
+    }
+    
+    /** @test */
+    public function it_can_filter_out_empty_filter_values(): void
+    {
+        // Hier verwenden wir PHPUnit spies, um zu prüfen, dass der richtige Request gesendet wird
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'content' => [],
+                'page' => 0,
+                'size' => 25,
+                'totalElements' => 0,
+                'totalPages' => 0,
+                'numberOfElements' => 0,
+                'first' => true,
+                'last' => true
+            ]))
+        ]);
+
+        $container = [];
+        $history = \GuzzleHttp\Middleware::history($container);
+        
+        $handlerStack = HandlerStack::create($mock);
+        $handlerStack->push($history);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // LexwareOffice-Client erstellen
+        /* @var LexwareOffice $instance */
+        $instance = $this->app->make('lexware-office');
+
+        // Methode setClient ist geschützt, also nutzen wir Reflection
+        $reflectionClass = new \ReflectionClass($instance);
+        $reflectionProperty = $reflectionClass->getProperty('client');
+        $reflectionProperty->setValue($instance, $client);
+
+        // Filter mit leeren Werten erstellen
+        $instance->contacts()->filter([
+            'name' => 'Test',
+            'email' => '',
+            'customer' => true,
+            'vendor' => null,
+            'number' => '12345'
+        ]);
+
+        // Assertions - Prüfen des tatsächlich gesendeten Requests
+        $this->assertCount(1, $container);
+        $request = $container[0]['request'];
+        $query = \GuzzleHttp\Psr7\Query::parse($request->getUri()->getQuery());
+        
+        // Nur nicht-leere Filter sollten gesendet werden
+        $this->assertArrayHasKey('name', $query);
+        $this->assertArrayHasKey('customer', $query);
+        $this->assertArrayHasKey('number', $query);
+        $this->assertArrayNotHasKey('email', $query);
+        $this->assertArrayNotHasKey('vendor', $query);
+        
+        // Werte prüfen
+        $this->assertEquals('Test', $query['name']);
+        $this->assertEquals('1', $query['customer']); // PHP kodiert bool true als '1' in query strings
+        $this->assertEquals('12345', $query['number']);
+    }
+    
+    /** @test */
+    public function it_can_handle_duplicate_filter_values(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'content' => [],
+                'page' => 0,
+                'size' => 25,
+                'totalElements' => 0,
+                'totalPages' => 0,
+                'numberOfElements' => 0,
+                'first' => true,
+                'last' => true
+            ])),
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'content' => [],
+                'page' => 0,
+                'size' => 25,
+                'totalElements' => 0,
+                'totalPages' => 0,
+                'numberOfElements' => 0,
+                'first' => true,
+                'last' => true
+            ]))
+        ]);
+
+        $container = [];
+        $history = \GuzzleHttp\Middleware::history($container);
+        
+        $handlerStack = HandlerStack::create($mock);
+        $handlerStack->push($history);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // LexwareOffice-Client erstellen
+        /* @var LexwareOffice $instance */
+        $instance = $this->app->make('lexware-office');
+
+        // Methode setClient ist geschützt, also nutzen wir Reflection
+        $reflectionClass = new \ReflectionClass($instance);
+        $reflectionProperty = $reflectionClass->getProperty('client');
+        $reflectionProperty->setValue($instance, $client);
+
+        // Da PHP selbst doppelte Array-Keys überschreibt, müssen wir das Array schrittweise aufbauen
+        $instance->contacts()->filter([
+            'name' => 'Test',
+            'email' => 'first@example.com' // Wird durch API-Implementierung nicht überschrieben
+        ]);
+        
+        // Assertions für den ersten Request
+        $this->assertCount(1, $container);
+        $request1 = $container[0]['request'];
+        $query1 = \GuzzleHttp\Psr7\Query::parse($request1->getUri()->getQuery());
+        
+        // Prüfen der einzelnen Werte
+        $this->assertEquals('Test', $query1['name']);
+        $this->assertEquals('first@example.com', $query1['email']);
+        
+        // Array zurücksetzen
+        $container = [];
+        
+        // Bei mehrfachen Aufrufen simulieren wir doppelte Filter
+        $instance->contacts()->filter([
+            'email' => ['first@example.com', 'second@example.com']
+        ]);
+        
+        // Assertions für den zweiten Request
+        $this->assertCount(1, $container);
+        $request2 = $container[0]['request'];
+        $queryString = $request2->getUri()->getQuery();
+        
+        // Da Array-Parameter in der URI als email[0]=first@example.com&email[1]=second@example.com kodiert werden,
+        // prüfen wir direkt den Query-String
+        $this->assertStringContainsString('email%5B0%5D=first%40example.com', $queryString);
+        $this->assertStringContainsString('email%5B1%5D=second%40example.com', $queryString);
+    }
+    
+    /** @test */
+    public function it_can_use_auto_paging_iterator(): void
+    {
+        // Zwei Seiten mit Kontakten simulieren
+        $page1 = [
+            'content' => [
+                [
+                    'id' => '123e4567-e89b-12d3-a456-426614174000',
+                    'version' => 0,
+                    'roles' => [
+                        'customer' => [
+                            'number' => 'K-00001'
+                        ]
+                    ],
+                    'person' => [
+                        'salutation' => 'Herr',
+                        'firstName' => 'Max',
+                        'lastName' => 'Mustermann'
+                    ]
+                ],
+                [
+                    'id' => '223e4567-e89b-12d3-a456-426614174001',
+                    'version' => 0,
+                    'roles' => [
+                        'vendor' => [
+                            'number' => 'L-00001'
+                        ]
+                    ],
+                    'company' => [
+                        'name' => 'Musterfirma GmbH'
+                    ]
+                ]
+            ],
+            'page' => 0,
+            'size' => 2,
+            'totalElements' => 3,
+            'totalPages' => 2,
+            'numberOfElements' => 2,
+            'first' => true,
+            'last' => false
+        ];
+        
+        $page2 = [
+            'content' => [
+                [
+                    'id' => '323e4567-e89b-12d3-a456-426614174002',
+                    'version' => 0,
+                    'roles' => [
+                        'customer' => [
+                            'number' => 'K-00003'
+                        ]
+                    ],
+                    'person' => [
+                        'salutation' => 'Frau',
+                        'firstName' => 'Erika',
+                        'lastName' => 'Musterfrau'
+                    ]
+                ]
+            ],
+            'page' => 1,
+            'size' => 2,
+            'totalElements' => 3,
+            'totalPages' => 2,
+            'numberOfElements' => 1,
+            'first' => false,
+            'last' => true
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($page1)),
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($page2))
+        ]);
+
+        $container = [];
+        $history = \GuzzleHttp\Middleware::history($container);
+        
+        $handlerStack = HandlerStack::create($mock);
+        $handlerStack->push($history);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // LexwareOffice-Client erstellen
+        /* @var LexwareOffice $instance */
+        $instance = $this->app->make('lexware-office');
+
+        // Methode setClient ist geschützt, also nutzen wir Reflection
+        $reflectionClass = new \ReflectionClass($instance);
+        $reflectionProperty = $reflectionClass->getProperty('client');
+        $reflectionProperty->setValue($instance, $client);
+
+        // AutoPagingIterator verwenden
+        $contacts = [];
+        foreach ($instance->contacts()->getAutoPagingIterator(['name' => 'Muster'], 2) as $contact) {
+            $contacts[] = $contact;
+        }
+
+        // Assertions
+        $this->assertCount(3, $contacts);
+        $this->assertEquals('123e4567-e89b-12d3-a456-426614174000', $contacts[0]->getId());
+        $this->assertEquals('223e4567-e89b-12d3-a456-426614174001', $contacts[1]->getId());
+        $this->assertEquals('323e4567-e89b-12d3-a456-426614174002', $contacts[2]->getId());
+        
+        // Prüfen, dass zwei Anfragen gesendet wurden
+        $this->assertCount(2, $container);
+        
+        // Prüfen der ersten Anfrage
+        $request1 = $container[0]['request'];
+        $query1 = \GuzzleHttp\Psr7\Query::parse($request1->getUri()->getQuery());
+        $this->assertEquals('Muster', $query1['name']);
+        $this->assertEquals('2', $query1['size']);
+        $this->assertEquals('0', $query1['page']);
+        
+        // Prüfen der zweiten Anfrage (zweite Seite)
+        $request2 = $container[1]['request'];
+        $query2 = \GuzzleHttp\Psr7\Query::parse($request2->getUri()->getQuery());
+        $this->assertEquals('Muster', $query2['name']);
+        $this->assertEquals('2', $query2['size']);
+        $this->assertEquals('1', $query2['page']);
     }
 }

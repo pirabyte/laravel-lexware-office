@@ -3,6 +3,7 @@
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
 use GuzzleHttp\Exception\GuzzleException;
+use Generator;
 use Pirabyte\LaravelLexwareOffice\Classes\PaginatedResource;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
@@ -101,10 +102,30 @@ class ContactResource
             'customer', 'vendor', 'name', 'email', 'number', 'page', 'size'
         ];
 
-        // Nur gültige Filter-Parameter verwenden
-        $query = array_filter($filters, function ($key) use ($validFilters) {
-            return in_array($key, $validFilters);
-        }, ARRAY_FILTER_USE_KEY);
+        // HTTP-Query vorbereiten
+        $query = [];
+        
+        // Wir müssen doppelte Filter korrekt handhaben (API kombiniert diese mit AND)
+        foreach ($filters as $key => $value) {
+            // Leere oder ungültige Filter überspringen
+            if (!in_array($key, $validFilters) || $value === null || $value === '') {
+                continue;
+            }
+            
+            // Wenn der Filter bereits existiert, konvertieren wir ihn zu einem Array
+            if (isset($query[$key])) {
+                // Wenn es bereits ein Array ist, fügen wir den neuen Wert hinzu
+                if (is_array($query[$key])) {
+                    $query[$key][] = $value;
+                } else {
+                    // Andernfalls konvertieren wir es zu einem Array mit beiden Werten
+                    $query[$key] = [$query[$key], $value];
+                }
+            } else {
+                // Bei einem neuen Filter-Key setzen wir den Wert einfach
+                $query[$key] = $value;
+            }
+        }
 
         // API-Anfrage senden
         $response = $this->client->get('contacts', $query);
@@ -147,5 +168,49 @@ class ContactResource
         }
 
         return $resource;
+    }
+
+    /**
+     * Liefert einen Generator, der alle Kontakte automatisch paginiert durchläuft
+     *
+     * @param array $filters Filtermöglichkeiten wie in der filter()-Methode:
+     *                      - customer: bool - Filtert nach Kunden
+     *                      - vendor: bool - Filtert nach Lieferanten
+     *                      - name: string - Filtert nach Namen (Firmen oder Personen)
+     *                      - email: string - Filtert nach E-Mail-Adresse
+     *                      - number: string - Filtert nach Kunden-/Lieferantennummer
+     * @param int $size Anzahl der Ergebnisse pro Seite (max. 250)
+     * @return Generator<Contact>
+     * @throws LexwareOfficeApiException
+     */
+    public function getAutoPagingIterator(array $filters = [], int $size = 25): Generator
+    {
+        $page = 0;
+        $hasMore = true;
+
+        // Filter-Array mit size Parameter vorbereiten
+        $queryFilters = $filters;
+        $queryFilters['size'] = min($size, 250);
+
+        while ($hasMore) {
+            $queryFilters['page'] = $page;
+            
+            // Aktuelle Seite laden
+            $paginatedResource = $this->filter($queryFilters);
+            
+            // Keine Ergebnisse mehr, Schleife beenden
+            if (empty($paginatedResource->jsonSerialize()['content'])) {
+                break;
+            }
+            
+            // Alle Kontakte der aktuellen Seite zurückgeben
+            foreach ($paginatedResource->jsonSerialize()['content'] as $contact) {
+                yield $contact;
+            }
+            
+            // Prüfen ob es weitere Seiten gibt
+            $hasMore = !$paginatedResource->jsonSerialize()['last'];
+            $page++;
+        }
     }
 }

@@ -124,8 +124,11 @@ class LexwareOffice
     public function get(string $endpoint, array $query = []): array
     {
         try {
-            return $this->makeRequest(function () use ($endpoint, $query) {
-                return $this->client->get($endpoint, ['query' => $query]);
+            // Hier müssen wir sicherstellen, dass Array-Parameter korrekt als separate Query-Parameter gesendet werden
+            $options = ['query' => $query];
+            
+            return $this->makeRequest(function () use ($endpoint, $options) {
+                return $this->client->get($endpoint, $options);
             });
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
