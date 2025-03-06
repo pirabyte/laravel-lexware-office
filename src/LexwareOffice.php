@@ -46,8 +46,10 @@ class LexwareOffice
         $this->baseUrl = $baseUrl;
         $this->apiKey = $apiKey;
 
+        $uri = $this->prepareBaseUri($this->baseUrl);
+
         $this->client = new Client([
-            'base_uri' => $this->baseUrl,
+            'base_uri' => $uri,
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Accept' => 'application/json',
@@ -175,6 +177,28 @@ class LexwareOffice
     #endregion Requests
 
     #region Helper
+
+    /**
+     * Bereitet die Basis-URI für API-Requests vor.
+     * Stellt sicher, dass die URL mit /v1/ endet.
+     *
+     * @param string $baseUrl Die Basis-URL für die API
+     * @return string Die korrekt formatierte Basis-URL
+     */
+    protected function prepareBaseUri(string $baseUrl): string
+    {
+        // Entferne trailing slashes
+        $baseUrl = rtrim($baseUrl, '/');
+
+        // Prüfe, ob die URL bereits mit /v1 endet
+        if (!str_ends_with($baseUrl, '/v1')) {
+            // Wenn nicht, füge /v1 hinzu
+            $baseUrl .= '/v1';
+        }
+
+        // Stelle sicher, dass die URL mit einem Slash endet
+        return $baseUrl . '/';
+    }
 
     /**
      * Behandelt Anfrage-Exceptions

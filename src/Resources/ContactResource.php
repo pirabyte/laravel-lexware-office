@@ -3,6 +3,7 @@
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
 use GuzzleHttp\Exception\GuzzleException;
+use Pirabyte\LaravelLexwareOffice\Classes\PaginatedResource;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Contact;
@@ -91,10 +92,10 @@ class ContactResource
      *                      - number: string - Filtert nach Kunden-/Lieferantennummer
      *                      - page: int - Seitennummer (beginnend bei 0)
      *                      - size: int - Anzahl der Ergebnisse pro Seite (max. 100)
-     * @return array Liste der gefilterten Kontakte als Contact-Objekte und Paginierungsinformationen
+     * @return PaginatedResource Liste der gefilterten Kontakte als PaginatedResource
      * @throws LexwareOfficeApiException
      */
-    public function filter(array $filters = []): array
+    public function filter(array $filters = []): PaginatedResource
     {
         $validFilters = [
             'customer', 'vendor', 'name', 'email', 'number', 'page', 'size'
@@ -116,10 +117,10 @@ class ContactResource
      *
      * @param int $page Seitennummer (beginnend bei 0)
      * @param int $size Anzahl der Ergebnisse pro Seite (max. 100)
-     * @return array Liste aller Kontakte als Contact-Objekte und Paginierungsinformationen
+     * @return PaginatedResource Liste aller Kontakte als PaginatedResource und Paginierungsinformationen
      * @throws LexwareOfficeApiException
      */
-    public function all(int $page = 0, int $size = 25): array
+    public function all(int $page = 0, int $size = 25): PaginatedResource
     {
         $response = $this->client->get('contacts', [
             'page' => $page,
@@ -133,27 +134,18 @@ class ContactResource
      * Verarbeitet die Antwort der Kontakt-API und erstellt daraus ein strukturiertes Array
      *
      * @param array $response API-Antwort
-     * @return array Strukturiertes Array mit Kontakten und Paginierungsinformationen
+     * @return PaginatedResource Strukturiertes Array mit Kontakten und Paginierungsinformationen
      */
-    protected function processContactsResponse(array $response): array
+    protected function processContactsResponse(array $response): PaginatedResource
     {
-        $result = [
-            'content' => [],
-            'pagination' => [
-                'page' => $response['page'] ?? 0,
-                'size' => $response['size'] ?? 0,
-                'totalPages' => $response['totalPages'] ?? 0,
-                'totalElements' => $response['totalElements'] ?? 0,
-                'numberOfElements' => $response['numberOfElements'] ?? 0,
-            ]
-        ];
+        $resource = PaginatedResource::fromArray($response);
 
         if (isset($response['content']) && is_array($response['content'])) {
             foreach ($response['content'] as $contactData) {
-                $result['content'][] = Contact::fromArray($contactData);
+                $resource->appendContent(Contact::fromArray($contactData));
             }
         }
 
-        return $result;
+        return $resource;
     }
 }

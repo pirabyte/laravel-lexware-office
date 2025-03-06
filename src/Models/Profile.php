@@ -12,11 +12,11 @@ class Profile implements \JsonSerializable
 
     private string $connectionId;
 
-    private array $features;
+    private ?array $features = null;
 
     private array $businessFeatures;
 
-    private string $subscriptionStatus;
+    private ?string $subscriptionStatus = null;
 
     private string $taxType = 'net';
 
