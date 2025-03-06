@@ -1,3 +1,5 @@
+![Pirabyte Lexware Office Hero Image](/public/img/og-image.png)
+
 <p align="center">
   <h1 align="center">Laravel Lexware Office API Client</h1>
 </p>
