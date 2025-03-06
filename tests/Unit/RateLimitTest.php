@@ -97,6 +97,81 @@ class RateLimitTest extends TestCase
         // Anfrage senden (sollte Exception werfen)
         $instance->get('contacts/123');
     }
+    
+    /** @test */
+    public function it_handles_request_exceptions_correctly()
+    {
+        // Mock RateLimiter Facade to pass rate limit check
+        RateLimiter::shouldReceive('tooManyAttempts')
+            ->once()
+            ->andReturn(false);
+            
+        RateLimiter::shouldReceive('hit')
+            ->never();
+
+        // Create a request exception with a response
+        $request = new Request('GET', 'contacts/123');
+        $response = new Response(400, [], json_encode(['error' => 'Bad Request']));
+        $exception = new RequestException('Bad Request', $request, $response);
+
+        // Create a mock handler that throws the exception
+        $mock = new MockHandler([$exception]);
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // LexwareOffice-Client erstellen
+        /* @var LexwareOffice $instance */
+        $instance = $this->app->make('lexware-office');
+
+        // Methode setClient ist geschützt, also nutzen wir Reflection
+        $reflectionClass = new \ReflectionClass($instance);
+        $reflectionProperty = $reflectionClass->getProperty('client');
+        $reflectionProperty->setValue($instance, $client);
+
+        // Erwarten, dass eine LexwareOfficeApiException geworfen wird
+        $this->expectException(LexwareOfficeApiException::class);
+        $this->expectExceptionCode(400);
+
+        // Anfrage senden (sollte Exception werfen)
+        $instance->get('contacts/123');
+    }
+    
+    /** @test */
+    public function it_handles_request_exceptions_without_response()
+    {
+        // Mock RateLimiter Facade to pass rate limit check
+        RateLimiter::shouldReceive('tooManyAttempts')
+            ->once()
+            ->andReturn(false);
+            
+        RateLimiter::shouldReceive('hit')
+            ->never();
+
+        // Create a request exception without a response
+        $request = new Request('GET', 'contacts/123');
+        $exception = new RequestException('Connection error', $request);
+
+        // Create a mock handler that throws the exception
+        $mock = new MockHandler([$exception]);
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // LexwareOffice-Client erstellen
+        /* @var LexwareOffice $instance */
+        $instance = $this->app->make('lexware-office');
+
+        // Methode setClient ist geschützt, also nutzen wir Reflection
+        $reflectionClass = new \ReflectionClass($instance);
+        $reflectionProperty = $reflectionClass->getProperty('client');
+        $reflectionProperty->setValue($instance, $client);
+
+        // Erwarten, dass eine LexwareOfficeApiException geworfen wird
+        $this->expectException(LexwareOfficeApiException::class);
+        $this->expectExceptionCode(500);
+
+        // Anfrage senden (sollte Exception werfen)
+        $instance->get('contacts/123');
+    }
 
     /** @test */
     public function it_allows_setting_custom_rate_limit()
@@ -139,6 +214,10 @@ class RateLimitTest extends TestCase
 
         // Überprüfen, ob die Antwort korrekt ist
         $this->assertEquals(['id' => '123'], $response);
+        
+        // Überprüfen, ob das Rate-Limit korrekt gesetzt wurde
+        $maxRequestsProperty = $reflectionClass->getProperty('maxRequestsPerMinute');
+        $this->assertEquals(10, $maxRequestsProperty->getValue($instance));
     }
     
     /** @test */
