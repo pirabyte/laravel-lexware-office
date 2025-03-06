@@ -8,6 +8,8 @@ use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\RateLimiter;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
+use Pirabyte\LaravelLexwareOffice\Resources\CountryResource;
+use Pirabyte\LaravelLexwareOffice\Resources\FinancialAccountResource;
 use Pirabyte\LaravelLexwareOffice\Resources\PostingCategoryResource;
 use Pirabyte\LaravelLexwareOffice\Resources\ProfileResource;
 use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
@@ -41,6 +43,16 @@ class LexwareOffice
      */
     protected PostingCategoryResource $postingCategories;
 
+    /**
+     * @var CountryResource
+     */
+    protected CountryResource $countries;
+
+    /**
+     * @var FinancialAccountResource
+     */
+    protected FinancialAccountResource $financialAccounts;
+
     public function __construct(string $baseUrl, string $apiKey)
     {
         $this->baseUrl = $baseUrl;
@@ -61,6 +73,8 @@ class LexwareOffice
         $this->vouchers = new VoucherResource($this);
         $this->profile = new ProfileResource($this);
         $this->postingCategories = new PostingCategoryResource($this);
+        $this->countries = new CountryResource($this);
+        $this->financialAccounts = new FinancialAccountResource($this);
     }
 
     #region Contacts
@@ -110,6 +124,30 @@ class LexwareOffice
     }
 
     #endregion PostingCategories
+
+    #region Countries
+
+    /**
+     * Länder-Ressource abrufen
+     */
+    public function countries(): CountryResource
+    {
+        return $this->countries;
+    }
+
+    #endregion Countries
+
+    #region FinancialAccounts
+
+    /**
+     * Finanzkonten-Ressource abrufen
+     */
+    public function financialAccounts(): FinancialAccountResource
+    {
+        return $this->financialAccounts;
+    }
+
+    #endregion FinancialAccounts
 
     #region Requests
 
@@ -171,6 +209,24 @@ class LexwareOffice
                 return $this->client->put($endpoint, [
                     'json' => $data
                 ]);
+            });
+        } catch (RequestException $e) {
+            throw $this->handleRequestException($e);
+        }
+    }
+
+    /**
+     * DELETE-Anfrage
+     *
+     * @param string $endpoint
+     * @return void
+     * @throws LexwareOfficeApiException
+     */
+    public function delete(string $endpoint): void
+    {
+        try {
+            $this->makeRequest(function () use ($endpoint) {
+                return $this->client->delete($endpoint);
             });
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);

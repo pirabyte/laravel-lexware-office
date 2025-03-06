@@ -90,3 +90,9 @@ Wenn das Rate-Limit erreicht wird, wird eine `LexwareOfficeApiException` mit dem
 |  | Belege auflisten | ✅ |
 |  | Beleg aktualisieren | ✅ |
 |  | Beleg-Dokument generieren | ✅ |
+| **Länder** |  |  |
+|  | Länder auflisten | ✅ |
+| **Finanzkonten** |  |  |
+|  | Finanzkonto abrufen | ✅ |
+|  | Finanzkonten filtern | ✅ |
+|  | Finanzkonto löschen | ✅ |
