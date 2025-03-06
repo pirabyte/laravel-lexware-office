@@ -1,9 +1,14 @@
-# Laravel Lexware Office API Client
+<p align="center">
+  <h1 align="center">Laravel Lexware Office API Client</h1>
+</p>
 
-Laravel package für die Lexware Office API.
+<p align="center">
+  <a href="https://github.com/pirabyte/laravel-lexware-office/actions/workflows/tests.yml"><img src="https://github.com/pirabyte/laravel-lexware-office/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+  <a href="https://codecov.io/github/pirabyte/laravel-lexware-office"><img src="https://codecov.io/github/pirabyte/laravel-lexware-office/branch/main/graph/badge.svg?token=KIpGNZLpn6" alt="codecov"></a>
+</p>
 
-[![Tests](https://github.com/pirabyte/laravel-lexware-office/actions/workflows/tests.yml/badge.svg)](https://github.com/pirabyte/laravel-lexware-office/actions/workflows/tests.yml)
-[![codecov](https://codecov.io/github/pirabyte/laravel-lexware-office/branch/main/graph/badge.svg?token=KIpGNZLpn6)](https://codecov.io/github/pirabyte/laravel-lexware-office)
+<p align="center">Laravel package für die Lexware Office API.</p>
+
 ## Installation
 
 ```bash
@@ -16,19 +21,35 @@ php artisan vendor:publish --provider="Pirabyte\LexwareOffice\LexwareOfficeServi
 
 ## Verwendung
 
-```php
+### Mit Facade (Standard)
 
+```php
 use Pirabyte\LaravelLexwareOffice\Facades\LexwareOffice;
 
 // API-Methoden nutzen
 $contact = LexwareOffice::contacts()->get('kontakt-id-hier');
+```
 
+### Direkte Instanzierung (z.B. für Multi-Tenant oder dynamische API-Keys)
+
+```php
+use Pirabyte\LaravelLexwareOffice\LexwareOffice;
+
+// Instanz mit benutzerdefiniertem API-Key erstellen
+$client = new LexwareOffice(
+    'https://api.lexoffice.de/', 
+    'Ihr-API-Key-Hier' // z.B. aus Benutzereinstellungen oder Datenbank
+);
+
+// API-Methoden nutzen
+$contact = $client->contacts()->get('kontakt-id-hier');
 ```
 
 ## Features
 
 - Strong Typed API-Methoden
 - Automatisches Rate-Limiting (50 Anfragen pro Minute)
+- Auto-Paging Iterator für effiziente Paginierung
 
 ## Rate-Limiting
 
@@ -44,55 +65,32 @@ $lexwareOffice->setRateLimit(10); // Beschränkt auf 10 Anfragen pro Minute
 
 Wenn das Rate-Limit erreicht wird, wird eine `LexwareOfficeApiException` mit dem Statuscode 429 und einer entsprechenden Fehlermeldung geworfen, die angibt, wie lange gewartet werden muss, bevor die nächste Anfrage gesendet werden kann.
 
-## API-Endpunkte
+## Implementierte API-Endpunkte
 
-| Bereich | Endpunkt | Implementiert 
-|---------|----------|--------------|
-| **Kontakte** |  |  |
-|  | Kontakt erstellen | ✅ |
-|  | Kontakt abrufen | ✅ |
-|  | Kontakte auflisten | ✅ |
-|  | Kontakt aktualisieren | ✅ |
-| **Rechnungen** |  |  |
-|  | Rechnung erstellen | ❌ |
-|  | Rechnung abrufen | ❌ |
-|  | Rechnungen auflisten | ❌ |
-|  | Rechnung aktualisieren | ❌ |
-| **Angebote** |  |  |
-|  | Angebot erstellen | ❌ |
-|  | Angebot abrufen | ❌ |
-|  | Angebote auflisten | ❌ |
-| **Lieferscheine** |  |  |
-|  | Lieferschein erstellen | ❌ |
-|  | Lieferschein abrufen | ❌ |
-|  | Lieferscheine auflisten | ❌ |
-| **Bestellungen** |  |  |
-|  | Bestellung erstellen | ❌ |
-|  | Bestellung abrufen | ❌ |
-|  | Bestellungen auflisten | ❌ |
-| **Gutschriften** |  |  |
-|  | Gutschrift erstellen | ❌ |
-|  | Gutschrift abrufen | ❌ |
-|  | Gutschriften auflisten | ❌ |
-| **Artikel** |  |  |
-|  | Artikel abrufen | ❌ |
-|  | Artikel auflisten | ❌ |
-| **Dateien** |  |  |
-|  | Datei hochladen | ❌ |
-|  | Datei abrufen | ❌ |
-| **Buchungen** |  |  |
-|  | Buchung erstellen | ❌ |
-|  | Buchung abrufen | ❌ |
-|  | Buchungen auflisten | ❌ |
-| **Belege** |  |  |
-|  | Beleg erstellen | ✅ |
-|  | Beleg abrufen | ✅ |
-|  | Belege auflisten | ✅ |
-|  | Beleg aktualisieren | ✅ |
-|  | Beleg-Dokument generieren | ✅ |
-| **Länder** |  |  |
-|  | Länder auflisten | ✅ |
-| **Finanzkonten** |  |  |
-|  | Finanzkonto abrufen | ✅ |
-|  | Finanzkonten filtern | ✅ |
-|  | Finanzkonto löschen | ✅ |
+### Kontakte
+- Kontakt erstellen
+- Kontakt abrufen
+- Kontakte auflisten
+- Kontakt aktualisieren
+
+### Belege
+- Beleg erstellen
+- Beleg abrufen
+- Belege auflisten
+- Beleg aktualisieren
+- Beleg-Dokument generieren
+
+### Länder
+- Länder auflisten
+
+### Finanzkonten
+- Finanzkonto abrufen
+- Finanzkonten filtern
+- Finanzkonto löschen
+
+### Finanztransaktionen
+- Transaktion abrufen
+- Transaktion aktualisieren
+- Transaktion löschen
+- Neueste Transaktionen abrufen
+- Belegzuweisungen abrufen
