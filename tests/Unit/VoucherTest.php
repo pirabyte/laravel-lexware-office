@@ -141,11 +141,7 @@ class VoucherTest extends TestCase
         $reflectionProperty->setValue($instance, $client);
 
         // Belege filtern
-        $result = $instance->vouchers()->filter([
-            'voucherType' => 'salesinvoice',
-            'startDate' => '2020-01-01',
-            'endDate' => '2020-01-31'
-        ]);
+        $result = $instance->vouchers()->filter('RE-001');
 
         // Assertions
         $this->assertIsArray($result);
