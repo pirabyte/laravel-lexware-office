@@ -85,6 +85,30 @@ class LexwareOffice
 
     #endregion Vouchers
 
+    #region Profile
+
+    /**
+     * Profil-Ressource abrufen
+     */
+    public function profile(): ProfileResource
+    {
+        return $this->profile;
+    }
+
+    #endregion Profile
+
+    #region PostingCategories
+
+    /**
+     * Buchungskategorien-Ressource abrufen
+     */
+    public function postingCategories(): PostingCategoryResource
+    {
+        return $this->postingCategories;
+    }
+
+    #endregion PostingCategories
+
     #region Requests
 
     /**

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
 
 namespace Pirabyte\LaravelLexwareOffice\Tests\Unit;
 
