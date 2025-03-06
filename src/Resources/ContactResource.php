@@ -116,7 +116,7 @@ class ContactResource
      * Alle Kontakte abrufen mit Paginierung
      *
      * @param int $page Seitennummer (beginnend bei 0)
-     * @param int $size Anzahl der Ergebnisse pro Seite (max. 100)
+     * @param int $size Anzahl der Ergebnisse pro Seite (max. 250)
      * @return PaginatedResource Liste aller Kontakte als PaginatedResource und Paginierungsinformationen
      * @throws LexwareOfficeApiException
      */
@@ -124,7 +124,7 @@ class ContactResource
     {
         $response = $this->client->get('contacts', [
             'page' => $page,
-            'size' => min($size, 100) // Maximal 100 Einträge pro Seite
+            'size' => min($size, 250) // Maximal 250 Einträge pro Seite
         ]);
 
         return $this->processContactsResponse($response);
