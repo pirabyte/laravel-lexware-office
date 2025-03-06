@@ -10,6 +10,7 @@ use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
 use Pirabyte\LaravelLexwareOffice\Resources\CountryResource;
 use Pirabyte\LaravelLexwareOffice\Resources\FinancialAccountResource;
+use Pirabyte\LaravelLexwareOffice\Resources\FinancialTransactionResource;
 use Pirabyte\LaravelLexwareOffice\Resources\PostingCategoryResource;
 use Pirabyte\LaravelLexwareOffice\Resources\ProfileResource;
 use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
@@ -53,6 +54,11 @@ class LexwareOffice
      */
     protected FinancialAccountResource $financialAccounts;
 
+    /**
+     * @var FinancialTransactionResource
+     */
+    protected FinancialTransactionResource $financialTransactions;
+
     public function __construct(string $baseUrl, string $apiKey)
     {
         $this->baseUrl = $baseUrl;
@@ -75,6 +81,7 @@ class LexwareOffice
         $this->postingCategories = new PostingCategoryResource($this);
         $this->countries = new CountryResource($this);
         $this->financialAccounts = new FinancialAccountResource($this);
+        $this->financialTransactions = new FinancialTransactionResource($this);
     }
 
     #region Contacts
@@ -148,6 +155,18 @@ class LexwareOffice
     }
 
     #endregion FinancialAccounts
+
+    #region FinancialTransactions
+
+    /**
+     * Finanztransaktionen-Ressource abrufen
+     */
+    public function financialTransactions(): FinancialTransactionResource
+    {
+        return $this->financialTransactions;
+    }
+
+    #endregion FinancialTransactions
 
     #region Requests
 
