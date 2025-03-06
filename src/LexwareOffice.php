@@ -8,6 +8,8 @@ use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\RateLimiter;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
+use Pirabyte\LaravelLexwareOffice\Resources\PostingCategoryResource;
+use Pirabyte\LaravelLexwareOffice\Resources\ProfileResource;
 use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
 
 class LexwareOffice
@@ -29,6 +31,16 @@ class LexwareOffice
      */
     protected VoucherResource $vouchers;
 
+    /**
+     * @var ProfileResource
+     */
+    protected ProfileResource $profile;
+
+    /**
+     * @var PostingCategoryResource
+     */
+    protected PostingCategoryResource $postingCategories;
+
     public function __construct(string $baseUrl, string $apiKey)
     {
         $this->baseUrl = $baseUrl;
@@ -45,6 +57,8 @@ class LexwareOffice
 
         $this->contacts = new ContactResource($this);
         $this->vouchers = new VoucherResource($this);
+        $this->profile = new ProfileResource($this);
+        $this->postingCategories = new PostingCategoryResource($this);
     }
 
     #region Contacts

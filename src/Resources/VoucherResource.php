@@ -83,30 +83,19 @@ class VoucherResource
     /**
      * Belege nach verschiedenen Kriterien filtern
      *
-     * @param array $filters Filtermöglichkeiten:
-     *                      - voucherType: string - Filterung nach Belegtyp (z.B. salesinvoice, salescreditnote)
-     *                      - voucherStatus: string - Filterung nach Belegstatus
-     *                      - voucherNumber: string - Filterung nach Belegnummer
-     *                      - startDate: string - Startdatum für die Filterung (ISO8601)
-     *                      - endDate: string - Enddatum für die Filterung (ISO8601)
-     *                      - contactId: string - Filterung nach Kontakt-ID
-     *                      - archived: bool - Filterung nach archivierten Belegen
-     *                      - page: int - Seitennummer (beginnend bei 0)
-     *                      - size: int - Anzahl der Ergebnisse pro Seite (max. 100)
+     * @param string $voucherNumber Filterung nach Belegnummer
      * @return array Liste der gefilterten Belege als Voucher-Objekte und Paginierungsinformationen
      * @throws LexwareOfficeApiException
      */
-    public function filter(array $filters = []): array
+    public function filter(string $voucherNumber): array
     {
-        $validFilters = [
-            'voucherType', 'voucherStatus', 'voucherNumber', 'startDate', 'endDate',
-            'contactId', 'archived', 'page', 'size'
-        ];
+        $query = [];
 
-        // Nur gültige Filter-Parameter verwenden
-        $query = array_filter($filters, function ($key) use ($validFilters) {
-            return in_array($key, $validFilters);
-        }, ARRAY_FILTER_USE_KEY);
+        if(!empty($voucherNumber)) {
+            $query = [
+                'voucherNumber' => $voucherNumber
+            ];
+        }
 
         // API-Anfrage senden
         $response = $this->client->get('vouchers', $query);
