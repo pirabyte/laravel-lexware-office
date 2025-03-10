@@ -6,6 +6,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\Utils;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Voucher;
 use Pirabyte\LaravelLexwareOffice\Models\VoucherItem;
@@ -192,5 +193,53 @@ class VoucherTest extends TestCase
         $this->assertEquals('file123', $result['id']);
         $this->assertEquals('invoice_123.pdf', $result['fileName']);
         $this->assertEquals('application/pdf', $result['mimeType']);
+    }
+
+    /** @test */
+    public function it_can_attach_file_to_voucher(): void
+    {
+        // Mock-Response erstellen
+        $fileData = [
+            'id' => 'file456',
+            'fileName' => 'test_document.pdf',
+            'mimeType' => 'application/pdf',
+            'size' => 54321,
+            'createdDate' => '2020-01-01T00:00:00.000+01:00'
+        ];
+
+        $mock = new MockHandler([
+            new Response(201, ['Content-Type' => 'application/json'], json_encode($fileData))
+        ]);
+
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // LexwareOffice-Client erstellen
+        /* @var LexwareOffice $instance */
+        $instance = $this->app->make('lexware-office');
+
+        // Methode setClient ist geschützt, also nutzen wir Reflection
+        $reflectionClass = new \ReflectionClass($instance);
+        $reflectionProperty = $reflectionClass->getProperty('client');
+        $reflectionProperty->setValue($instance, $client);
+
+        // Test-Datei als Stream erstellen
+        $fileContent = 'Test PDF Inhalt';
+        $stream = Utils::streamFor($fileContent);
+        
+        // Datei an Beleg anhängen
+        $result = $instance->vouchers()->attachFile(
+            '123e4567-e89b-12d3-a456-426614174000',
+            $stream,
+            'test_document.pdf',
+            'voucher'
+        );
+
+        // Assertions
+        $this->assertIsArray($result);
+        $this->assertEquals('file456', $result['id']);
+        $this->assertEquals('test_document.pdf', $result['fileName']);
+        $this->assertEquals('application/pdf', $result['mimeType']);
+        $this->assertEquals(54321, $result['size']);
     }
 }

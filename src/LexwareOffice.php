@@ -323,6 +323,16 @@ class LexwareOffice
         $this->client = $client;
         return $this;
     }
+    
+    /**
+     * Gibt den HTTP-Client zurück
+     *
+     * @return Client
+     */
+    public function client(): Client
+    {
+        return $this->client;
+    }
 
     /**
      * Führt eine Anfrage mit Rate Limiting aus

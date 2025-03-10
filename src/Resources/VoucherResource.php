@@ -3,6 +3,8 @@
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
+use Psr\Http\Message\StreamInterface;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Voucher;
@@ -40,6 +42,8 @@ class VoucherResource
 
         return Voucher::fromArray(array_merge($data, $response));
     }
+
+
 
     /**
      * Ruft einen Beleg anhand der ID ab
@@ -172,5 +176,37 @@ class VoucherResource
     public function downloadDocument(string $voucherId, string $fileId): array
     {
         return $this->client->get("vouchers/{$voucherId}/files/{$fileId}");
+    }
+
+    /**
+     * Fügt eine Datei an einen Beleg an
+     *
+     * @param string $id Beleg-ID
+     * @param StreamInterface $stream Datei-Inhalt als Stream
+     * @param string $filename Optional: Name der Datei (Standard: voucher.pdf)
+     * @param string $type Optional: Typ der Datei (Standard: voucher)
+     * @return array Informationen zur angehängten Datei
+     * @throws LexwareOfficeApiException
+     * @throws GuzzleException
+     */
+    public function attachFile(string $id, StreamInterface $stream, string $filename = 'voucher.pdf', string $type = 'voucher'): array
+    {
+        $endpoint = "vouchers/{$id}/files";
+
+        $options = [
+            'multipart' => [
+                [
+                    'name' => 'file',
+                    'contents' => $stream,
+                    'filename' => $filename
+                ],
+                [
+                    'name' => 'type',
+                    'contents' => $type
+                ]
+            ]
+        ];
+        $response = $this->client->client()->request('POST', $endpoint, $options);
+        return json_decode($response->getBody()->getContents(), true);
     }
 }

@@ -5,7 +5,7 @@
     "keywords": ["laravel", "lexware", "api", "lexoffice", "buchhaltung", "invoice"],
     "homepage": "https://github.com/pirabyte/laravel-lexware-office",
     "license": "MIT",
-    "version": "0.2.4",
+    "version": "0.2.5",
     "require": {
         "php": "^8.3|^8.4",
         "illuminate/support": "^11.0|^12.0",
@@ -48,8 +48,8 @@
     "prefer-stable": true,
     "authors": [
         {
-            "name": "Felix Deibert",
-            "email": "24978665+felix-exon@users.noreply.github.com"
+            "name": "pirabyte",
+            "email": "info@pirabyte.io"
         }
     ]
 }
