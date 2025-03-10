@@ -104,14 +104,14 @@ class ContactResource
 
         // HTTP-Query vorbereiten
         $query = [];
-        
+
         // Wir müssen doppelte Filter korrekt handhaben (API kombiniert diese mit AND)
         foreach ($filters as $key => $value) {
             // Leere oder ungültige Filter überspringen
             if (!in_array($key, $validFilters) || $value === null || $value === '') {
                 continue;
             }
-            
+
             // Wenn der Filter bereits existiert, konvertieren wir ihn zu einem Array
             if (isset($query[$key])) {
                 // Wenn es bereits ein Array ist, fügen wir den neuen Wert hinzu
@@ -149,6 +149,16 @@ class ContactResource
         ]);
 
         return $this->processContactsResponse($response);
+    }
+
+    /**
+     * Returns the total number of contacts
+     * @throws LexwareOfficeApiException
+     */
+    public function count() : int
+    {
+        $paginator = $this->all(1, 1);
+        return $paginator->getTotal();
     }
 
     /**
@@ -194,20 +204,20 @@ class ContactResource
 
         while ($hasMore) {
             $queryFilters['page'] = $page;
-            
+
             // Aktuelle Seite laden
             $paginatedResource = $this->filter($queryFilters);
-            
+
             // Keine Ergebnisse mehr, Schleife beenden
             if (empty($paginatedResource->jsonSerialize()['content'])) {
                 break;
             }
-            
+
             // Alle Kontakte der aktuellen Seite zurückgeben
             foreach ($paginatedResource->jsonSerialize()['content'] as $contact) {
                 yield $contact;
             }
-            
+
             // Prüfen ob es weitere Seiten gibt
             $hasMore = !$paginatedResource->jsonSerialize()['last'];
             $page++;

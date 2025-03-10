@@ -86,5 +86,10 @@ class PaginatedResource implements \JsonSerializable
     {
         $this->content[] = $model;
     }
+
+    public function getTotal(): int
+    {
+        return $this->totalElements;
+    }
 }
 
