@@ -645,6 +645,10 @@ class Voucher implements \JsonSerializable
             $data['files'] = $this->files;
         }
 
+        if($this->taxType) {
+            $data['taxType'] = $this->taxType;
+        }
+
         if ($this->voucherStatus) {
             $data['voucherStatus'] = $this->voucherStatus;
         }
