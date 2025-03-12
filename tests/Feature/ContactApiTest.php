@@ -96,12 +96,14 @@ class ContactApiTest extends TestCase
                 ],
                 'note' => 'Notizen',
                 'addresses' => [
-                    [
-                        'street' => 'Musterstraße 1',
-                        'zip' => '12345',
-                        'city' => 'Musterstadt',
-                        'countryCode' => 'DE'
-                    ]
+                    ['billing' => [
+                        [
+                            'street' => 'Musterstraße 1',
+                            'zip' => '12345',
+                            'city' => 'Musterstadt',
+                            'countryCode' => 'DE'
+                        ]
+                    ]]
                 ],
                 'emailAddresses' => [
                     ['business' => ['inge@example.com']]
@@ -124,12 +126,12 @@ class ContactApiTest extends TestCase
         $contact = Contact::createPerson('Inge', 'Musterfrau', 'Frau');
         $contact->setAsCustomer()
             ->setNote('Notizen')
-            ->addAddress([
-                'street' => 'Musterstraße 1',
-                'zip' => '12345',
-                'city' => 'Musterstadt',
-                'countryCode' => 'DE'
-            ])
+            ->addBillingAddress(
+                'Musterstraße 1',
+                '12345',
+                'Musterstadt',
+                'DE'
+            )
             ->addEmailAddress('inge@example.com', 'business')
             ->addPhoneNumber('+49123456789', 'business');
         
@@ -224,6 +226,103 @@ class ContactApiTest extends TestCase
     }
     
     /** @test */
+    public function it_can_handle_multiple_address_types(): void
+    {
+        // Prepare mock responses for contact with multiple address types
+        $mockResponses = [
+            // Response für create
+            new Response(201, ['Content-Type' => 'application/json'], json_encode([
+                'id' => '44444444-bbbb-4444-cccc-444444444444',
+                'resourceUri' => 'https://api-sandbox.grld.eu/v1/contacts/44444444-bbbb-4444-cccc-444444444444',
+                'createdDate' => '2023-06-29T15:15:09.447+02:00',
+                'updatedDate' => '2023-06-29T15:15:09.447+02:00',
+                'version' => 1
+            ])),
+            // Response für get (innerhalb von create)
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                'id' => '44444444-bbbb-4444-cccc-444444444444',
+                'version' => 1,
+                'roles' => ['customer' => []],
+                'person' => [
+                    'salutation' => 'Herr',
+                    'firstName' => 'Peter',
+                    'lastName' => 'Beispiel'
+                ],
+                'addresses' => [
+                    ['billing' => [
+                        [
+                            'supplement' => 'Rechnungsadressenzusatz',
+                            'street' => 'Hauptstr. 5',
+                            'zip' => '12345',
+                            'city' => 'Musterort',
+                            'countryCode' => 'DE'
+                        ]
+                    ]],
+                    ['shipping' => [
+                        [
+                            'supplement' => 'Lieferadressenzusatz',
+                            'street' => 'Schulstr. 13',
+                            'zip' => '76543',
+                            'city' => 'Musterstadt',
+                            'countryCode' => 'DE'
+                        ]
+                    ]]
+                ]
+            ])),
+        ];
+
+        $mock = new MockHandler($mockResponses);
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // Client mit Mock-Handler ersetzen
+        $instance = app('lexware-office');
+        $instance->setClient($client);
+        
+        // Kontakt mit verschiedenen Adresstypen erstellen
+        $contact = Contact::createPerson('Peter', 'Beispiel', 'Herr');
+        $contact->setAsCustomer()
+            ->addBillingAddress(
+                'Hauptstr. 5',
+                '12345',
+                'Musterort',
+                'DE',
+                'Rechnungsadressenzusatz'
+            )
+            ->addShippingAddress(
+                'Schulstr. 13',
+                '76543',
+                'Musterstadt',
+                'DE',
+                'Lieferadressenzusatz'
+            );
+        
+        // Kontakt speichern
+        $savedContact = LexwareOffice::contacts()->create($contact);
+        
+        // Prüfen der Ergebnisse
+        $this->assertEquals('44444444-bbbb-4444-cccc-444444444444', $savedContact->getId());
+        
+        // Billing address test
+        $billingAddress = $savedContact->getAddress('billing');
+        $this->assertNotNull($billingAddress);
+        $this->assertEquals('Hauptstr. 5', $billingAddress['street']);
+        $this->assertEquals('12345', $billingAddress['zip']);
+        $this->assertEquals('Musterort', $billingAddress['city']);
+        $this->assertEquals('DE', $billingAddress['countryCode']);
+        $this->assertEquals('Rechnungsadressenzusatz', $billingAddress['supplement']);
+        
+        // Shipping address test
+        $shippingAddress = $savedContact->getAddress('shipping');
+        $this->assertNotNull($shippingAddress);
+        $this->assertEquals('Schulstr. 13', $shippingAddress['street']);
+        $this->assertEquals('76543', $shippingAddress['zip']);
+        $this->assertEquals('Musterstadt', $shippingAddress['city']);
+        $this->assertEquals('DE', $shippingAddress['countryCode']);
+        $this->assertEquals('Lieferadressenzusatz', $shippingAddress['supplement']);
+    }
+    
+    /** @test */
     public function it_can_create_a_company_contact(): void
     {
         // Prepare mock responses for company contact creation
@@ -253,12 +352,14 @@ class ContactApiTest extends TestCase
                     ]
                 ],
                 'addresses' => [
-                    [
-                        'street' => 'Industriestraße 42',
-                        'zip' => '54321',
-                        'city' => 'Musterstadt',
-                        'countryCode' => 'DE'
-                    ]
+                    ['billing' => [
+                        [
+                            'street' => 'Industriestraße 42',
+                            'zip' => '54321',
+                            'city' => 'Musterstadt',
+                            'countryCode' => 'DE'
+                        ]
+                    ]]
                 ]
             ])),
         ];
@@ -274,12 +375,12 @@ class ContactApiTest extends TestCase
         // Firmenkontakt erstellen
         $contact = Contact::createCompany('Musterfirma GmbH');
         $contact->setAsVendor(['number' => 'L-789'])
-            ->addAddress([
-                'street' => 'Industriestraße 42',
-                'zip' => '54321',
-                'city' => 'Musterstadt',
-                'countryCode' => 'DE'
-            ]);
+            ->addBillingAddress(
+                'Industriestraße 42',
+                '54321',
+                'Musterstadt',
+                'DE'
+            );
         
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
@@ -287,6 +388,7 @@ class ContactApiTest extends TestCase
         $this->assertEquals('87654321-abcd-1234-efgh-987654321987', $savedContact->getId());
         $this->assertEquals('Musterfirma GmbH', $savedContact->getCompany()->getName());
         $this->assertEquals('L-789', $savedContact->getRoles()['vendor']['number']);
-        $this->assertEquals('DE', $savedContact->getAddresses()[0]['countryCode']);
+        $billingAddress = $savedContact->getAddress('billing');
+        $this->assertEquals('DE', $billingAddress['countryCode']);
     }
 }

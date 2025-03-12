@@ -18,7 +18,7 @@ class Contact implements \JsonSerializable
     private bool $archived = false;
     private ?string $createdDate = null;
     private ?string $updatedDate = null;
-    
+
     /**
      * Creates a new contact with a person as the contact type
      *
@@ -31,22 +31,22 @@ class Contact implements \JsonSerializable
     {
         $person = new Person();
         $person->setLastName($lastName);
-        
+
         if ($firstName !== null) {
             $person->setFirstName($firstName);
         }
-        
+
         if ($salutation !== null) {
             $person->setSalutation($salutation);
         }
-        
+
         $contact = new self();
         $contact->setPerson($person);
         $contact->setVersion(0);
-        
+
         return $contact;
     }
-    
+
     /**
      * Creates a new contact with a company as the contact type
      *
@@ -57,11 +57,11 @@ class Contact implements \JsonSerializable
     {
         $company = new Company();
         $company->setName($name);
-        
+
         $contact = new self();
         $contact->setCompany($company);
         $contact->setVersion(0);
-        
+
         return $contact;
     }
 
@@ -85,7 +85,7 @@ class Contact implements \JsonSerializable
 
     /**
      * Gets an email address of a specific type
-     * 
+     *
      * @param string $type The type of email address (business, office, private, other)
      * @return string|null The email address or null if not found
      */
@@ -96,7 +96,7 @@ class Contact implements \JsonSerializable
                 return $emailAddress[$type][0];
             }
         }
-        
+
         return null;
     }
 
@@ -104,10 +104,10 @@ class Contact implements \JsonSerializable
     {
         return $this->phoneNumbers;
     }
-    
+
     /**
      * Gets a phone number of a specific type
-     * 
+     *
      * @param string $type The type of phone number (business, office, mobile, private, fax, other)
      * @return string|null The phone number or null if not found
      */
@@ -118,7 +118,7 @@ class Contact implements \JsonSerializable
                 return $phoneNumber[$type][0];
             }
         }
-        
+
         return null;
     }
 
@@ -283,62 +283,147 @@ class Contact implements \JsonSerializable
         $this->roles = $roles;
         return $this;
     }
-    
+
     /**
      * Adds a role to the contact
      * @param string $roleType One of: customer, vendor
-     * @param array $roleData Optional role data (e.g. ['number' => 'K123'])
      * @return $this
      */
-    public function addRole(string $roleType, array $roleData = []): self
+    public function addRole(string $roleType): self
     {
-        $this->roles[$roleType] = $roleData;
+        $this->roles[$roleType] = null;
         return $this;
     }
-    
+
     /**
      * Sets the contact as a customer
      * @param array $roleData Optional customer data
      * @return $this
      */
-    public function setAsCustomer(array $roleData = []): self
+    public function setAsCustomer(): self
     {
-        return $this->addRole('customer', $roleData);
+        return $this->addRole('customer');
     }
-    
+
     /**
      * Sets the contact as a vendor
-     * @param array $roleData Optional vendor data
      * @return $this
      */
-    public function setAsVendor(array $roleData = []): self
+    public function setAsVendor(): self
     {
-        return $this->addRole('vendor', $roleData);
+        return $this->addRole('vendor');
     }
 
     /**
      * Adds an address to the contact
-     * 
+     *
      * @param array $addressData Address data with the following format:
      *   [
      *     'street' => 'Musterstraße 1',
      *     'zip' => '12345',
      *     'city' => 'Musterstadt',
-     *     'countryCode' => 'DE'
+     *     'countryCode' => 'DE',
+     *     'supplement' => 'Optional address supplement'
      *   ]
+     * @param string $type The address type ('billing' or 'shipping')
      * @return $this
      */
-    public function addAddress(array $addressData): self
+    public function addAddress(array $addressData, string $type = 'billing'): self
     {
-        $this->addresses[] = $addressData;
+        // Validate address type
+        $validTypes = ['billing', 'shipping'];
+        if (!in_array($type, $validTypes)) {
+            throw new \InvalidArgumentException("Invalid address type: $type. Must be one of: " . implode(', ', $validTypes));
+        }
+        
+        // Check if the type already exists in addresses
+        foreach ($this->addresses as $key => $address) {
+            if (isset($address[$type])) {
+                // Replace existing address of this type
+                $this->addresses[$key] = [$type => [$addressData]];
+                return $this;
+            }
+        }
+        
+        // Add new address with correct format
+        $this->addresses[] = [$type => [$addressData]];
         return $this;
     }
     
     /**
+     * Gets an address of a specific type
+     * 
+     * @param string $type The type of address ('billing' or 'shipping')
+     * @return array|null The address data or null if not found
+     */
+    public function getAddress(string $type): ?array
+    {
+        foreach ($this->addresses as $address) {
+            if (isset($address[$type]) && !empty($address[$type])) {
+                return $address[$type][0];
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Adds a billing address to the contact
+     * 
+     * @param string $street Street name and number
+     * @param string $zip Postal code
+     * @param string $city City
+     * @param string $countryCode ISO 3166 alpha2 country code (e.g. 'DE')
+     * @param string|null $supplement Optional address supplement
+     * @return $this
+     */
+    public function addBillingAddress(string $street, string $zip, string $city, string $countryCode, ?string $supplement = null): self
+    {
+        $addressData = [
+            'street' => $street,
+            'zip' => $zip,
+            'city' => $city,
+            'countryCode' => $countryCode
+        ];
+        
+        if ($supplement !== null) {
+            $addressData['supplement'] = $supplement;
+        }
+        
+        return $this->addAddress($addressData, 'billing');
+    }
+    
+    /**
+     * Adds a shipping address to the contact
+     * 
+     * @param string $street Street name and number
+     * @param string $zip Postal code
+     * @param string $city City
+     * @param string $countryCode ISO 3166 alpha2 country code (e.g. 'DE')
+     * @param string|null $supplement Optional address supplement
+     * @return $this
+     */
+    public function addShippingAddress(string $street, string $zip, string $city, string $countryCode, ?string $supplement = null): self
+    {
+        $addressData = [
+            'street' => $street,
+            'zip' => $zip,
+            'city' => $city,
+            'countryCode' => $countryCode
+        ];
+        
+        if ($supplement !== null) {
+            $addressData['supplement'] = $supplement;
+        }
+        
+        return $this->addAddress($addressData, 'shipping');
+    }
+
+    /**
      * Sets the email addresses for the contact
-     * 
+     *
      * Note: The API supports only one email address per type (business, office, private, other)
-     * 
+     *
      * @param array $emailAddresses Array with email addresses in API format
      * @return $this
      */
@@ -347,12 +432,12 @@ class Contact implements \JsonSerializable
         $this->emailAddresses = $emailAddresses;
         return $this;
     }
-    
+
     /**
      * Adds an email address to the contact
-     * 
+     *
      * Note: The API supports only one email address per type (business, office, private, other)
-     * 
+     *
      * @param string $email The email address
      * @param string $type The type of email address (business, office, private, other)
      * @return $this
@@ -364,7 +449,7 @@ class Contact implements \JsonSerializable
         if (!in_array($type, $validTypes)) {
             throw new \InvalidArgumentException("Invalid email type: $type. Must be one of: " . implode(', ', $validTypes));
         }
-        
+
         // Check if type already exists
         foreach ($this->emailAddresses as $index => $existingEmail) {
             if (isset($existingEmail[$type])) {
@@ -373,17 +458,17 @@ class Contact implements \JsonSerializable
                 return $this;
             }
         }
-        
+
         // Add new email address with correct format
         $this->emailAddresses[] = [$type => [$email]];
         return $this;
     }
-    
+
     /**
      * Sets the phone numbers for the contact
-     * 
+     *
      * Note: The API supports only one phone number per type (business, office, mobile, private, fax, other)
-     * 
+     *
      * @param array $phoneNumbers Array with phone numbers in API format
      * @return $this
      */
@@ -392,12 +477,12 @@ class Contact implements \JsonSerializable
         $this->phoneNumbers = $phoneNumbers;
         return $this;
     }
-    
+
     /**
      * Adds a phone number to the contact
-     * 
+     *
      * Note: The API supports only one phone number per type (business, office, mobile, private, fax, other)
-     * 
+     *
      * @param string $number The phone number
      * @param string $type The type of phone number (business, office, mobile, private, fax, other)
      * @return $this
@@ -409,7 +494,7 @@ class Contact implements \JsonSerializable
         if (!in_array($type, $validTypes)) {
             throw new \InvalidArgumentException("Invalid phone type: $type. Must be one of: " . implode(', ', $validTypes));
         }
-        
+
         // Check if type already exists
         foreach ($this->phoneNumbers as $index => $existingPhone) {
             if (isset($existingPhone[$type])) {
@@ -418,7 +503,7 @@ class Contact implements \JsonSerializable
                 return $this;
             }
         }
-        
+
         // Add new phone number with correct format
         $this->phoneNumbers[] = [$type => [$number]];
         return $this;
@@ -475,7 +560,7 @@ class Contact implements \JsonSerializable
     {
         return $this->person;
     }
-    
+
     public function getCompany(): ?Company
     {
         return $this->company;
@@ -485,7 +570,7 @@ class Contact implements \JsonSerializable
     {
         return $this->roles;
     }
-    
+
     public function getVersion(): int
     {
         return $this->version;

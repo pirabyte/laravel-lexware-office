@@ -5,7 +5,7 @@
     "keywords": ["laravel", "lexware", "api", "lexoffice", "buchhaltung", "invoice"],
     "homepage": "https://github.com/pirabyte/laravel-lexware-office",
     "license": "MIT",
-    "version": "0.2.7",
+    "version": "0.2.8",
     "require": {
         "php": "^8.3|^8.4",
         "illuminate/support": "^11.0|^12.0",

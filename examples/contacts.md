@@ -4,6 +4,12 @@ This document shows various examples of how to create and retrieve contacts usin
 
 ## Important API Limitations
 
+**Address Format:**
+- The API expects addresses in a specific format with 'billing' and 'shipping' types
+- Each address type can contain only one address record
+- Required fields: street, zip, city, countryCode (ISO 3166 alpha2 format, e.g. 'DE')
+- Optional fields: supplement
+
 **Email Addresses:**
 - The API supports a maximum of ONE email address per type (business, office, private, other)
 - It's possible to retrieve contacts with multiple emails of the same type, but when updating such contacts, some data might be lost
@@ -43,12 +49,19 @@ $contact = Contact::createPerson('Inge', 'Musterfrau', 'Frau');
 // Add customer role and additional information
 $contact->setAsCustomer()
     ->setNote('Wichtiger Kunde')
-    ->addAddress([
-        'street' => 'Musterstraße 1',
-        'zip' => '12345',
-        'city' => 'Musterstadt',
-        'countryCode' => 'DE'  // Required - ISO 3166 alpha2 country code
-    ])
+    ->addBillingAddress(
+        'Musterstraße 1',
+        '12345',
+        'Musterstadt',
+        'DE',  // Required - ISO 3166 alpha2 country code
+        'Rechnungsadressenzusatz'  // Optional address supplement
+    )
+    ->addShippingAddress(
+        'Lieferstraße 42',
+        '54321',
+        'Lieferstadt',
+        'DE'
+    )
     ->addEmailAddress('inge@example.com', 'business')
     ->addPhoneNumber('+49123456789', 'business');
 
@@ -103,6 +116,8 @@ $isVendor = isset($roles['vendor']);
 
 // Access addresses and contact details
 $addresses = $contact->getAddresses();
+$billingAddress = $contact->getAddress('billing');
+$shippingAddress = $contact->getAddress('shipping');
 $emailAddresses = $contact->getEmailAddresses();
 $phoneNumbers = $contact->getPhoneNumbers();
 
