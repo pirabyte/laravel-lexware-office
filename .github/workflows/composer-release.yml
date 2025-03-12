@@ -41,7 +41,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git tag -a "v${{ env.VERSION }}" -m "Release v${{ env.VERSION }}"
-          git push https://${{ secrets.ACTION_TOKEN }}@github.com/pirabyte/laravel-lexware-office.git "v${{ env.VERSION }}"
+          git push "https://x-access-token:${{ secrets.ACTION_TOKEN }}@github.com/pirabyte/laravel-lexware-office.git" "v${{ env.VERSION }}"
 
       - name: Create GitHub Release
         if: steps.check-tag.outputs.exists == 'false'
