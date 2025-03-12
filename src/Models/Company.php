@@ -64,28 +64,58 @@ class Company implements \JsonSerializable
         return $data;
     }
 
-    private function setName(string $name): void
+    public function setName(string $name): self
     {
         $this->name = $name;
+        return $this;
     }
 
-    private function setContactPersons(array $contactPersons): void
+    public function setContactPersons(array $contactPersons): self
     {
         $this->contactPersons = $contactPersons;
+        return $this;
     }
 
-    private function setAllowTaxFreeInvoices(bool $allowTaxFreeInvoices): void
+    public function setAllowTaxFreeInvoices(bool $allowTaxFreeInvoices): self
     {
         $this->allowTaxFreeInvoices = $allowTaxFreeInvoices;
+        return $this;
     }
 
-    private function setTaxNumber(string|null $taxNumber): void
+    public function setTaxNumber(?string $taxNumber): self
     {
         $this->taxNumber = $taxNumber;
+        return $this;
     }
 
-    private function setVatRegistrationId(string|null $vatRegistrationId): void
+    public function setVatRegistrationId(?string $vatRegistrationId): self
     {
         $this->vatRegistrationId = $vatRegistrationId;
+        return $this;
+    }
+    
+    public function getName(): string
+    {
+        return $this->name;
+    }
+    
+    public function getTaxNumber(): ?string
+    {
+        return $this->taxNumber;
+    }
+    
+    public function getVatRegistrationId(): ?string
+    {
+        return $this->vatRegistrationId;
+    }
+    
+    public function getAllowTaxFreeInvoices(): bool
+    {
+        return $this->allowTaxFreeInvoices;
+    }
+    
+    public function getContactPersons(): array
+    {
+        return $this->contactPersons;
     }
 }

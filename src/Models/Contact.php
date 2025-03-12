@@ -4,9 +4,9 @@ namespace Pirabyte\LaravelLexwareOffice\Models;
 
 class Contact implements \JsonSerializable
 {
-    private string $id;
+    private ?string $id = null;
     private ?string $organizationId = null;
-    private int $version;
+    private int $version = 0;
     private array $roles = [];
     private ?Person $person = null;
     private ?Company $company = null;
@@ -18,6 +18,52 @@ class Contact implements \JsonSerializable
     private bool $archived = false;
     private ?string $createdDate = null;
     private ?string $updatedDate = null;
+    
+    /**
+     * Creates a new contact with a person as the contact type
+     *
+     * @param string|null $firstName
+     * @param string $lastName
+     * @param string|null $salutation
+     * @return static
+     */
+    public static function createPerson(?string $firstName, string $lastName, ?string $salutation = null): self
+    {
+        $person = new Person();
+        $person->setLastName($lastName);
+        
+        if ($firstName !== null) {
+            $person->setFirstName($firstName);
+        }
+        
+        if ($salutation !== null) {
+            $person->setSalutation($salutation);
+        }
+        
+        $contact = new self();
+        $contact->setPerson($person);
+        $contact->setVersion(0);
+        
+        return $contact;
+    }
+    
+    /**
+     * Creates a new contact with a company as the contact type
+     *
+     * @param string $name Company name
+     * @return static
+     */
+    public static function createCompany(string $name): self
+    {
+        $company = new Company();
+        $company->setName($name);
+        
+        $contact = new self();
+        $contact->setCompany($company);
+        $contact->setVersion(0);
+        
+        return $contact;
+    }
 
     // Getters und Setters für alle neuen Felder
 
@@ -37,21 +83,43 @@ class Contact implements \JsonSerializable
         return $this->emailAddresses;
     }
 
-    public function setEmailAddresses(array $emailAddresses): self
+    /**
+     * Gets an email address of a specific type
+     * 
+     * @param string $type The type of email address (business, office, private, other)
+     * @return string|null The email address or null if not found
+     */
+    public function getEmailAddress(string $type): ?string
     {
-        $this->emailAddresses = $emailAddresses;
-        return $this;
+        foreach ($this->emailAddresses as $emailAddress) {
+            if (isset($emailAddress[$type]) && !empty($emailAddress[$type])) {
+                return $emailAddress[$type][0];
+            }
+        }
+        
+        return null;
     }
 
     public function getPhoneNumbers(): array
     {
         return $this->phoneNumbers;
     }
-
-    public function setPhoneNumbers(array $phoneNumbers): self
+    
+    /**
+     * Gets a phone number of a specific type
+     * 
+     * @param string $type The type of phone number (business, office, mobile, private, fax, other)
+     * @return string|null The phone number or null if not found
+     */
+    public function getPhoneNumber(string $type): ?string
     {
-        $this->phoneNumbers = $phoneNumbers;
-        return $this;
+        foreach ($this->phoneNumbers as $phoneNumber) {
+            if (isset($phoneNumber[$type]) && !empty($phoneNumber[$type])) {
+                return $phoneNumber[$type][0];
+            }
+        }
+        
+        return null;
     }
 
     public function getXRechnung(): ?XRechnung
@@ -210,44 +278,192 @@ class Contact implements \JsonSerializable
         return $data;
     }
 
-    private function setRoles(mixed $roles): void
+    public function setRoles(array $roles): self
     {
         $this->roles = $roles;
+        return $this;
+    }
+    
+    /**
+     * Adds a role to the contact
+     * @param string $roleType One of: customer, vendor
+     * @param array $roleData Optional role data (e.g. ['number' => 'K123'])
+     * @return $this
+     */
+    public function addRole(string $roleType, array $roleData = []): self
+    {
+        $this->roles[$roleType] = $roleData;
+        return $this;
+    }
+    
+    /**
+     * Sets the contact as a customer
+     * @param array $roleData Optional customer data
+     * @return $this
+     */
+    public function setAsCustomer(array $roleData = []): self
+    {
+        return $this->addRole('customer', $roleData);
+    }
+    
+    /**
+     * Sets the contact as a vendor
+     * @param array $roleData Optional vendor data
+     * @return $this
+     */
+    public function setAsVendor(array $roleData = []): self
+    {
+        return $this->addRole('vendor', $roleData);
     }
 
-    private function setUpdatedDate(mixed $updatedDate): void
+    /**
+     * Adds an address to the contact
+     * 
+     * @param array $addressData Address data with the following format:
+     *   [
+     *     'street' => 'Musterstraße 1',
+     *     'zip' => '12345',
+     *     'city' => 'Musterstadt',
+     *     'countryCode' => 'DE'
+     *   ]
+     * @return $this
+     */
+    public function addAddress(array $addressData): self
+    {
+        $this->addresses[] = $addressData;
+        return $this;
+    }
+    
+    /**
+     * Sets the email addresses for the contact
+     * 
+     * Note: The API supports only one email address per type (business, office, private, other)
+     * 
+     * @param array $emailAddresses Array with email addresses in API format
+     * @return $this
+     */
+    public function setEmailAddresses(array $emailAddresses): self
+    {
+        $this->emailAddresses = $emailAddresses;
+        return $this;
+    }
+    
+    /**
+     * Adds an email address to the contact
+     * 
+     * Note: The API supports only one email address per type (business, office, private, other)
+     * 
+     * @param string $email The email address
+     * @param string $type The type of email address (business, office, private, other)
+     * @return $this
+     */
+    public function addEmailAddress(string $email, string $type = 'business'): self
+    {
+        // Validate email type
+        $validTypes = ['business', 'office', 'private', 'other'];
+        if (!in_array($type, $validTypes)) {
+            throw new \InvalidArgumentException("Invalid email type: $type. Must be one of: " . implode(', ', $validTypes));
+        }
+        
+        // Check if type already exists
+        foreach ($this->emailAddresses as $index => $existingEmail) {
+            if (isset($existingEmail[$type])) {
+                // Replace existing email of this type
+                $this->emailAddresses[$index] = [$type => [$email]];
+                return $this;
+            }
+        }
+        
+        // Add new email address with correct format
+        $this->emailAddresses[] = [$type => [$email]];
+        return $this;
+    }
+    
+    /**
+     * Sets the phone numbers for the contact
+     * 
+     * Note: The API supports only one phone number per type (business, office, mobile, private, fax, other)
+     * 
+     * @param array $phoneNumbers Array with phone numbers in API format
+     * @return $this
+     */
+    public function setPhoneNumbers(array $phoneNumbers): self
+    {
+        $this->phoneNumbers = $phoneNumbers;
+        return $this;
+    }
+    
+    /**
+     * Adds a phone number to the contact
+     * 
+     * Note: The API supports only one phone number per type (business, office, mobile, private, fax, other)
+     * 
+     * @param string $number The phone number
+     * @param string $type The type of phone number (business, office, mobile, private, fax, other)
+     * @return $this
+     */
+    public function addPhoneNumber(string $number, string $type = 'business'): self
+    {
+        // Validate phone type
+        $validTypes = ['business', 'office', 'mobile', 'private', 'fax', 'other'];
+        if (!in_array($type, $validTypes)) {
+            throw new \InvalidArgumentException("Invalid phone type: $type. Must be one of: " . implode(', ', $validTypes));
+        }
+        
+        // Check if type already exists
+        foreach ($this->phoneNumbers as $index => $existingPhone) {
+            if (isset($existingPhone[$type])) {
+                // Replace existing phone of this type
+                $this->phoneNumbers[$index] = [$type => [$number]];
+                return $this;
+            }
+        }
+        
+        // Add new phone number with correct format
+        $this->phoneNumbers[] = [$type => [$number]];
+        return $this;
+    }
+
+    private function setUpdatedDate(?string $updatedDate): self
     {
         $this->updatedDate = $updatedDate;
+        return $this;
     }
 
-    private function setCreatedDate(mixed $createdDate): void
+    private function setCreatedDate(?string $createdDate): self
     {
         $this->createdDate = $createdDate;
+        return $this;
     }
 
-    private function setCompany(Company $company): void
+    private function setCompany(Company $company): self
     {
         $this->company = $company;
+        return $this;
     }
 
-    private function setPerson(Person $person): void
+    private function setPerson(Person $person): self
     {
         $this->person = $person;
+        return $this;
     }
 
-    private function setVersion(mixed $version): void
+    public function setVersion(int $version): self
     {
         $this->version = $version;
+        return $this;
     }
 
-    private function setOrganizationId(mixed $organizationId): void
+    private function setOrganizationId(?string $organizationId): self
     {
         $this->organizationId = $organizationId;
+        return $this;
     }
 
-    private function setId(string $id): void
+    private function setId(string $id): self
     {
         $this->id = $id;
+        return $this;
     }
 
     public function getId(): string
@@ -258,6 +474,11 @@ class Contact implements \JsonSerializable
     public function getPerson(): ?Person
     {
         return $this->person;
+    }
+    
+    public function getCompany(): ?Company
+    {
+        return $this->company;
     }
 
     public function getRoles(): array
