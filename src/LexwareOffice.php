@@ -59,16 +59,21 @@ class LexwareOffice
      * @var FinancialTransactionResource
      */
     protected FinancialTransactionResource $financialTransactions;
-    
+
     /**
      * @var TransactionAssignmentHintResource
      */
     protected TransactionAssignmentHintResource $transactionAssignmentHints;
 
-    public function __construct(string $baseUrl, string $apiKey)
+    public function __construct(
+        string $baseUrl,
+        string $apiKey,
+        string $rateLimitKey = 'lexware_office_api')
     {
         $this->baseUrl = $baseUrl;
         $this->apiKey = $apiKey;
+
+        $this->rateLimitKey = $rateLimitKey;
 
         $uri = $this->prepareBaseUri($this->baseUrl);
 
@@ -89,6 +94,14 @@ class LexwareOffice
         $this->financialAccounts = new FinancialAccountResource($this);
         $this->financialTransactions = new FinancialTransactionResource($this);
         $this->transactionAssignmentHints = new TransactionAssignmentHintResource($this);
+    }
+
+    /**
+     * Set rate limit key for current client
+     */
+    public function setRateLimitKey(string $key): void
+    {
+        $this->rateLimitKey = $key;
     }
 
     #region Contacts
@@ -174,9 +187,9 @@ class LexwareOffice
     }
 
     #endregion FinancialTransactions
-    
+
     #region TransactionAssignmentHints
-    
+
     /**
      * TransactionAssignmentHint-Ressource abrufen
      */
@@ -184,7 +197,7 @@ class LexwareOffice
     {
         return $this->transactionAssignmentHints;
     }
-    
+
     #endregion TransactionAssignmentHints
 
     #region Requests
@@ -202,7 +215,7 @@ class LexwareOffice
         try {
             // Hier müssen wir sicherstellen, dass Array-Parameter korrekt als separate Query-Parameter gesendet werden
             $options = ['query' => $query];
-            
+
             return $this->makeRequest(function () use ($endpoint, $options) {
                 return $this->client->get($endpoint, $options);
             });
@@ -323,7 +336,7 @@ class LexwareOffice
         $this->client = $client;
         return $this;
     }
-    
+
     /**
      * Gibt den HTTP-Client zurück
      *

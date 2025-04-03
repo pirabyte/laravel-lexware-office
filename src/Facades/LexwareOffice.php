@@ -21,6 +21,7 @@ use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
  * @method static FinancialAccountResource financialAccounts()
  * @method static FinancialTransactionResource financialTransactions()
  * @method static TransactionAssignmentHintResource transactionAssignmentHints()
+ * @method setRateLimitKey(string $key)
  */
 class LexwareOffice extends Facade
 {
