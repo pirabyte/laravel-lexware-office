@@ -5,6 +5,7 @@ namespace Pirabyte\LaravelLexwareOffice\Resources;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\FinancialTransaction;
+use Pirabyte\LaravelLexwareOffice\Models\NewFinancialTransaction;
 use Pirabyte\LaravelLexwareOffice\Models\VoucherAssignment;
 
 class FinancialTransactionResource
@@ -15,6 +16,23 @@ class FinancialTransactionResource
     {
         $this->client = $client;
     }
+
+
+    /**
+     * Creates transactions for the account referenced by the financialAccountId.
+     *
+     * @param array<NewFinancialTransaction> $transactions Up to 25 transactions
+     * @return array<FinancialTransaction>
+     * @throws LexwareOfficeApiException
+     */
+     public function create(array $transactions): array
+     {
+         if(sizeof($transactions) > 25) {
+             throw new \OutOfRangeException('only 25 transactions allowed per request');
+         }
+         $response = $this->client->post('financialTransactions', $transactions);
+         return $this->processTransactionsResponse($response);
+     }
 
     /**
      * Ruft eine Finanztransaktion anhand der ID ab
