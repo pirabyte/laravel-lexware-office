@@ -29,6 +29,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_ORG_TOKEN }}
           slug: "pirabyte/laravel-lexware-office"
+          verbose: true # <--- Hinzufügen
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -36,3 +37,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_ORG_TOKEN }}
           slug: "pirabyte/laravel-lexware-office"
+          verbose: true # <--- Hinzufügen
