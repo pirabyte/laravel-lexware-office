@@ -46,20 +46,8 @@ class FinancialTransaction implements \JsonSerializable
      * @param float $amount Der Betrag (positiv für Einnahmen, negativ für Ausgaben)
      * @param string $financialAccountId Die ID des verknüpften Finanzkontos
      */
-    public function __construct(
-        string $financialTransactionId,
-        string $valueDate,
-        string $bookingDate,
-        string $purpose,
-        float $amount,
-        string $financialAccountId
-    ) {
-        $this->financialTransactionId = $financialTransactionId;
-        $this->valueDate = $valueDate;
-        $this->bookingDate = $bookingDate;
-        $this->purpose = $purpose;
-        $this->amount = $amount;
-        $this->financialAccountId = $financialAccountId;
+    public function __construct() {
+
     }
 
     /**
@@ -70,24 +58,40 @@ class FinancialTransaction implements \JsonSerializable
      */
     public static function fromArray(array $data): self
     {
-        // Erforderliche Felder validieren
-        if (!isset($data['financialTransactionId']) || !isset($data['valueDate']) || 
-            !isset($data['bookingDate']) || !isset($data['purpose']) || 
-            !isset($data['amount']) || !isset($data['financialAccountId'])) {
-            throw new \InvalidArgumentException('Fehlende erforderliche Felder für FinancialTransaction');
+        // Objekt erstellen
+        $transaction = new self();
+
+        if (isset($data['financialAccountId'])) {
+            $transaction->financialAccountId = $data['financialAccountId'];
         }
 
-        // Objekt erstellen
-        $transaction = new self(
-            $data['financialTransactionId'],
-            $data['valueDate'],
-            $data['bookingDate'],
-            $data['purpose'],
-            (float)$data['amount'],
-            $data['financialAccountId']
-        );
+        if (isset($data['transactiondate'])) {
+            $transaction->transactionDate = $data['transactiondate'];
+        }
+        if (isset($data['transactionDate'])) {
+            $transaction->transactionDate = $data['transactionDate'];
+        }
 
-        // Optionale Felder setzen
+        if (isset($data['amount'])) {
+            $transaction->amount = $data['amount'];
+        }
+
+        if (isset($data['purpose'])) {
+            $transaction->purpose = $data['purpose'];
+        }
+
+        if (isset($data['bookingDate'])) {
+            $transaction->bookingDate = $data['bookingDate'];
+        }
+
+        if (isset($data['valueDate'])) {
+            $transaction->valueDate = $data['valueDate'];
+        }
+
+        if (isset($data['financialTransactionId'])) {
+            $transaction->financialTransactionId = $data['financialTransactionId'];
+        }
+
         if (isset($data['transactionDate'])) {
             $transaction->transactionDate = $data['transactionDate'];
         }
@@ -180,6 +184,10 @@ class FinancialTransaction implements \JsonSerializable
             'amount' => $this->amount,
             'financialAccountId' => $this->financialAccountId,
         ];
+
+        if (isset($this->transactionDate)) {
+            $data['transactionDate'] = $this->transactionDate;
+        }
 
         // Optionale Felder hinzufügen
         if ($this->transactionDate !== null) {
@@ -596,5 +604,25 @@ class FinancialTransaction implements \JsonSerializable
     {
         $this->financialAccountId = $financialAccountId;
         return $this;
+    }
+
+    public function setValueDate(?string $valueDate): void
+    {
+        $this->valueDate = $valueDate;
+    }
+
+    public function setBookingDate(?string $bookingDate): void
+    {
+        $this->bookingDate = $bookingDate;
+    }
+
+    public function setTransactionDate(?string $transactionDate): void
+    {
+        $this->transactionDate = $transactionDate;
+    }
+
+    public function setExternalReference(?string $externalReference): void
+    {
+        $this->externalReference = $externalReference;
     }
 }

@@ -30,6 +30,16 @@ class FinancialTransactionResource
          if(sizeof($transactions) > 25) {
              throw new \OutOfRangeException('only 25 transactions allowed per request');
          }
+
+         foreach($transactions as $transaction) {
+             // Erforderliche Felder validieren
+             if (!isset($transaction['financialTransactionId']) || !isset($transaction['valueDate']) ||
+                 !isset($transaction['bookingDate']) || !isset($transaction['purpose']) ||
+                 !isset($transaction['amount']) || !isset($transaction['financialAccountId'])) {
+                 throw new \InvalidArgumentException('Fehlende erforderliche Felder für FinancialTransaction');
+             }
+         }
+
          $response = $this->client->post('finance/transactions', $transactions);
          return $this->processTransactionsResponse($response);
      }

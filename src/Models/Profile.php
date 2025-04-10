@@ -2,7 +2,7 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Models;
 
-class Profile implements \JsonSerializable
+class Profile
 {
     private string $organizationId;
 
@@ -21,21 +21,6 @@ class Profile implements \JsonSerializable
     private string $taxType = 'net';
 
     private bool $smallBusiness = false;
-
-    public function jsonSerialize(): array
-    {
-        return [
-            'organizationId' => $this->organizationId,
-            'companyName' => $this->companyName,
-            'created' => $this->created,
-            'connectionId' => $this->connectionId,
-            'features' => $this->features,
-            'businessFeatures' => $this->businessFeatures,
-            'subscriptionStatus' => $this->subscriptionStatus,
-            'taxType' => $this->taxType,
-            'smallBusiness' => $this->smallBusiness,
-        ];
-    }
 
     public static function fromArray(array $data): self
     {
