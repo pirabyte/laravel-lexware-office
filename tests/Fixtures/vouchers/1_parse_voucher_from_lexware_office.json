@@ -1,0 +1,27 @@
+{
+  "id": "66196c43-baf3-4335-bfee-d610367059db",
+  "organizationId": "aa93e8a8-2aa3-470b-b914-caad8a255dd8",
+  "type": "salesinvoice",
+  "voucherStatus": "open",
+  "voucherNumber": "123-456",
+  "voucherDate": "2023-06-28T00:00:00.000+02:00",
+  "shippingDate": "2023-07-02T00:00:00.000+02:00",
+  "dueDate": "2023-07-05T00:00:00.000+02:00",
+  "totalGrossAmount": 119,
+  "totalTaxAmount": 19.00,
+  "taxType": "gross",
+  "useCollectiveContact": true,
+  "remark": "Bestellung von Max Mustermann.",
+  "voucherItems": [
+    {
+      "amount": 119,
+      "taxAmount": 19.00,
+      "taxRatePercent": 19,
+      "categoryId": "8f8664a8-fd86-11e1-a21f-0800200c9a66"
+    }
+  ],
+  "files": [],
+  "createdDate": "2023-06-29T15:15:09.447+02:00",
+  "updatedDate": "2023-06-29T15:15:09.447+02:00",
+  "version": 1
+}

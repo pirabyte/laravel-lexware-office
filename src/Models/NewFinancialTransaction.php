@@ -10,6 +10,10 @@ class NewFinancialTransaction implements \JsonSerializable
     private string $bookingDate;
     private string $transactiondate;
     private string $purpose;
+
+    /**
+     * @var float Format must be ##.00 (e.g. 119.00). The only supported currency is EUR.
+     */
     private float $amount;
     private ?string $additionalInfo;
     private string $recipientOrSenderName;
@@ -35,7 +39,7 @@ class NewFinancialTransaction implements \JsonSerializable
         ];
     }
 
-    public function fromArray(array $data): NewFinancialTransaction
+    public static function fromArray(array $data): NewFinancialTransaction
     {
         $transaction = new self();
         $transaction->valueDate = $data['valueDate'];

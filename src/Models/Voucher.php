@@ -101,6 +101,8 @@ class Voucher implements \JsonSerializable
     #endregion
 
     #region Factory Methods
+    private ?string $shippingDate = null;
+
     /**
      * Erstellt ein Voucher-Objekt aus einem Array.
      *
@@ -133,6 +135,10 @@ class Voucher implements \JsonSerializable
 
         if (isset($data['voucherNumber'])) {
             $voucher->setVoucherNumber($data['voucherNumber']);
+        }
+
+        if (isset($data['shippingDate'])) {
+            $voucher->setShippingDate($data['shippingDate']);
         }
 
         if (isset($data['voucherDate'])) {
@@ -420,7 +426,7 @@ class Voucher implements \JsonSerializable
     /**
      * Setzt die Belegpositionen.
      *
-     * @param array<int, array> $voucherItems Die Belegpositionen
+     * @param array<VoucherItem> $voucherItems Die Belegpositionen
      * @return void
      */
     public function setVoucherItems(array $voucherItems): void
@@ -604,10 +610,13 @@ class Voucher implements \JsonSerializable
      */
     public function jsonSerialize(): array
     {
-        $data = [
-            'type' => $this->type,
-            'voucherItems' => $this->voucherItems,
-        ];
+        $data = [];
+
+        if (isset($this->type)) {
+            $data['type'] = $this->type;
+        }
+
+
 
         if (!empty($this->version)) {
             $data['version'] = $this->version;
@@ -615,6 +624,10 @@ class Voucher implements \JsonSerializable
 
         if ($this->id) {
             $data['id'] = $this->id;
+        }
+
+        if ($this->organizationId) {
+            $data['organizationId'] = $this->organizationId;
         }
 
         if ($this->voucherNumber) {
@@ -625,11 +638,15 @@ class Voucher implements \JsonSerializable
             $data['voucherDate'] = $this->voucherDate;
         }
 
+        if ($this->shippingDate) {
+            $data['shippingDate'] = $this->shippingDate;
+        }
+
         if (!empty($this->totalGrossAmount)) {
             $data['totalGrossAmount'] = $this->totalGrossAmount;
         }
 
-        if ($this->totalTaxAmount) {
+        if ( isset($this->totalTaxAmount)) {
             $data['totalTaxAmount'] = $this->totalTaxAmount;
         }
 
@@ -653,6 +670,22 @@ class Voucher implements \JsonSerializable
             $data['voucherStatus'] = $this->voucherStatus;
         }
 
+        if(isset($this->useCollectiveContact)) {
+            $data['useCollectiveContact'] = $this->useCollectiveContact;
+        }
+
+        if (isset($this->files)) {
+            $data['files'] = $this->files;
+        }
+
+        if (isset($this->createdDate)) {
+            $data['createdDate'] = $this->createdDate;
+        }
+
+        if (isset($this->updatedDate)) {
+            $data['updatedDate'] = $this->updatedDate;
+        }
+
         if ($this->dueDate) {
             $data['dueDate'] = $this->dueDate;
         }
@@ -661,7 +694,20 @@ class Voucher implements \JsonSerializable
             $data['contactId'] = $this->contactId;
         }
 
+        if (isset($this->voucherItems)) {
+            $data['voucherItems'] = $this->voucherItems;
+        }
+
         return $data;
     }
     #endregion
+    public function getShippingDate()
+    {
+        return $this->shippingDate;
+    }
+
+    private function setShippingDate(mixed $shippingDate)
+    {
+        $this->shippingDate = $shippingDate;
+    }
 }

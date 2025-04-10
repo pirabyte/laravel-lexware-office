@@ -1,0 +1,61 @@
+{
+  "content": [
+    {
+      "id": "dba9418a-2381-48cd-afa3-81c0c1d0e53e",
+      "organizationId": "aa93e8a8-2aa3-470b-b914-caad8a255dd8",
+      "type": "purchaseinvoice",
+      "voucherNumber": "123-456-789",
+      "voucherDate": "2023-01-31T00:00:00.000+01:00",
+      "dueDate": "2023-01-31T00:00:00.000+01:00",
+      "totalGrossAmount": 1000,
+      "totalTaxAmount": 159.66,
+      "taxType": "gross",
+      "useCollectiveContact": true,
+      "remark": "Test",
+      "voucherItems": [
+        {
+          "amount": 1000,
+          "taxAmount": 159.66,
+          "taxRatePercent": 19,
+          "categoryId": "16d04a28-fd91-11e1-a21f-0800200c9a66"
+        }
+      ],
+      "files": [],
+      "createdDate": "2023-01-16T07:58:21.849+01:00",
+      "updatedDate": "2023-01-16T07:58:21.849+01:00",
+      "version": 0
+    },
+    {
+      "id": "0a739052-ce80-4ae6-a276-34524eec43b1",
+      "organizationId": "aa93e8a8-2aa3-470b-b914-caad8a255dd8",
+      "type": "salesinvoice",
+      "voucherNumber": "123-456-789",
+      "voucherDate": "2023-01-31T00:00:00.000+01:00",
+      "dueDate": "2023-01-31T00:00:00.000+01:00",
+      "totalGrossAmount": 500,
+      "totalTaxAmount": 79.83,
+      "taxType": "gross",
+      "useCollectiveContact": true,
+      "remark": "Test-2",
+      "voucherItems": [
+        {
+          "amount": 500,
+          "taxAmount": 79.83,
+          "taxRatePercent": 19,
+          "categoryId": "4f01e761-d912-441f-ad1a-1c1d2d590a81"
+        }
+      ],
+      "files": [],
+      "createdDate": "2023-01-16T07:59:32.277+01:00",
+      "updatedDate": "2023-01-16T07:59:32.277+01:00",
+      "version": 0
+    }
+  ],
+  "totalPages": 1,
+  "totalElements": 2,
+  "last": true,
+  "numberOfElements": 2,
+  "first": true,
+  "size": 25,
+  "number": 0
+}

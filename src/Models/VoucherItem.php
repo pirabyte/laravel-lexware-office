@@ -15,6 +15,9 @@ class VoucherItem implements \JsonSerializable
     private ?string $vatRateType = null;
     private ?float $vatRatePercent = null;
     private ?string $categoryId = null;
+    private ?float $amount = null;
+    private ?float $taxAmount = null;
+    private ?float $taxRatePercent = null;
 
     /**
      * Erstellt ein VoucherItem-Objekt aus einem Array
@@ -44,6 +47,18 @@ class VoucherItem implements \JsonSerializable
 
         if (isset($data['quantity'])) {
             $item->setQuantity($data['quantity']);
+        }
+
+        if(isset($data['amount'])) {
+            $item->setAmount($data['amount']);
+        }
+
+        if(isset($data['taxAmount'])) {
+            $item->setTaxAmount($data['taxAmount']);
+        }
+
+        if(isset($data['taxRatePercent'])) {
+            $item->setTaxRatePercent($data['taxRatePercent']);
         }
 
         if (isset($data['unitName'])) {
@@ -359,6 +374,46 @@ class VoucherItem implements \JsonSerializable
             $data['categoryId'] = $this->categoryId;
         }
 
+        if (isset($this->taxAmount))
+        {
+            $data['taxAmount'] = $this->taxAmount;
+        }
+
+        if (isset($this->amount))
+        {
+            $data['amount'] = $this->amount;
+        }
+
         return $data;
+    }
+
+    public function getAmount(): ?float
+    {
+        return $this->amount;
+    }
+
+    public function getTaxAmount(): ?float
+    {
+        return $this->taxAmount;
+    }
+
+    public function getTaxRatePercent(): ?float
+    {
+        return $this->taxRatePercent;
+    }
+
+    public function setAmount(float $amount): void
+    {
+        $this->amount = $amount;
+    }
+
+    public function setTaxRatePercent(float $taxRatePercent): void
+    {
+        $this->taxRatePercent = $taxRatePercent;
+    }
+
+    public function setTaxAmount(float $taxAmount): void
+    {
+        $this->taxAmount = $taxAmount;
     }
 }

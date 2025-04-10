@@ -30,7 +30,7 @@ class FinancialTransactionResource
          if(sizeof($transactions) > 25) {
              throw new \OutOfRangeException('only 25 transactions allowed per request');
          }
-         $response = $this->client->post('financialTransactions', $transactions);
+         $response = $this->client->post('finance/transactions', $transactions);
          return $this->processTransactionsResponse($response);
      }
 
