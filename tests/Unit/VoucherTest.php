@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUnhandledExceptionInspection */
+<?php
+
+/** @noinspection PhpUnhandledExceptionInspection */
 
 namespace Pirabyte\LaravelLexwareOffice\Tests\Unit;
 
@@ -14,6 +16,7 @@ use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 /**
  * @property $app
+ *
  * @method assertEquals(string $string, string $getId)
  * @method assertArrayHasKey(string $string, array $result)
  * @method assertCount(int $int, mixed $content)
@@ -34,7 +37,7 @@ class VoucherTest extends TestCase
         ];
 
         $mock = new MockHandler([
-            new Response(201, ['Content-Type' => 'application/json'], json_encode($responseData))
+            new Response(201, ['Content-Type' => 'application/json'], json_encode($responseData)),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -59,9 +62,9 @@ class VoucherTest extends TestCase
             'unitPrice' => [
                 'currency' => 'EUR',
                 'netAmount' => 100.00,
-                'taxRatePercentage' => 19
+                'taxRatePercentage' => 19,
             ],
-            'vatRateType' => 'normal'
+            'vatRateType' => 'normal',
         ]);
 
         $voucher = Voucher::fromArray([
@@ -73,9 +76,9 @@ class VoucherTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'zip' => '12345',
                 'city' => 'Musterstadt',
-                'countryCode' => 'DE'
+                'countryCode' => 'DE',
             ],
-            'voucherItems' => [$voucherItem->jsonSerialize()]
+            'voucherItems' => [$voucherItem->jsonSerialize()],
         ]);
 
         // API aufrufen
@@ -101,8 +104,8 @@ class VoucherTest extends TestCase
                         'currency' => 'EUR',
                         'totalNetAmount' => 100.00,
                         'totalGrossAmount' => 119.00,
-                        'totalTaxAmount' => 19.00
-                    ]
+                        'totalTaxAmount' => 19.00,
+                    ],
                 ],
                 [
                     'id' => '223e4567-e89b-12d3-a456-426614174001',
@@ -114,19 +117,19 @@ class VoucherTest extends TestCase
                         'currency' => 'EUR',
                         'totalNetAmount' => 200.00,
                         'totalGrossAmount' => 238.00,
-                        'totalTaxAmount' => 38.00
-                    ]
-                ]
+                        'totalTaxAmount' => 38.00,
+                    ],
+                ],
             ],
             'page' => 0,
             'size' => 25,
             'totalElements' => 2,
             'totalPages' => 1,
-            'numberOfElements' => 2
+            'numberOfElements' => 2,
         ];
 
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode($vouchersData))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($vouchersData)),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -166,11 +169,11 @@ class VoucherTest extends TestCase
             'fileName' => 'invoice_123.pdf',
             'mimeType' => 'application/pdf',
             'size' => 12345,
-            'createdDate' => '2020-01-01T00:00:00.000+01:00'
+            'createdDate' => '2020-01-01T00:00:00.000+01:00',
         ];
 
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode($documentData))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($documentData)),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -204,11 +207,11 @@ class VoucherTest extends TestCase
             'fileName' => 'test_document.pdf',
             'mimeType' => 'application/pdf',
             'size' => 54321,
-            'createdDate' => '2020-01-01T00:00:00.000+01:00'
+            'createdDate' => '2020-01-01T00:00:00.000+01:00',
         ];
 
         $mock = new MockHandler([
-            new Response(201, ['Content-Type' => 'application/json'], json_encode($fileData))
+            new Response(201, ['Content-Type' => 'application/json'], json_encode($fileData)),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -226,7 +229,7 @@ class VoucherTest extends TestCase
         // Test-Datei als Stream erstellen
         $fileContent = 'Test PDF Inhalt';
         $stream = Utils::streamFor($fileContent);
-        
+
         // Datei an Beleg anhängen
         $result = $instance->vouchers()->attachFile(
             '123e4567-e89b-12d3-a456-426614174000',

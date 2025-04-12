@@ -6,7 +6,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Voucher;
 use Pirabyte\LaravelLexwareOffice\Models\VoucherItem;
-use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class VoucherResourceTest extends TestCase
@@ -23,36 +22,37 @@ class VoucherResourceTest extends TestCase
     /**
      * Lädt Fixture-Daten aus einer JSON-Datei.
      *
-     * @param string $filename Der Dateiname der Fixture (ohne Pfad/Endung)
+     * @param  string  $filename  Der Dateiname der Fixture (ohne Pfad/Endung)
      * @return array Die dekodierten JSON-Daten
      */
     private function loadFixture(string $filename): array
     {
-        $path = __DIR__ . '/../Fixtures/vouchers/' . $filename . '.json'; // Passe den Pfad an
-        if (!file_exists($path)) {
-            $this->fail("Fixture file not found: " . $path);
+        $path = __DIR__.'/../Fixtures/vouchers/'.$filename.'.json'; // Passe den Pfad an
+        if (! file_exists($path)) {
+            $this->fail('Fixture file not found: '.$path);
         }
         $content = file_get_contents($path);
         if ($content === false) {
-            $this->fail("Could not read fixture file: " . $path);
+            $this->fail('Could not read fixture file: '.$path);
         }
         $data = json_decode($content, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->fail("Error decoding JSON from fixture file: " . $path . ' - ' . json_last_error_msg());
+            $this->fail('Error decoding JSON from fixture file: '.$path.' - '.json_last_error_msg());
         }
+
         return $data;
     }
 
     public function test_it_can_parse_voucher_from_api_result(): void
     {
-        $fixtureData = $this->loadFixture("1_parse_voucher_from_lexware_office");
+        $fixtureData = $this->loadFixture('1_parse_voucher_from_lexware_office');
         $voucher = Voucher::fromArray($fixtureData);
         $this->assert_voucher_data($voucher, $fixtureData);
     }
 
     public function test_it_can_serialize_voucher_from_model(): void
     {
-        $fixtureData = $this->loadFixture("1_parse_voucher_from_lexware_office");
+        $fixtureData = $this->loadFixture('1_parse_voucher_from_lexware_office');
         $voucher = Voucher::fromArray($fixtureData);
         $this->assertInstanceOf(Voucher::class, $voucher);
 
@@ -71,8 +71,8 @@ class VoucherResourceTest extends TestCase
         $this->assertEquals($voucher->getTaxType(), $jsonArray['taxType']);
         $this->assertEquals($voucher->getUseCollectiveContact(), $jsonArray['useCollectiveContact']);
         $this->assertEquals($voucher->getRemark(), $jsonArray['remark']);
-        $this->assertEquals(sizeof($voucher->getVoucherItems()), sizeof($jsonArray['voucherItems']));
-        $this->assertEquals(sizeof($voucher->getFiles()), sizeof($jsonArray['files']));
+        $this->assertEquals(count($voucher->getVoucherItems()), count($jsonArray['voucherItems']));
+        $this->assertEquals(count($voucher->getFiles()), count($jsonArray['files']));
         $this->assertEquals($voucher->getCreatedDate(), $jsonArray['createdDate']);
         $this->assertEquals($voucher->getUpdatedDate(), $jsonArray['updatedDate']);
         $this->assertEquals($voucher->getVersion(), $jsonArray['version']);
@@ -80,17 +80,17 @@ class VoucherResourceTest extends TestCase
 
     public function test_it_can_serialize_null_values()
     {
-        $voucher = new Voucher();
+        $voucher = new Voucher;
         $voucher->setTotalTaxAmount(0);
         $voucher->setTotalGrossAmount(0);
 
-        $voucherItem = new VoucherItem();
+        $voucherItem = new VoucherItem;
         $voucherItem->setTaxRatePercent(0);
         $voucherItem->setAmount(0);
         $voucherItem->setTaxAmount(0);
 
         $voucher->setVoucherItems([
-            $voucherItem
+            $voucherItem,
         ]);
 
         $json = $voucher->jsonSerialize();
@@ -100,8 +100,8 @@ class VoucherResourceTest extends TestCase
 
     public function test_it_can_parse_vouchers_from_filter_request()
     {
-        $fixtureData = $this->loadFixture("2_filter_voucher_response");
-        foreach($fixtureData['content'] as $fixtureVoucher) {
+        $fixtureData = $this->loadFixture('2_filter_voucher_response');
+        foreach ($fixtureData['content'] as $fixtureVoucher) {
             $voucher = Voucher::fromArray($fixtureVoucher);
             $this->assert_voucher_data($voucher, $fixtureVoucher);
         }
@@ -129,9 +129,9 @@ class VoucherResourceTest extends TestCase
         $this->assertEquals($voucher->getUseCollectiveContact(), $fixtureData['useCollectiveContact']);
         $this->assertEquals($voucher->getRemark(), $fixtureData['remark']);
 
-        $this->assertEquals(sizeof($voucher->getVoucherItems()), sizeof($fixtureData['voucherItems']));
+        $this->assertEquals(count($voucher->getVoucherItems()), count($fixtureData['voucherItems']));
 
-        foreach($fixtureData['voucherItems'] as $fixtureVoucherItem) {
+        foreach ($fixtureData['voucherItems'] as $fixtureVoucherItem) {
             $voucherItem = VoucherItem::fromArray($fixtureVoucherItem);
             $this->assertInstanceOf(VoucherItem::class, $voucherItem);
 
@@ -141,11 +141,11 @@ class VoucherResourceTest extends TestCase
             $this->assertEquals($voucherItem->getCategoryId(), $fixtureVoucherItem['categoryId']);
         }
 
-        $this->assertEquals(sizeof($voucher->getFiles()), sizeof($fixtureData['files']));
+        $this->assertEquals(count($voucher->getFiles()), count($fixtureData['files']));
         $this->assertEquals($voucher->getCreatedDate(), $fixtureData['createdDate']);
         $this->assertEquals($voucher->getUpdatedDate(), $fixtureData['updatedDate']);
         $this->assertEquals($voucher->getVersion(), $fixtureData['version']);
 
-        $this->assertEquals(sizeof($voucher->jsonSerialize()), sizeof($fixtureData));
+        $this->assertEquals(count($voucher->jsonSerialize()), count($fixtureData));
     }
 }

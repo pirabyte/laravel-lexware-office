@@ -38,7 +38,7 @@ class RateLimitTest extends TestCase
 
         // Mock HTTP response
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => '123']))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => '123'])),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -74,7 +74,7 @@ class RateLimitTest extends TestCase
 
         // Mock HTTP response (sollte nicht aufgerufen werden)
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => '123']))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => '123'])),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -91,13 +91,13 @@ class RateLimitTest extends TestCase
 
         // Erwarten, dass eine Exception geworfen wird
         $this->expectException(LexwareOfficeApiException::class);
-        $this->expectExceptionMessage("Rate limit erreicht. Bitte warten Sie 30 Sekunden.");
+        $this->expectExceptionMessage('Rate limit erreicht. Bitte warten Sie 30 Sekunden.');
         $this->expectExceptionCode(429);
 
         // Anfrage senden (sollte Exception werfen)
         $instance->get('contacts/123');
     }
-    
+
     /** @test */
     public function it_handles_request_exceptions_correctly()
     {
@@ -105,7 +105,7 @@ class RateLimitTest extends TestCase
         RateLimiter::shouldReceive('tooManyAttempts')
             ->once()
             ->andReturn(false);
-            
+
         RateLimiter::shouldReceive('hit')
             ->never();
 
@@ -135,7 +135,7 @@ class RateLimitTest extends TestCase
         // Anfrage senden (sollte Exception werfen)
         $instance->get('contacts/123');
     }
-    
+
     /** @test */
     public function it_handles_request_exceptions_without_response()
     {
@@ -143,7 +143,7 @@ class RateLimitTest extends TestCase
         RateLimiter::shouldReceive('tooManyAttempts')
             ->once()
             ->andReturn(false);
-            
+
         RateLimiter::shouldReceive('hit')
             ->never();
 
@@ -191,7 +191,7 @@ class RateLimitTest extends TestCase
 
         // Mock HTTP response
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => '123']))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => '123'])),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -214,12 +214,12 @@ class RateLimitTest extends TestCase
 
         // Überprüfen, ob die Antwort korrekt ist
         $this->assertEquals(['id' => '123'], $response);
-        
+
         // Überprüfen, ob das Rate-Limit korrekt gesetzt wurde
         $maxRequestsProperty = $reflectionClass->getProperty('maxRequestsPerMinute');
         $this->assertEquals(10, $maxRequestsProperty->getValue($instance));
     }
-    
+
     /** @test */
     public function it_applies_rate_limit_to_post_requests()
     {
@@ -240,7 +240,7 @@ class RateLimitTest extends TestCase
 
         // Mock HTTP response
         $mock = new MockHandler([
-            new Response(201, ['Content-Type' => 'application/json'], json_encode(['id' => '123']))
+            new Response(201, ['Content-Type' => 'application/json'], json_encode(['id' => '123'])),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -261,7 +261,7 @@ class RateLimitTest extends TestCase
         // Überprüfen, ob die Antwort korrekt ist
         $this->assertEquals(['id' => '123'], $response);
     }
-    
+
     /** @test */
     public function it_applies_rate_limit_to_put_requests()
     {
@@ -282,7 +282,7 @@ class RateLimitTest extends TestCase
 
         // Mock HTTP response
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => '123']))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode(['id' => '123'])),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -304,7 +304,7 @@ class RateLimitTest extends TestCase
         $this->assertEquals(['id' => '123'], $response);
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         Mockery::close();
         parent::tearDown();

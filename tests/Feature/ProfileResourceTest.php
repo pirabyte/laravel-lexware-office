@@ -9,7 +9,7 @@ class ProfileResourceTest extends TestCase
 {
     public function test_it_can_deserialize_profile_response(): void
     {
-        $fixtureFile = __DIR__ . '/../Fixtures/profile/1_profile_endpoint_response.json';
+        $fixtureFile = __DIR__.'/../Fixtures/profile/1_profile_endpoint_response.json';
         $fixtureContents = file_get_contents($fixtureFile);
         $fixtureData = json_decode($fixtureContents, true);
         $profile = Profile::fromArray($fixtureData);

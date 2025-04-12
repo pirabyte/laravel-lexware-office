@@ -19,20 +19,20 @@ class PostingCategoryResource
     /**
      * Ruft alle Posting Categories ab
      *
-     * @return array
      * @throws LexwareOfficeApiException
      */
-    public function get(PostingCategoryType $type = null): array
+    public function get(PostingCategoryType $type = PostingCategoryType::ALL): array
     {
-        $response = $this->client->get("posting-categories");
+        $response = $this->client->get('posting-categories');
         $categories = [];
-        foreach($response as $entry)
-        {
-            if($type && $entry['type'] != $type->value) {
-                continue;
+
+        foreach ($response as $entry) {
+            if ($type === PostingCategoryType::ALL || $type->value === $entry['type']) {
+                // Nur wenn die Bedingung zutrifft, wird die Kategorie hinzugefügt.
+                $categories[] = PostingCategory::fromArray($entry);
             }
-            $categories[] = PostingCategory::fromArray($entry);
         }
+
         return $categories;
     }
 }

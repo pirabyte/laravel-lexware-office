@@ -2,7 +2,7 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Enums;
 
-enum CreditCardProvider : string
+enum CreditCardProvider: string
 {
     case VISA = 'VISA';
     case MASTERCARD = 'MASTERCARD';

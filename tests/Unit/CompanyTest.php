@@ -17,8 +17,8 @@ class CompanyTest extends TestCase
             'allowTaxFreeInvoices' => true,
             'contactPersons' => [
                 ['id' => '1', 'name' => 'John Doe'],
-                ['id' => '2', 'name' => 'Jane Doe']
-            ]
+                ['id' => '2', 'name' => 'Jane Doe'],
+            ],
         ];
 
         $company = Company::fromArray($data);
@@ -36,7 +36,7 @@ class CompanyTest extends TestCase
     {
         // Test with only required field (name)
         $data = [
-            'name' => 'Minimal Company'
+            'name' => 'Minimal Company',
         ];
 
         $company = Company::fromArray($data);
@@ -54,12 +54,12 @@ class CompanyTest extends TestCase
     {
         $data = [
             'name' => 'JSON Company',
-            'taxNumber' => '987654321', 
+            'taxNumber' => '987654321',
             'vatRegistrationId' => 'DE987654321',
             'allowTaxFreeInvoices' => true,
             'contactPersons' => [
-                ['id' => '3', 'name' => 'Max Mustermann']
-            ]
+                ['id' => '3', 'name' => 'Max Mustermann'],
+            ],
         ];
 
         $company = Company::fromArray($data);

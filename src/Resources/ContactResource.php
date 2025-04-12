@@ -2,8 +2,8 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
-use GuzzleHttp\Exception\GuzzleException;
 use Generator;
+use GuzzleHttp\Exception\GuzzleException;
 use Pirabyte\LaravelLexwareOffice\Classes\PaginatedResource;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
@@ -21,8 +21,6 @@ class ContactResource
     /**
      * Erstellt einen neuen Kontakt
      *
-     * @param Contact $contact
-     * @return Contact
      * @throws LexwareOfficeApiException
      * @throws GuzzleException
      */
@@ -46,22 +44,18 @@ class ContactResource
     /**
      * Ruft einen Kontakt anhand der ID ab
      *
-     * @param string $id
-     * @return Contact
      * @throws LexwareOfficeApiException
      */
     public function get(string $id): Contact
     {
         $response = $this->client->get("contacts/{$id}");
+
         return Contact::fromArray($response);
     }
 
     /**
      * Aktualisiert einen bestehenden Kontakt
      *
-     * @param string $id
-     * @param Contact $contact
-     * @return Contact
      * @throws LexwareOfficeApiException
      * @throws GuzzleException
      */
@@ -85,21 +79,22 @@ class ContactResource
     /**
      * Kontakte nach verschiedenen Kriterien filtern
      *
-     * @param array $filters Filtermöglichkeiten:
-     *                      - customer: bool - Filtert nach Kunden
-     *                      - vendor: bool - Filtert nach Lieferanten
-     *                      - name: string - Filtert nach Namen (Firmen oder Personen)
-     *                      - email: string - Filtert nach E-Mail-Adresse
-     *                      - number: string - Filtert nach Kunden-/Lieferantennummer
-     *                      - page: int - Seitennummer (beginnend bei 0)
-     *                      - size: int - Anzahl der Ergebnisse pro Seite (max. 100)
+     * @param  array  $filters  Filtermöglichkeiten:
+     *                          - customer: bool - Filtert nach Kunden
+     *                          - vendor: bool - Filtert nach Lieferanten
+     *                          - name: string - Filtert nach Namen (Firmen oder Personen)
+     *                          - email: string - Filtert nach E-Mail-Adresse
+     *                          - number: string - Filtert nach Kunden-/Lieferantennummer
+     *                          - page: int - Seitennummer (beginnend bei 0)
+     *                          - size: int - Anzahl der Ergebnisse pro Seite (max. 100)
      * @return PaginatedResource Liste der gefilterten Kontakte als PaginatedResource
+     *
      * @throws LexwareOfficeApiException
      */
     public function filter(array $filters = []): PaginatedResource
     {
         $validFilters = [
-            'customer', 'vendor', 'name', 'email', 'number', 'page', 'size'
+            'customer', 'vendor', 'name', 'email', 'number', 'page', 'size',
         ];
 
         // HTTP-Query vorbereiten
@@ -108,7 +103,7 @@ class ContactResource
         // Wir müssen doppelte Filter korrekt handhaben (API kombiniert diese mit AND)
         foreach ($filters as $key => $value) {
             // Leere oder ungültige Filter überspringen
-            if (!in_array($key, $validFilters) || $value === null || $value === '') {
+            if (! in_array($key, $validFilters) || $value === null || $value === '') {
                 continue;
             }
 
@@ -136,16 +131,17 @@ class ContactResource
     /**
      * Alle Kontakte abrufen mit Paginierung
      *
-     * @param int $page Seitennummer (beginnend bei 0)
-     * @param int $size Anzahl der Ergebnisse pro Seite (max. 250)
+     * @param  int  $page  Seitennummer (beginnend bei 0)
+     * @param  int  $size  Anzahl der Ergebnisse pro Seite (max. 250)
      * @return PaginatedResource Liste aller Kontakte als PaginatedResource und Paginierungsinformationen
+     *
      * @throws LexwareOfficeApiException
      */
     public function all(int $page = 0, int $size = 25): PaginatedResource
     {
         $response = $this->client->get('contacts', [
             'page' => $page,
-            'size' => min($size, 250) // Maximal 250 Einträge pro Seite
+            'size' => min($size, 250), // Maximal 250 Einträge pro Seite
         ]);
 
         return $this->processContactsResponse($response);
@@ -153,18 +149,20 @@ class ContactResource
 
     /**
      * Returns the total number of contacts
+     *
      * @throws LexwareOfficeApiException
      */
-    public function count() : int
+    public function count(): int
     {
         $paginator = $this->all(1, 1);
+
         return $paginator->getTotal();
     }
 
     /**
      * Verarbeitet die Antwort der Kontakt-API und erstellt daraus ein strukturiertes Array
      *
-     * @param array $response API-Antwort
+     * @param  array  $response  API-Antwort
      * @return PaginatedResource Strukturiertes Array mit Kontakten und Paginierungsinformationen
      */
     protected function processContactsResponse(array $response): PaginatedResource
@@ -183,14 +181,15 @@ class ContactResource
     /**
      * Liefert einen Generator, der alle Kontakte automatisch paginiert durchläuft
      *
-     * @param array $filters Filtermöglichkeiten wie in der filter()-Methode:
-     *                      - customer: bool - Filtert nach Kunden
-     *                      - vendor: bool - Filtert nach Lieferanten
-     *                      - name: string - Filtert nach Namen (Firmen oder Personen)
-     *                      - email: string - Filtert nach E-Mail-Adresse
-     *                      - number: string - Filtert nach Kunden-/Lieferantennummer
-     * @param int $size Anzahl der Ergebnisse pro Seite (max. 250)
+     * @param  array  $filters  Filtermöglichkeiten wie in der filter()-Methode:
+     *                          - customer: bool - Filtert nach Kunden
+     *                          - vendor: bool - Filtert nach Lieferanten
+     *                          - name: string - Filtert nach Namen (Firmen oder Personen)
+     *                          - email: string - Filtert nach E-Mail-Adresse
+     *                          - number: string - Filtert nach Kunden-/Lieferantennummer
+     * @param  int  $size  Anzahl der Ergebnisse pro Seite (max. 250)
      * @return Generator<Contact>
+     *
      * @throws LexwareOfficeApiException
      */
     public function getAutoPagingIterator(array $filters = [], int $size = 25): Generator
@@ -219,7 +218,7 @@ class ContactResource
             }
 
             // Prüfen ob es weitere Seiten gibt
-            $hasMore = !$paginatedResource->jsonSerialize()['last'];
+            $hasMore = ! $paginatedResource->jsonSerialize()['last'];
             $page++;
         }
     }

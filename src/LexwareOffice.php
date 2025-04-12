@@ -19,57 +19,36 @@ use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
 class LexwareOffice
 {
     protected Client $client;
+
     protected string $baseUrl;
+
     protected string $apiKey;
 
     protected string $rateLimitKey = 'lexware_office_api';
+
     protected int $maxRequestsPerMinute = 50;
 
-    /**
-     * @var ContactResource
-     */
     protected ContactResource $contacts;
 
-    /**
-     * @var VoucherResource
-     */
     protected VoucherResource $vouchers;
 
-    /**
-     * @var ProfileResource
-     */
     protected ProfileResource $profile;
 
-    /**
-     * @var PostingCategoryResource
-     */
     protected PostingCategoryResource $postingCategories;
 
-    /**
-     * @var CountryResource
-     */
     protected CountryResource $countries;
 
-    /**
-     * @var FinancialAccountResource
-     */
     protected FinancialAccountResource $financialAccounts;
 
-    /**
-     * @var FinancialTransactionResource
-     */
     protected FinancialTransactionResource $financialTransactions;
 
-    /**
-     * @var TransactionAssignmentHintResource
-     */
     protected TransactionAssignmentHintResource $transactionAssignmentHints;
 
     public function __construct(
         string $baseUrl,
         string $apiKey,
-        string $rateLimitKey = 'lexware_office_api')
-    {
+        string $rateLimitKey = 'lexware_office_api'
+    ) {
         $this->baseUrl = $baseUrl;
         $this->apiKey = $apiKey;
 
@@ -80,7 +59,7 @@ class LexwareOffice
         $this->client = new Client([
             'base_uri' => $uri,
             'headers' => [
-                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Authorization' => 'Bearer '.$this->apiKey,
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ],
@@ -104,7 +83,7 @@ class LexwareOffice
         $this->rateLimitKey = $key;
     }
 
-    #region Contacts
+    // region Contacts
 
     /**
      * Kontakt-Ressource abrufen
@@ -114,9 +93,9 @@ class LexwareOffice
         return $this->contacts;
     }
 
-    #endregion Contacts
+    // endregion Contacts
 
-    #region Vouchers
+    // region Vouchers
 
     /**
      * Beleg-Ressource abrufen
@@ -126,9 +105,9 @@ class LexwareOffice
         return $this->vouchers;
     }
 
-    #endregion Vouchers
+    // endregion Vouchers
 
-    #region Profile
+    // region Profile
 
     /**
      * Profil-Ressource abrufen
@@ -138,9 +117,9 @@ class LexwareOffice
         return $this->profile;
     }
 
-    #endregion Profile
+    // endregion Profile
 
-    #region PostingCategories
+    // region PostingCategories
 
     /**
      * Buchungskategorien-Ressource abrufen
@@ -150,9 +129,9 @@ class LexwareOffice
         return $this->postingCategories;
     }
 
-    #endregion PostingCategories
+    // endregion PostingCategories
 
-    #region Countries
+    // region Countries
 
     /**
      * Länder-Ressource abrufen
@@ -162,9 +141,9 @@ class LexwareOffice
         return $this->countries;
     }
 
-    #endregion Countries
+    // endregion Countries
 
-    #region FinancialAccounts
+    // region FinancialAccounts
 
     /**
      * Finanzkonten-Ressource abrufen
@@ -174,9 +153,9 @@ class LexwareOffice
         return $this->financialAccounts;
     }
 
-    #endregion FinancialAccounts
+    // endregion FinancialAccounts
 
-    #region FinancialTransactions
+    // region FinancialTransactions
 
     /**
      * Finanztransaktionen-Ressource abrufen
@@ -186,9 +165,9 @@ class LexwareOffice
         return $this->financialTransactions;
     }
 
-    #endregion FinancialTransactions
+    // endregion FinancialTransactions
 
-    #region TransactionAssignmentHints
+    // region TransactionAssignmentHints
 
     /**
      * TransactionAssignmentHint-Ressource abrufen
@@ -198,16 +177,13 @@ class LexwareOffice
         return $this->transactionAssignmentHints;
     }
 
-    #endregion TransactionAssignmentHints
+    // endregion TransactionAssignmentHints
 
-    #region Requests
+    // region Requests
 
     /**
      * GET-Anfrage
      *
-     * @param string $endpoint
-     * @param array $query
-     * @return array
      * @throws LexwareOfficeApiException
      */
     public function get(string $endpoint, array $query = []): array
@@ -227,9 +203,6 @@ class LexwareOffice
     /**
      * POST-Anfrage
      *
-     * @param string $endpoint
-     * @param array $data
-     * @return array
      * @throws LexwareOfficeApiException|GuzzleException
      */
     public function post(string $endpoint, array $data): array
@@ -237,7 +210,7 @@ class LexwareOffice
         try {
             return $this->makeRequest(function () use ($endpoint, $data) {
                 return $this->client->post($endpoint, [
-                    'json' => $data
+                    'json' => $data,
                 ]);
             });
         } catch (RequestException $e) {
@@ -248,9 +221,6 @@ class LexwareOffice
     /**
      * PUT-Anfrage
      *
-     * @param string $endpoint
-     * @param array $data
-     * @return array
      * @throws LexwareOfficeApiException|GuzzleException
      */
     public function put(string $endpoint, array $data): array
@@ -258,7 +228,7 @@ class LexwareOffice
         try {
             return $this->makeRequest(function () use ($endpoint, $data) {
                 return $this->client->put($endpoint, [
-                    'json' => $data
+                    'json' => $data,
                 ]);
             });
         } catch (RequestException $e) {
@@ -269,8 +239,6 @@ class LexwareOffice
     /**
      * DELETE-Anfrage
      *
-     * @param string $endpoint
-     * @return void
      * @throws LexwareOfficeApiException
      */
     public function delete(string $endpoint): void
@@ -284,15 +252,15 @@ class LexwareOffice
         }
     }
 
-    #endregion Requests
+    // endregion Requests
 
-    #region Helper
+    // region Helper
 
     /**
      * Bereitet die Basis-URI für API-Requests vor.
      * Stellt sicher, dass die URL mit /v1/ endet.
      *
-     * @param string $baseUrl Die Basis-URL für die API
+     * @param  string  $baseUrl  Die Basis-URL für die API
      * @return string Die korrekt formatierte Basis-URL
      */
     protected function prepareBaseUri(string $baseUrl): string
@@ -301,20 +269,17 @@ class LexwareOffice
         $baseUrl = rtrim($baseUrl, '/');
 
         // Prüfe, ob die URL bereits mit /v1 endet
-        if (!str_ends_with($baseUrl, '/v1')) {
+        if (! str_ends_with($baseUrl, '/v1')) {
             // Wenn nicht, füge /v1 hinzu
             $baseUrl .= '/v1';
         }
 
         // Stelle sicher, dass die URL mit einem Slash endet
-        return $baseUrl . '/';
+        return $baseUrl.'/';
     }
 
     /**
      * Behandelt Anfrage-Exceptions
-     *
-     * @param RequestException $e
-     * @return LexwareOfficeApiException
      */
     protected function handleRequestException(RequestException $e): LexwareOfficeApiException
     {
@@ -328,19 +293,17 @@ class LexwareOffice
     /**
      * Setzt den HTTP-Client (für Tests)
      *
-     * @param Client $client
      * @return $this
      */
     public function setClient(Client $client): static
     {
         $this->client = $client;
+
         return $this;
     }
 
     /**
      * Gibt den HTTP-Client zurück
-     *
-     * @return Client
      */
     public function client(): Client
     {
@@ -349,6 +312,7 @@ class LexwareOffice
 
     /**
      * Führt eine Anfrage mit Rate Limiting aus
+     *
      * @throws LexwareOfficeApiException
      */
     protected function makeRequest(callable $callback)
@@ -364,6 +328,7 @@ class LexwareOffice
         try {
             $response = $callback();
             RateLimiter::hit($this->rateLimitKey, 60);
+
             return json_decode($response->getBody()->getContents(), true);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
@@ -376,9 +341,10 @@ class LexwareOffice
     public function setRateLimit(int $maxRequests): static
     {
         $this->maxRequestsPerMinute = $maxRequests;
+
         return $this;
     }
 
-    #endregion Helper
+    // endregion Helper
 
 }

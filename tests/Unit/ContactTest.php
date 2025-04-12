@@ -3,12 +3,10 @@
 namespace Pirabyte\LaravelLexwareOffice\Tests\Unit;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Pirabyte\LaravelLexwareOffice\Classes\PaginatedResource;
-use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Contact;
 use Pirabyte\LaravelLexwareOffice\Models\Person;
@@ -16,11 +14,11 @@ use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 /**
  * @property $app
+ *
  * @method assertEquals(string $string, string $getId)
  */
 class ContactTest extends TestCase
 {
-
     /** @test */
     public function it_can_create_a_contact(): void
     {
@@ -34,7 +32,7 @@ class ContactTest extends TestCase
         ];
 
         $mock = new MockHandler([
-            new Response(201, ['Content-Type' => 'application/json'], json_encode($responseData))
+            new Response(201, ['Content-Type' => 'application/json'], json_encode($responseData)),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -54,14 +52,14 @@ class ContactTest extends TestCase
             'version' => 0,
             'roles' => [
                 'customer' => [
-                    'number' => 'K-00001'
-                ]
+                    'number' => 'K-00001',
+                ],
             ],
             'person' => [
                 'salutation' => 'Herr',
                 'firstName' => 'Max',
-                'lastName' => 'Mustermann'
-            ]
+                'lastName' => 'Mustermann',
+            ],
         ]);
 
         // API aufrufen
@@ -80,13 +78,13 @@ class ContactTest extends TestCase
             'version' => 0,
             'roles' => [
                 'customer' => [
-                    'number' => 'K-00001'
-                ]
+                    'number' => 'K-00001',
+                ],
             ],
             'person' => [
                 'salutation' => 'Herr',
                 'firstName' => 'Max',
-                'lastName' => 'Mustermann'
+                'lastName' => 'Mustermann',
             ],
             'resourceUri' => 'https://api.lexoffice.io/v1/contacts/123e4567-e89b-12d3-a456-426614174000',
             'createdDate' => '2020-01-01T00:00:00.000+01:00',
@@ -106,13 +104,13 @@ class ContactTest extends TestCase
             'version' => 1,
             'roles' => [
                 'customer' => [
-                    'number' => 'K-00001'
-                ]
+                    'number' => 'K-00001',
+                ],
             ],
             'person' => [
                 'salutation' => 'Herr',
                 'firstName' => 'Maximilian',
-                'lastName' => 'Mustermann'
+                'lastName' => 'Mustermann',
             ],
             'resourceUri' => 'https://api.lexoffice.io/v1/contacts/123e4567-e89b-12d3-a456-426614174000',
             'createdDate' => '2020-01-01T00:00:00.000+01:00',
@@ -145,7 +143,7 @@ class ContactTest extends TestCase
         $updatedPerson = Person::fromArray([
             'salutation' => $person->getSalutation(),
             'firstName' => 'Maximilian',
-            'lastName' => $person->getLastName()
+            'lastName' => $person->getLastName(),
         ]);
 
         // Reflection nutzen, um private setPerson Methode aufzurufen
@@ -173,37 +171,37 @@ class ContactTest extends TestCase
                     'version' => 0,
                     'roles' => [
                         'customer' => [
-                            'number' => 'K-00001'
-                        ]
+                            'number' => 'K-00001',
+                        ],
                     ],
                     'person' => [
                         'salutation' => 'Herr',
                         'firstName' => 'Max',
-                        'lastName' => 'Mustermann'
-                    ]
+                        'lastName' => 'Mustermann',
+                    ],
                 ],
                 [
                     'id' => '223e4567-e89b-12d3-a456-426614174001',
                     'version' => 0,
                     'roles' => [
                         'customer' => [
-                            'number' => 'K-00002'
-                        ]
+                            'number' => 'K-00002',
+                        ],
                     ],
                     'company' => [
-                        'name' => 'Musterfirma GmbH'
-                    ]
-                ]
+                        'name' => 'Musterfirma GmbH',
+                    ],
+                ],
             ],
             'page' => 0,
             'size' => 25,
             'totalElements' => 2,
             'totalPages' => 1,
-            'numberOfElements' => 2
+            'numberOfElements' => 2,
         ];
 
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode($contactsData))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($contactsData)),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -221,7 +219,7 @@ class ContactTest extends TestCase
         // Kontakte filtern
         $result = $instance->contacts()->filter([
             'customer' => true,
-            'name' => 'Muster'
+            'name' => 'Muster',
         ]);
 
         // Assertions
@@ -249,53 +247,53 @@ class ContactTest extends TestCase
                     'version' => 0,
                     'roles' => [
                         'customer' => [
-                            'number' => 'K-00001'
-                        ]
+                            'number' => 'K-00001',
+                        ],
                     ],
                     'person' => [
                         'salutation' => 'Herr',
                         'firstName' => 'Max',
-                        'lastName' => 'Mustermann'
-                    ]
+                        'lastName' => 'Mustermann',
+                    ],
                 ],
                 [
                     'id' => '223e4567-e89b-12d3-a456-426614174001',
                     'version' => 0,
                     'roles' => [
                         'vendor' => [
-                            'number' => 'L-00001'
-                        ]
+                            'number' => 'L-00001',
+                        ],
                     ],
                     'company' => [
-                        'name' => 'Musterfirma GmbH'
-                    ]
+                        'name' => 'Musterfirma GmbH',
+                    ],
                 ],
                 [
                     'id' => '323e4567-e89b-12d3-a456-426614174002',
                     'version' => 0,
                     'roles' => [
                         'customer' => [
-                            'number' => 'K-00003'
-                        ]
+                            'number' => 'K-00003',
+                        ],
                     ],
                     'person' => [
                         'salutation' => 'Frau',
                         'firstName' => 'Erika',
-                        'lastName' => 'Musterfrau'
-                    ]
-                ]
+                        'lastName' => 'Musterfrau',
+                    ],
+                ],
             ],
             'page' => 0,
             'size' => 25,
             'totalElements' => 3,
             'totalPages' => 1,
-            'numberOfElements' => 3
+            'numberOfElements' => 3,
         ];
 
         // Two responses for both method calls
         $mock = new MockHandler([
             new Response(200, ['Content-Type' => 'application/json'], json_encode($contactsData)),
-            new Response(200, ['Content-Type' => 'application/json'], json_encode(array_merge($contactsData, ['size' => 10])))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode(array_merge($contactsData, ['size' => 10]))),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -341,53 +339,53 @@ class ContactTest extends TestCase
                     'version' => 0,
                     'roles' => [
                         'customer' => [
-                            'number' => 'K-00001'
-                        ]
+                            'number' => 'K-00001',
+                        ],
                     ],
                     'person' => [
                         'salutation' => 'Herr',
                         'firstName' => 'Max',
-                        'lastName' => 'Mustermann'
-                    ]
+                        'lastName' => 'Mustermann',
+                    ],
                 ],
                 [
                     'id' => '223e4567-e89b-12d3-a456-426614174001',
                     'version' => 0,
                     'roles' => [
                         'vendor' => [
-                            'number' => 'L-00001'
-                        ]
+                            'number' => 'L-00001',
+                        ],
                     ],
                     'company' => [
-                        'name' => 'Musterfirma GmbH'
-                    ]
+                        'name' => 'Musterfirma GmbH',
+                    ],
                 ],
                 [
                     'id' => '323e4567-e89b-12d3-a456-426614174002',
                     'version' => 0,
                     'roles' => [
                         'customer' => [
-                            'number' => 'K-00003'
-                        ]
+                            'number' => 'K-00003',
+                        ],
                     ],
                     'person' => [
                         'salutation' => 'Frau',
                         'firstName' => 'Erika',
-                        'lastName' => 'Musterfrau'
-                    ]
-                ]
+                        'lastName' => 'Musterfrau',
+                    ],
+                ],
             ],
             'page' => 0,
             'size' => 25,
             'totalElements' => 3,
             'totalPages' => 1,
-            'numberOfElements' => 3
+            'numberOfElements' => 3,
         ];
 
         // Two responses for both method calls
         $mock = new MockHandler([
             new Response(200, ['Content-Type' => 'application/json'], json_encode($contactsData)),
-            new Response(200, ['Content-Type' => 'application/json'], json_encode(array_merge($contactsData, ['size' => 10])))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode(array_merge($contactsData, ['size' => 10]))),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -420,8 +418,8 @@ class ContactTest extends TestCase
                 'totalPages' => 0,
                 'numberOfElements' => 0,
                 'first' => true,
-                'last' => true
-            ]))
+                'last' => true,
+            ])),
         ]);
 
         $container = [];
@@ -446,7 +444,7 @@ class ContactTest extends TestCase
             'email' => '',
             'customer' => true,
             'vendor' => null,
-            'number' => '12345'
+            'number' => '12345',
         ]);
 
         // Assertions - Prüfen des tatsächlich gesendeten Requests
@@ -479,7 +477,7 @@ class ContactTest extends TestCase
                 'totalPages' => 0,
                 'numberOfElements' => 0,
                 'first' => true,
-                'last' => true
+                'last' => true,
             ])),
             new Response(200, ['Content-Type' => 'application/json'], json_encode([
                 'content' => [],
@@ -489,8 +487,8 @@ class ContactTest extends TestCase
                 'totalPages' => 0,
                 'numberOfElements' => 0,
                 'first' => true,
-                'last' => true
-            ]))
+                'last' => true,
+            ])),
         ]);
 
         $container = [];
@@ -512,7 +510,7 @@ class ContactTest extends TestCase
         // Da PHP selbst doppelte Array-Keys überschreibt, müssen wir das Array schrittweise aufbauen
         $instance->contacts()->filter([
             'name' => 'Test',
-            'email' => 'first@example.com' // Wird durch API-Implementierung nicht überschrieben
+            'email' => 'first@example.com', // Wird durch API-Implementierung nicht überschrieben
         ]);
 
         // Assertions für den ersten Request
@@ -529,7 +527,7 @@ class ContactTest extends TestCase
 
         // Bei mehrfachen Aufrufen simulieren wir doppelte Filter
         $instance->contacts()->filter([
-            'email' => ['first@example.com', 'second@example.com']
+            'email' => ['first@example.com', 'second@example.com'],
         ]);
 
         // Assertions für den zweiten Request
@@ -554,27 +552,27 @@ class ContactTest extends TestCase
                     'version' => 0,
                     'roles' => [
                         'customer' => [
-                            'number' => 'K-00001'
-                        ]
+                            'number' => 'K-00001',
+                        ],
                     ],
                     'person' => [
                         'salutation' => 'Herr',
                         'firstName' => 'Max',
-                        'lastName' => 'Mustermann'
-                    ]
+                        'lastName' => 'Mustermann',
+                    ],
                 ],
                 [
                     'id' => '223e4567-e89b-12d3-a456-426614174001',
                     'version' => 0,
                     'roles' => [
                         'vendor' => [
-                            'number' => 'L-00001'
-                        ]
+                            'number' => 'L-00001',
+                        ],
                     ],
                     'company' => [
-                        'name' => 'Musterfirma GmbH'
-                    ]
-                ]
+                        'name' => 'Musterfirma GmbH',
+                    ],
+                ],
             ],
             'page' => 0,
             'size' => 2,
@@ -582,7 +580,7 @@ class ContactTest extends TestCase
             'totalPages' => 2,
             'numberOfElements' => 2,
             'first' => true,
-            'last' => false
+            'last' => false,
         ];
 
         $page2 = [
@@ -592,15 +590,15 @@ class ContactTest extends TestCase
                     'version' => 0,
                     'roles' => [
                         'customer' => [
-                            'number' => 'K-00003'
-                        ]
+                            'number' => 'K-00003',
+                        ],
                     ],
                     'person' => [
                         'salutation' => 'Frau',
                         'firstName' => 'Erika',
-                        'lastName' => 'Musterfrau'
-                    ]
-                ]
+                        'lastName' => 'Musterfrau',
+                    ],
+                ],
             ],
             'page' => 1,
             'size' => 2,
@@ -608,12 +606,12 @@ class ContactTest extends TestCase
             'totalPages' => 2,
             'numberOfElements' => 1,
             'first' => false,
-            'last' => true
+            'last' => true,
         ];
 
         $mock = new MockHandler([
             new Response(200, ['Content-Type' => 'application/json'], json_encode($page1)),
-            new Response(200, ['Content-Type' => 'application/json'], json_encode($page2))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($page2)),
         ]);
 
         $container = [];

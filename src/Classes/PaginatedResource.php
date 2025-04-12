@@ -40,43 +40,41 @@ class PaginatedResource implements \JsonSerializable
     /**
      * Erstellt ein PaginatedResource-Objekt aus einem Array
      * ACHTUNG: Content wird hier nicht gesetzt!
-     * @param array $data
-     * @return PaginatedResource
      */
     public static function fromArray(array $data): self
     {
         $resource = new self();
 
-        if(isset($data["first"])) {
-            $resource->first = $data["first"];
+        if (isset($data['first'])) {
+            $resource->first = $data['first'];
         }
 
-        if(isset($data["last"])) {
-            $resource->last = $data["last"];
+        if (isset($data['last'])) {
+            $resource->last = $data['last'];
         }
 
-        if(isset($data["totalPages"])) {
-            $resource->totalPages = $data["totalPages"];
+        if (isset($data['totalPages'])) {
+            $resource->totalPages = $data['totalPages'];
         }
 
-        if(isset($data["totalElements"])) {
-            $resource->totalElements = $data["totalElements"];
+        if (isset($data['totalElements'])) {
+            $resource->totalElements = $data['totalElements'];
         }
 
-        if(isset($data["numberOfElements"])) {
-            $resource->numberOfElements = $data["numberOfElements"];
+        if (isset($data['numberOfElements'])) {
+            $resource->numberOfElements = $data['numberOfElements'];
         }
 
-        if(isset($data["size"])) {
-            $resource->size = $data["size"];
+        if (isset($data['size'])) {
+            $resource->size = $data['size'];
         }
 
-        if(isset($data["number"])) {
-            $resource->number = $data["number"];
+        if (isset($data['number'])) {
+            $resource->number = $data['number'];
         }
 
-        if(isset($data["sort"])) {
-            $resource->sort = $data["sort"];
+        if (isset($data['sort'])) {
+            $resource->sort = $data['sort'];
         }
 
         return $resource;
@@ -92,4 +90,3 @@ class PaginatedResource implements \JsonSerializable
         return $this->totalElements;
     }
 }
-

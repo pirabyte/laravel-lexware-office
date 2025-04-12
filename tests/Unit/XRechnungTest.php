@@ -12,7 +12,7 @@ class XRechnungTest extends TestCase
     {
         $data = [
             'buyerReference' => 'BUYER-REF-123',
-            'vendorNumberAtCustomer' => 'VENDOR-123'
+            'vendorNumberAtCustomer' => 'VENDOR-123',
         ];
 
         $xRechnung = XRechnung::fromArray($data);
@@ -30,10 +30,10 @@ class XRechnungTest extends TestCase
         $serialized = $xRechnung->jsonSerialize();
 
         $this->assertEmpty($serialized);
-        
+
         // Test with only buyerReference
         $data = [
-            'buyerReference' => 'BUYER-REF-456'
+            'buyerReference' => 'BUYER-REF-456',
         ];
 
         $xRechnung = XRechnung::fromArray($data);
@@ -41,10 +41,10 @@ class XRechnungTest extends TestCase
 
         $this->assertEquals($data['buyerReference'], $serialized['buyerReference']);
         $this->assertArrayNotHasKey('vendorNumberAtCustomer', $serialized);
-        
+
         // Test with only vendorNumberAtCustomer
         $data = [
-            'vendorNumberAtCustomer' => 'VENDOR-456'
+            'vendorNumberAtCustomer' => 'VENDOR-456',
         ];
 
         $xRechnung = XRechnung::fromArray($data);
@@ -59,7 +59,7 @@ class XRechnungTest extends TestCase
     {
         $data = [
             'buyerReference' => 'BUYER-REF-789',
-            'vendorNumberAtCustomer' => 'VENDOR-789'
+            'vendorNumberAtCustomer' => 'VENDOR-789',
         ];
 
         $xRechnung = XRechnung::fromArray($data);

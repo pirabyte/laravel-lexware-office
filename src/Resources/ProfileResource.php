@@ -18,12 +18,12 @@ class ProfileResource
     /**
      * Ruft die Profilinformationen ab
      *
-     * @return Profile
      * @throws LexwareOfficeApiException
      */
     public function get(): Profile
     {
-        $response = $this->client->get("profile");
+        $response = $this->client->get('profile');
+
         return Profile::fromArray($response);
     }
 }

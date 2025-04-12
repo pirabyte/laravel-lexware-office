@@ -4,23 +4,17 @@ namespace Pirabyte\LaravelLexwareOffice\Models;
 
 class VoucherAssignment
 {
-
     private string $id;
 
     private string $type;
 
-    /**
-     *
-     */
     public function __construct()
     {
-
     }
 
     /**
      * Konvertiert ein Array in eine VoucherAssignment-Instanz
      *
-     * @param array $data
      * @return static
      */
     public static function fromArray(array $data): self
@@ -37,7 +31,6 @@ class VoucherAssignment
 
         return $assignment;
     }
-
 
     public function getId(): string
     {

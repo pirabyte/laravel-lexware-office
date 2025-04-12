@@ -8,15 +8,13 @@ use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class SetupTest extends TestCase
 {
-    /** @test */
-    public function the_package_can_be_instantiated()
+    public function test_it_can_setup_package()
     {
         $this->assertTrue(class_exists(LexwareOffice::class));
         $this->assertTrue(class_exists(LexwareOfficeServiceProvider::class));
     }
 
-    /** @test */
-    public function the_service_is_registered()
+    public function test_it_can_register_services()
     {
         $instance = $this->app->make('lexware-office');
         $this->assertInstanceOf(LexwareOffice::class, $instance);

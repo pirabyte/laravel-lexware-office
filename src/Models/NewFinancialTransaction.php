@@ -2,24 +2,31 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Models;
 
-use AllowDynamicProperties;
-
 class NewFinancialTransaction implements \JsonSerializable
 {
     private string $valueDate;
+
     private string $bookingDate;
+
     private string $transactiondate;
+
     private string $purpose;
 
     /**
      * @var float Format must be ##.00 (e.g. 119.00). The only supported currency is EUR.
      */
     private float $amount;
+
     private ?string $additionalInfo;
+
     private string $recipientOrSenderName;
+
     private string $recipientOrSenderIban;
+
     private string $recipientOrSenderBic;
+
     private string $financialAccountId;
+
     private string $externalReference;
 
     public function jsonSerialize(): mixed
@@ -53,6 +60,7 @@ class NewFinancialTransaction implements \JsonSerializable
         $transaction->recipientOrSenderBic = $data['recipientOrSenderBic'];
         $transaction->financialAccountId = $data['financialAccountId'];
         $transaction->externalReference = $data['externalReference'];
+
         return $transaction;
     }
 }

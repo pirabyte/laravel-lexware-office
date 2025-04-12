@@ -5,6 +5,7 @@ namespace Pirabyte\LaravelLexwareOffice\Models;
 class XRechnung implements \JsonSerializable
 {
     private ?string $buyerReference = null;
+
     private ?string $vendorNumberAtCustomer = null;
 
     // Getters und Setters
@@ -39,12 +40,12 @@ class XRechnung implements \JsonSerializable
         return $data;
     }
 
-    private function setBuyerReference(string|null $buyerReference): void
+    private function setBuyerReference(?string $buyerReference): void
     {
         $this->buyerReference = $buyerReference;
     }
 
-    private function setVendorNumberAtCustomer(string|null $vendorNumberAtCustomer): void
+    private function setVendorNumberAtCustomer(?string $vendorNumberAtCustomer): void
     {
         $this->vendorNumberAtCustomer = $vendorNumberAtCustomer;
     }

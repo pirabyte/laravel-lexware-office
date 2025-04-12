@@ -5,6 +5,7 @@ namespace Pirabyte\LaravelLexwareOffice\Models;
 class TransactionAssignmentHint implements \JsonSerializable
 {
     private string $voucherId;
+
     private string $externalReference;
 
     public static function fromArray(array $data): self
@@ -26,7 +27,7 @@ class TransactionAssignmentHint implements \JsonSerializable
     {
         return [
             'voucherId' => $this->voucherId,
-            'externalReference' => $this->externalReference
+            'externalReference' => $this->externalReference,
         ];
     }
 

@@ -5,25 +5,35 @@ namespace Pirabyte\LaravelLexwareOffice\Models;
 class VoucherItem implements \JsonSerializable
 {
     private ?string $id = null;
+
     private ?string $type = null;
+
     private ?string $name = null;
+
     private ?string $description = null;
+
     private ?int $quantity = null;
+
     private ?string $unitName = null;
+
     private ?array $unitPrice = null;
+
     private ?array $totalPrice = null;
+
     private ?string $vatRateType = null;
+
     private ?float $vatRatePercent = null;
+
     private ?string $categoryId = null;
+
     private ?float $amount = null;
+
     private ?float $taxAmount = null;
+
     private ?float $taxRatePercent = null;
 
     /**
      * Erstellt ein VoucherItem-Objekt aus einem Array
-     *
-     * @param array $data
-     * @return self
      */
     public static function fromArray(array $data): self
     {
@@ -49,15 +59,15 @@ class VoucherItem implements \JsonSerializable
             $item->setQuantity($data['quantity']);
         }
 
-        if(isset($data['amount'])) {
+        if (isset($data['amount'])) {
             $item->setAmount($data['amount']);
         }
 
-        if(isset($data['taxAmount'])) {
+        if (isset($data['taxAmount'])) {
             $item->setTaxAmount($data['taxAmount']);
         }
 
-        if(isset($data['taxRatePercent'])) {
+        if (isset($data['taxRatePercent'])) {
             $item->setTaxRatePercent($data['taxRatePercent']);
         }
 
@@ -90,9 +100,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Setzt die ID des VoucherItems
-     *
-     * @param string $id
-     * @return void
      */
     public function setId(string $id): void
     {
@@ -101,8 +108,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt die ID des VoucherItems zurück
-     *
-     * @return string|null
      */
     public function getId(): ?string
     {
@@ -112,9 +117,6 @@ class VoucherItem implements \JsonSerializable
     /**
      * Setzt den Typ des VoucherItems
      * (z.B. custom, text, service, material, product)
-     *
-     * @param string|null $type
-     * @return void
      */
     public function setType(?string $type): void
     {
@@ -123,8 +125,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt den Typ des VoucherItems zurück
-     *
-     * @return string|null
      */
     public function getType(): ?string
     {
@@ -133,9 +133,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Setzt den Namen des VoucherItems
-     *
-     * @param string|null $name
-     * @return void
      */
     public function setName(?string $name): void
     {
@@ -144,8 +141,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt den Namen des VoucherItems zurück
-     *
-     * @return string|null
      */
     public function getName(): ?string
     {
@@ -154,9 +149,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Setzt die Beschreibung des VoucherItems
-     *
-     * @param string|null $description
-     * @return void
      */
     public function setDescription(?string $description): void
     {
@@ -165,8 +157,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt die Beschreibung des VoucherItems zurück
-     *
-     * @return string|null
      */
     public function getDescription(): ?string
     {
@@ -175,9 +165,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Setzt die Menge des VoucherItems
-     *
-     * @param int|null $quantity
-     * @return void
      */
     public function setQuantity(?int $quantity): void
     {
@@ -186,8 +173,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt die Menge des VoucherItems zurück
-     *
-     * @return int|null
      */
     public function getQuantity(): ?int
     {
@@ -196,9 +181,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Setzt den Namen der Einheit des VoucherItems
-     *
-     * @param string|null $unitName
-     * @return void
      */
     public function setUnitName(?string $unitName): void
     {
@@ -207,8 +189,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt den Namen der Einheit des VoucherItems zurück
-     *
-     * @return string|null
      */
     public function getUnitName(): ?string
     {
@@ -217,9 +197,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Setzt den Einheitspreis des VoucherItems
-     *
-     * @param array|null $unitPrice
-     * @return void
      */
     public function setUnitPrice(?array $unitPrice): void
     {
@@ -228,8 +205,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt den Einheitspreis des VoucherItems zurück
-     *
-     * @return array|null
      */
     public function getUnitPrice(): ?array
     {
@@ -238,9 +213,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Setzt den Gesamtpreis des VoucherItems
-     *
-     * @param array|null $totalPrice
-     * @return void
      */
     public function setTotalPrice(?array $totalPrice): void
     {
@@ -249,8 +221,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt den Gesamtpreis des VoucherItems zurück
-     *
-     * @return array|null
      */
     public function getTotalPrice(): ?array
     {
@@ -260,9 +230,6 @@ class VoucherItem implements \JsonSerializable
     /**
      * Setzt den Typ des Mehrwertsteuersatzes
      * (z.B. normal, reduced, custom, ...)
-     *
-     * @param string|null $vatRateType
-     * @return void
      */
     public function setVatRateType(?string $vatRateType): void
     {
@@ -271,8 +238,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt den Typ des Mehrwertsteuersatzes zurück
-     *
-     * @return string|null
      */
     public function getVatRateType(): ?string
     {
@@ -281,9 +246,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Setzt den Prozentsatz des Mehrwertsteuersatzes
-     *
-     * @param float|null $vatRatePercent
-     * @return void
      */
     public function setVatRatePercent(?float $vatRatePercent): void
     {
@@ -292,8 +254,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt den Prozentsatz des Mehrwertsteuersatzes zurück
-     *
-     * @return float|null
      */
     public function getVatRatePercent(): ?float
     {
@@ -302,9 +262,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Setzt die Kategorie-ID des VoucherItems
-     *
-     * @param string|null $categoryId
-     * @return void
      */
     public function setCategoryId(?string $categoryId): void
     {
@@ -313,8 +270,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Gibt die Kategorie-ID des VoucherItems zurück
-     *
-     * @return string|null
      */
     public function getCategoryId(): ?string
     {
@@ -323,8 +278,6 @@ class VoucherItem implements \JsonSerializable
 
     /**
      * Konvertiert das Objekt in ein Array für die JSON-Serialisierung
-     *
-     * @return array
      */
     public function jsonSerialize(): array
     {
@@ -374,13 +327,11 @@ class VoucherItem implements \JsonSerializable
             $data['categoryId'] = $this->categoryId;
         }
 
-        if (isset($this->taxAmount))
-        {
+        if (isset($this->taxAmount)) {
             $data['taxAmount'] = $this->taxAmount;
         }
 
-        if (isset($this->amount))
-        {
+        if (isset($this->amount)) {
             $data['amount'] = $this->amount;
         }
 

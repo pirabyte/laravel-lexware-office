@@ -8,52 +8,72 @@ class FinancialTransaction implements \JsonSerializable
 {
     // Read-only properties
     private string $financialTransactionId;
+
     private ?string $transactionDate = null;
+
     private ?float $openAmount = null;
+
     private ?string $amountAsString = null;
+
     private ?string $openAmountAsString = null;
+
     private ?TransactionState $state = null;
+
     private ?int $lockVersion = null;
+
     private ?string $createdDate = null;
+
     private ?string $lastModifiedDate = null;
+
     private ?string $endToEndId = null;
 
     // Immutable properties
     private string $valueDate;
+
     private string $bookingDate;
+
     private ?string $externalReference = null;
 
     // Mutable properties
     private string $purpose;
+
     private float $amount;
+
     private ?float $feeAmount = null;
+
     private ?float $feeTaxRatePercentage = null;
+
     private ?string $feePostingCategoryId = null;
+
     private ?string $additionalInfo = null;
+
     private ?string $recipientOrSenderName = null;
+
     private ?string $recipientOrSenderEmail = null;
+
     private ?string $recipientOrSenderIban = null;
+
     private ?string $recipientOrSenderBic = null;
+
     private string $financialAccountId;
 
     /**
      * Konstruktor mit den minimal erforderlichen Feldern
      *
-     * @param string $financialTransactionId Die eindeutige ID der Transaktion
-     * @param string $valueDate Das Wertstellungsdatum
-     * @param string $bookingDate Das Buchungsdatum
-     * @param string $purpose Der Verwendungszweck
-     * @param float $amount Der Betrag (positiv für Einnahmen, negativ für Ausgaben)
-     * @param string $financialAccountId Die ID des verknüpften Finanzkontos
+     * @param  string  $financialTransactionId  Die eindeutige ID der Transaktion
+     * @param  string  $valueDate  Das Wertstellungsdatum
+     * @param  string  $bookingDate  Das Buchungsdatum
+     * @param  string  $purpose  Der Verwendungszweck
+     * @param  float  $amount  Der Betrag (positiv für Einnahmen, negativ für Ausgaben)
+     * @param  string  $financialAccountId  Die ID des verknüpften Finanzkontos
      */
-    public function __construct() {
-
+    public function __construct()
+    {
     }
 
     /**
      * Konvertiert ein Array in eine FinancialTransaction-Instanz
      *
-     * @param array $data
      * @return static
      */
     public static function fromArray(array $data): self
@@ -97,7 +117,7 @@ class FinancialTransaction implements \JsonSerializable
         }
 
         if (isset($data['openAmount'])) {
-            $transaction->openAmount = (float)$data['openAmount'];
+            $transaction->openAmount = (float) $data['openAmount'];
         }
 
         if (isset($data['amountAsString'])) {
@@ -109,13 +129,13 @@ class FinancialTransaction implements \JsonSerializable
         }
 
         if (isset($data['state'])) {
-            $transaction->state = is_string($data['state']) 
-                ? TransactionState::from($data['state']) 
+            $transaction->state = is_string($data['state'])
+                ? TransactionState::from($data['state'])
                 : $data['state'];
         }
 
         if (isset($data['lockVersion'])) {
-            $transaction->lockVersion = (int)$data['lockVersion'];
+            $transaction->lockVersion = (int) $data['lockVersion'];
         }
 
         if (isset($data['createdDate'])) {
@@ -135,11 +155,11 @@ class FinancialTransaction implements \JsonSerializable
         }
 
         if (isset($data['feeAmount'])) {
-            $transaction->setFeeAmount((float)$data['feeAmount']);
+            $transaction->setFeeAmount((float) $data['feeAmount']);
         }
 
         if (isset($data['feeTaxRatePercentage'])) {
-            $transaction->setFeeTaxRatePercentage((float)$data['feeTaxRatePercentage']);
+            $transaction->setFeeTaxRatePercentage((float) $data['feeTaxRatePercentage']);
         }
 
         if (isset($data['feePostingCategoryId'])) {
@@ -171,8 +191,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Konvertiert die FinancialTransaction-Instanz in ein Array für JSON-Serialisierung
-     *
-     * @return array
      */
     public function jsonSerialize(): array
     {
@@ -269,7 +287,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt die eindeutige ID der Transaktion zurück
-     * @return string
      */
     public function getFinancialTransactionId(): string
     {
@@ -278,7 +295,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt das Transaktionsdatum zurück
-     * @return string|null
      */
     public function getTransactionDate(): ?string
     {
@@ -287,7 +303,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt den offenen Betrag zurück
-     * @return float|null
      */
     public function getOpenAmount(): ?float
     {
@@ -296,7 +311,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt den Betrag als String zurück
-     * @return string|null
      */
     public function getAmountAsString(): ?string
     {
@@ -305,7 +319,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt den offenen Betrag als String zurück
-     * @return string|null
      */
     public function getOpenAmountAsString(): ?string
     {
@@ -314,7 +327,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt den Status der Transaktion zurück
-     * @return TransactionState|null
      */
     public function getState(): ?TransactionState
     {
@@ -323,7 +335,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt die Versionsnummer zurück
-     * @return int|null
      */
     public function getLockVersion(): ?int
     {
@@ -332,7 +343,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt das Erstellungsdatum zurück
-     * @return string|null
      */
     public function getCreatedDate(): ?string
     {
@@ -341,7 +351,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt das Datum der letzten Änderung zurück
-     * @return string|null
      */
     public function getLastModifiedDate(): ?string
     {
@@ -350,7 +359,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt die End-to-End-ID zurück
-     * @return string|null
      */
     public function getEndToEndId(): ?string
     {
@@ -359,7 +367,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt das Wertstellungsdatum zurück
-     * @return string
      */
     public function getValueDate(): string
     {
@@ -368,7 +375,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt das Buchungsdatum zurück
-     * @return string
      */
     public function getBookingDate(): string
     {
@@ -377,7 +383,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt die externe Referenz zurück
-     * @return string|null
      */
     public function getExternalReference(): ?string
     {
@@ -386,7 +391,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt den Verwendungszweck zurück
-     * @return string
      */
     public function getPurpose(): string
     {
@@ -395,7 +399,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt den Betrag zurück
-     * @return float
      */
     public function getAmount(): float
     {
@@ -404,7 +407,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt den Gebührenbetrag zurück
-     * @return float|null
      */
     public function getFeeAmount(): ?float
     {
@@ -413,7 +415,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt den Steuersatz für die Gebühr zurück
-     * @return float|null
      */
     public function getFeeTaxRatePercentage(): ?float
     {
@@ -422,7 +423,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt die Buchungskategorie-ID für die Gebühr zurück
-     * @return string|null
      */
     public function getFeePostingCategoryId(): ?string
     {
@@ -431,7 +431,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt zusätzliche Informationen zurück
-     * @return string|null
      */
     public function getAdditionalInfo(): ?string
     {
@@ -440,7 +439,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt den Namen des Empfängers oder Absenders zurück
-     * @return string|null
      */
     public function getRecipientOrSenderName(): ?string
     {
@@ -449,7 +447,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt die E-Mail-Adresse des Empfängers oder Absenders zurück
-     * @return string|null
      */
     public function getRecipientOrSenderEmail(): ?string
     {
@@ -458,7 +455,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt die IBAN des Empfängers oder Absenders zurück
-     * @return string|null
      */
     public function getRecipientOrSenderIban(): ?string
     {
@@ -467,7 +463,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt die BIC des Empfängers oder Absenders zurück
-     * @return string|null
      */
     public function getRecipientOrSenderBic(): ?string
     {
@@ -476,7 +471,6 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Gibt die Finanzkonto-ID zurück
-     * @return string
      */
     public function getFinancialAccountId(): string
     {
@@ -487,122 +481,133 @@ class FinancialTransaction implements \JsonSerializable
 
     /**
      * Setzt den Verwendungszweck
-     * @param string $purpose
+     *
      * @return $this
      */
     public function setPurpose(string $purpose): self
     {
         $this->purpose = $purpose;
+
         return $this;
     }
 
     /**
      * Setzt den Betrag
-     * @param float $amount
+     *
      * @return $this
      */
     public function setAmount(float $amount): self
     {
         $this->amount = $amount;
+
         return $this;
     }
 
     /**
      * Setzt den Gebührenbetrag
-     * @param float|null $feeAmount
+     *
      * @return $this
      */
     public function setFeeAmount(?float $feeAmount): self
     {
         $this->feeAmount = $feeAmount;
+
         return $this;
     }
 
     /**
      * Setzt den Steuersatz für die Gebühr
-     * @param float|null $feeTaxRatePercentage
+     *
      * @return $this
      */
     public function setFeeTaxRatePercentage(?float $feeTaxRatePercentage): self
     {
         $this->feeTaxRatePercentage = $feeTaxRatePercentage;
+
         return $this;
     }
 
     /**
      * Setzt die Buchungskategorie-ID für die Gebühr
-     * @param string|null $feePostingCategoryId
+     *
      * @return $this
      */
     public function setFeePostingCategoryId(?string $feePostingCategoryId): self
     {
         $this->feePostingCategoryId = $feePostingCategoryId;
+
         return $this;
     }
 
     /**
      * Setzt zusätzliche Informationen
-     * @param string|null $additionalInfo
+     *
      * @return $this
      */
     public function setAdditionalInfo(?string $additionalInfo): self
     {
         $this->additionalInfo = $additionalInfo;
+
         return $this;
     }
 
     /**
      * Setzt den Namen des Empfängers oder Absenders
-     * @param string|null $recipientOrSenderName
+     *
      * @return $this
      */
     public function setRecipientOrSenderName(?string $recipientOrSenderName): self
     {
         $this->recipientOrSenderName = $recipientOrSenderName;
+
         return $this;
     }
 
     /**
      * Setzt die E-Mail-Adresse des Empfängers oder Absenders
-     * @param string|null $recipientOrSenderEmail
+     *
      * @return $this
      */
     public function setRecipientOrSenderEmail(?string $recipientOrSenderEmail): self
     {
         $this->recipientOrSenderEmail = $recipientOrSenderEmail;
+
         return $this;
     }
 
     /**
      * Setzt die IBAN des Empfängers oder Absenders
-     * @param string|null $recipientOrSenderIban
+     *
      * @return $this
      */
     public function setRecipientOrSenderIban(?string $recipientOrSenderIban): self
     {
         $this->recipientOrSenderIban = $recipientOrSenderIban;
+
         return $this;
     }
 
     /**
      * Setzt die BIC des Empfängers oder Absenders
-     * @param string|null $recipientOrSenderBic
+     *
      * @return $this
      */
     public function setRecipientOrSenderBic(?string $recipientOrSenderBic): self
     {
         $this->recipientOrSenderBic = $recipientOrSenderBic;
+
         return $this;
     }
 
     /**
      * Setzt die Finanzkonto-ID
-     * @param string $financialAccountId
+     *
      * @return $this
      */
     public function setFinancialAccountId(string $financialAccountId): self
     {
         $this->financialAccountId = $financialAccountId;
+
         return $this;
     }
 

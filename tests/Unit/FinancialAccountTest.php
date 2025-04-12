@@ -11,7 +11,6 @@ use Pirabyte\LaravelLexwareOffice\Enums\CreditCardProvider;
 use Pirabyte\LaravelLexwareOffice\Enums\FinancialAccountType;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\FinancialAccount;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class FinancialAccountTest extends TestCase
@@ -33,11 +32,11 @@ class FinancialAccountTest extends TestCase
             'balance' => 1000.00,
             'iban' => 'DE12345678901234567890',
             'bic' => 'TESTBICXXXXX',
-            'deactivated' => false
+            'deactivated' => false,
         ];
 
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode($accountData))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($accountData)),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -83,7 +82,7 @@ class FinancialAccountTest extends TestCase
                     'accountSystem' => 'UNKNOWN',
                     'name' => 'Girokonto',
                     'balance' => 1000.00,
-                    'deactivated' => false
+                    'deactivated' => false,
                 ],
                 [
                     'financialAccountId' => '223e4567-e89b-12d3-a456-426614174001',
@@ -93,18 +92,18 @@ class FinancialAccountTest extends TestCase
                     'balance' => 500.00,
                     'provider' => 'VISA',
                     'creditCardNumber' => '************1234',
-                    'deactivated' => false
-                ]
+                    'deactivated' => false,
+                ],
             ],
             'page' => 0,
             'size' => 25,
             'totalElements' => 2,
             'totalPages' => 1,
-            'numberOfElements' => 2
+            'numberOfElements' => 2,
         ];
 
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode($accountsData))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($accountsData)),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -122,7 +121,7 @@ class FinancialAccountTest extends TestCase
         // Finanzkonten filtern
         $accounts = $instance->financialAccounts()->filter([
             'type' => 'GIRO',
-            'deactivated' => false
+            'deactivated' => false,
         ]);
 
         // Assertions
@@ -150,16 +149,16 @@ class FinancialAccountTest extends TestCase
             'size' => 25,
             'totalElements' => 0,
             'totalPages' => 0,
-            'numberOfElements' => 0
+            'numberOfElements' => 0,
         ];
 
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode($accountsData))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($accountsData)),
         ]);
 
         $container = [];
         $history = \GuzzleHttp\Middleware::history($container);
-        
+
         $handlerStack = HandlerStack::create($mock);
         $handlerStack->push($history);
         $client = new Client(['handler' => $handlerStack]);
@@ -178,20 +177,20 @@ class FinancialAccountTest extends TestCase
             'type' => 'GIRO',
             'deactivated' => null,
             'page' => '',
-            'size' => 25
+            'size' => 25,
         ]);
 
         // Assertions - Prüfen des tatsächlich gesendeten Requests
         $this->assertCount(1, $container);
         $request = $container[0]['request'];
         $query = \GuzzleHttp\Psr7\Query::parse($request->getUri()->getQuery());
-        
+
         // Nur nicht-leere Filter sollten gesendet werden
         $this->assertArrayHasKey('type', $query);
         $this->assertArrayHasKey('size', $query);
         $this->assertArrayNotHasKey('deactivated', $query);
         $this->assertArrayNotHasKey('page', $query);
-        
+
         // Werte prüfen
         $this->assertEquals('GIRO', $query['type']);
         $this->assertEquals('25', $query['size']);
@@ -202,7 +201,7 @@ class FinancialAccountTest extends TestCase
     {
         // Mock für erfolgreiche Löschung (204 No Content)
         $mock = new MockHandler([
-            new Response(204)
+            new Response(204),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -230,8 +229,8 @@ class FinancialAccountTest extends TestCase
         // Mock für Fehler 406 (Not Acceptable)
         $mock = new MockHandler([
             new Response(406, [], json_encode([
-                'error' => 'Cannot delete financial account with assigned transactions'
-            ]))
+                'error' => 'Cannot delete financial account with assigned transactions',
+            ])),
         ]);
 
         $handlerStack = HandlerStack::create($mock);

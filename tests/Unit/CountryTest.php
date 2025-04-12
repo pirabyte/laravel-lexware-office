@@ -8,7 +8,6 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Pirabyte\LaravelLexwareOffice\Enums\TaxClassification;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\Country;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class CountryTest extends TestCase
@@ -22,24 +21,24 @@ class CountryTest extends TestCase
                 'countryCode' => 'DE',
                 'countryNameDE' => 'Deutschland',
                 'countryNameEN' => 'Germany',
-                'taxClassification' => 'de'
+                'taxClassification' => 'de',
             ],
             [
                 'countryCode' => 'FR',
                 'countryNameDE' => 'Frankreich',
                 'countryNameEN' => 'France',
-                'taxClassification' => 'intraCommunity'
+                'taxClassification' => 'intraCommunity',
             ],
             [
                 'countryCode' => 'US',
                 'countryNameDE' => 'Vereinigte Staaten von Amerika',
                 'countryNameEN' => 'United States',
-                'taxClassification' => 'thirdPartyCountry'
-            ]
+                'taxClassification' => 'thirdPartyCountry',
+            ],
         ];
 
         $mock = new MockHandler([
-            new Response(200, ['Content-Type' => 'application/json'], json_encode($countriesData))
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($countriesData)),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -59,19 +58,19 @@ class CountryTest extends TestCase
 
         // Assertions
         $this->assertCount(3, $countries);
-        
+
         // Deutschland prüfen
         $this->assertEquals('DE', $countries[0]->getCountryCode());
         $this->assertEquals('Deutschland', $countries[0]->getCountryNameDE());
         $this->assertEquals('Germany', $countries[0]->getCountryNameEN());
         $this->assertEquals(TaxClassification::GERMANY, $countries[0]->getTaxClassification());
-        
+
         // Frankreich prüfen
         $this->assertEquals('FR', $countries[1]->getCountryCode());
         $this->assertEquals('Frankreich', $countries[1]->getCountryNameDE());
         $this->assertEquals('France', $countries[1]->getCountryNameEN());
         $this->assertEquals(TaxClassification::INTRA_COMMUNITY, $countries[1]->getTaxClassification());
-        
+
         // USA prüfen
         $this->assertEquals('US', $countries[2]->getCountryCode());
         $this->assertEquals('Vereinigte Staaten von Amerika', $countries[2]->getCountryNameDE());

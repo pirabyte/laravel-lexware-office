@@ -2,7 +2,7 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Enums;
 
-enum TaxClassification : string
+enum TaxClassification: string
 {
     case GERMANY = 'de';
     case INTRA_COMMUNITY = 'intraCommunity';

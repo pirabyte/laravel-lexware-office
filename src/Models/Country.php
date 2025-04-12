@@ -7,17 +7,15 @@ use Pirabyte\LaravelLexwareOffice\Enums\TaxClassification;
 class Country implements \JsonSerializable
 {
     private string $countryCode;
+
     private string $countryNameEN;
+
     private string $countryNameDE;
+
     private TaxClassification $taxClassification;
 
     /**
      * Konstruktor mit erforderlichen Feldern
-     * 
-     * @param string $countryCode
-     * @param string $countryNameEN
-     * @param string $countryNameDE
-     * @param TaxClassification $taxClassification
      */
     public function __construct(
         string $countryCode,
@@ -34,15 +32,14 @@ class Country implements \JsonSerializable
     /**
      * Konvertiert ein Array in eine Country-Instanz
      *
-     * @param array $data
      * @return static
      */
     public static function fromArray(array $data): self
     {
         // Enum von String konvertieren falls nötig
-        $taxClassification = isset($data['taxClassification']) 
-            ? (is_string($data['taxClassification']) 
-                ? TaxClassification::from($data['taxClassification']) 
+        $taxClassification = isset($data['taxClassification'])
+            ? (is_string($data['taxClassification'])
+                ? TaxClassification::from($data['taxClassification'])
                 : $data['taxClassification'])
             : TaxClassification::GERMANY; // Standardwert falls nicht gesetzt
 
@@ -56,8 +53,6 @@ class Country implements \JsonSerializable
 
     /**
      * Konvertiert die Country-Instanz in ein Array für JSON-Serialisierung
-     *
-     * @return array
      */
     public function jsonSerialize(): array
     {
@@ -71,8 +66,6 @@ class Country implements \JsonSerializable
 
     /**
      * Gibt den Ländercode zurück
-     *
-     * @return string
      */
     public function getCountryCode(): string
     {
@@ -81,8 +74,6 @@ class Country implements \JsonSerializable
 
     /**
      * Gibt den englischen Ländernamen zurück
-     *
-     * @return string
      */
     public function getCountryNameEN(): string
     {
@@ -91,8 +82,6 @@ class Country implements \JsonSerializable
 
     /**
      * Gibt den deutschen Ländernamen zurück
-     *
-     * @return string
      */
     public function getCountryNameDE(): string
     {
@@ -101,8 +90,6 @@ class Country implements \JsonSerializable
 
     /**
      * Gibt die Steuerklassifizierung zurück
-     *
-     * @return TaxClassification
      */
     public function getTaxClassification(): TaxClassification
     {

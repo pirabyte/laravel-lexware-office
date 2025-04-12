@@ -7,6 +7,7 @@ use Exception;
 class LexwareOfficeApiException extends Exception
 {
     protected $statusCode;
+
     protected $responseData;
 
     public function __construct($message, $statusCode = 500, $previous = null)

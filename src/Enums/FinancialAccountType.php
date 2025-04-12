@@ -2,7 +2,7 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Enums;
 
-enum FinancialAccountType : string
+enum FinancialAccountType: string
 {
     case GIRO = 'GIRO';
     case SAVINGS = 'SAVINGS';

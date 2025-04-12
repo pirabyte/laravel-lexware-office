@@ -10,11 +10,17 @@ class FinancialAccount implements \JsonSerializable
 {
     // Read-only properties
     private string $financialAccountId;
+
     private ?string $createdDate = null;
+
     private ?string $lastModifiedDate = null;
+
     private ?int $lockVersion = null;
+
     private bool $deactivated = false;
+
     private ?object $state = null;
+
     private ?string $initialSyncDate = null;
 
     // Immutable property
@@ -22,23 +28,32 @@ class FinancialAccount implements \JsonSerializable
 
     // Mutable properties
     private FinancialAccountType $type;
+
     private string $name;
+
     private ?string $bankName = null;
+
     private ?string $accountHolder = null;
+
     private ?float $balance = null;
+
     private ?string $externalReference = null;
+
     private ?string $iban = null;
+
     private ?string $bic = null;
+
     private ?CreditCardProvider $provider = null;
+
     private ?string $creditCardNumber = null;
 
     /**
      * Konstruktor mit minimal erforderlichen Feldern
      *
-     * @param string $financialAccountId Unique ID des Finanzkontos
-     * @param FinancialAccountType $type Typ des Finanzkontos
-     * @param AccountSystem $accountSystem Beschreibung des Finanzkontos
-     * @param string $name Individueller Name des Finanzkontos
+     * @param  string  $financialAccountId  Unique ID des Finanzkontos
+     * @param  FinancialAccountType  $type  Typ des Finanzkontos
+     * @param  AccountSystem  $accountSystem  Beschreibung des Finanzkontos
+     * @param  string  $name  Individueller Name des Finanzkontos
      */
     public function __construct(
         string $financialAccountId,
@@ -55,23 +70,22 @@ class FinancialAccount implements \JsonSerializable
     /**
      * Konvertiert ein Array in eine FinancialAccount-Instanz
      *
-     * @param array $data
      * @return static
      */
     public static function fromArray(array $data): self
     {
         // Erforderliche Felder validieren
-        if (!isset($data['financialAccountId']) || !isset($data['type']) || !isset($data['accountSystem']) || !isset($data['name'])) {
+        if (! isset($data['financialAccountId']) || ! isset($data['type']) || ! isset($data['accountSystem']) || ! isset($data['name'])) {
             throw new \InvalidArgumentException('Fehlende erforderliche Felder für FinancialAccount');
         }
 
         // Type und AccountSystem als Enums verarbeiten
-        $type = is_string($data['type']) 
-            ? FinancialAccountType::from($data['type']) 
+        $type = is_string($data['type'])
+            ? FinancialAccountType::from($data['type'])
             : $data['type'];
-            
-        $accountSystem = is_string($data['accountSystem']) 
-            ? AccountSystem::from($data['accountSystem']) 
+
+        $accountSystem = is_string($data['accountSystem'])
+            ? AccountSystem::from($data['accountSystem'])
             : $data['accountSystem'];
 
         // Objekt erstellen
@@ -127,8 +141,8 @@ class FinancialAccount implements \JsonSerializable
         }
 
         if (isset($data['provider'])) {
-            $provider = is_string($data['provider']) 
-                ? CreditCardProvider::from($data['provider']) 
+            $provider = is_string($data['provider'])
+                ? CreditCardProvider::from($data['provider'])
                 : $data['provider'];
             $account->setProvider($provider);
         }
@@ -142,8 +156,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Konvertiert die FinancialAccount-Instanz in ein Array für JSON-Serialisierung
-     *
-     * @return array
      */
     public function jsonSerialize(): array
     {
@@ -218,8 +230,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt die eindeutige ID des Finanzkontos zurück
-     *
-     * @return string
      */
     public function getFinancialAccountId(): string
     {
@@ -228,8 +238,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt das Erstellungsdatum zurück
-     *
-     * @return string|null
      */
     public function getCreatedDate(): ?string
     {
@@ -238,8 +246,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt das Datum der letzten Änderung zurück
-     *
-     * @return string|null
      */
     public function getLastModifiedDate(): ?string
     {
@@ -248,8 +254,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt die Versionsnummer zurück
-     *
-     * @return int|null
      */
     public function getLockVersion(): ?int
     {
@@ -258,8 +262,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt zurück, ob das Konto deaktiviert ist
-     *
-     * @return bool
      */
     public function isDeactivated(): bool
     {
@@ -268,8 +270,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt den Status zurück
-     *
-     * @return object|null
      */
     public function getState(): ?object
     {
@@ -278,8 +278,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt das Datum der ersten Synchronisation zurück
-     *
-     * @return string|null
      */
     public function getInitialSyncDate(): ?string
     {
@@ -288,8 +286,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt den Kontentyp zurück
-     *
-     * @return FinancialAccountType
      */
     public function getType(): FinancialAccountType
     {
@@ -298,8 +294,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt das Kontensystem zurück
-     *
-     * @return AccountSystem
      */
     public function getAccountSystem(): AccountSystem
     {
@@ -308,8 +302,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt den Namen des Kontos zurück
-     *
-     * @return string
      */
     public function getName(): string
     {
@@ -318,8 +310,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt den Namen der Bank zurück
-     *
-     * @return string|null
      */
     public function getBankName(): ?string
     {
@@ -328,8 +318,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt den Kontoinhaber zurück
-     *
-     * @return string|null
      */
     public function getAccountHolder(): ?string
     {
@@ -338,8 +326,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt den Kontostand zurück
-     *
-     * @return float|null
      */
     public function getBalance(): ?float
     {
@@ -348,8 +334,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt die externe Referenz zurück
-     *
-     * @return string|null
      */
     public function getExternalReference(): ?string
     {
@@ -358,8 +342,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt die IBAN zurück
-     *
-     * @return string|null
      */
     public function getIban(): ?string
     {
@@ -368,8 +350,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt die BIC zurück
-     *
-     * @return string|null
      */
     public function getBic(): ?string
     {
@@ -378,8 +358,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt den Kreditkartenanbieter zurück
-     *
-     * @return CreditCardProvider|null
      */
     public function getProvider(): ?CreditCardProvider
     {
@@ -388,8 +366,6 @@ class FinancialAccount implements \JsonSerializable
 
     /**
      * Gibt die Kreditkartennummer zurück
-     *
-     * @return string|null
      */
     public function getCreditCardNumber(): ?string
     {
@@ -401,120 +377,120 @@ class FinancialAccount implements \JsonSerializable
     /**
      * Setzt den Typ des Finanzkontos
      *
-     * @param FinancialAccountType $type
      * @return $this
      */
     public function setType(FinancialAccountType $type): self
     {
         $this->type = $type;
+
         return $this;
     }
 
     /**
      * Setzt den Namen des Finanzkontos
      *
-     * @param string $name
      * @return $this
      */
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
     /**
      * Setzt den Namen der Bank
      *
-     * @param string|null $bankName
      * @return $this
      */
     public function setBankName(?string $bankName): self
     {
         $this->bankName = $bankName;
+
         return $this;
     }
 
     /**
      * Setzt den Kontoinhaber
      *
-     * @param string|null $accountHolder
      * @return $this
      */
     public function setAccountHolder(?string $accountHolder): self
     {
         $this->accountHolder = $accountHolder;
+
         return $this;
     }
 
     /**
      * Setzt den Kontostand
      *
-     * @param float|null $balance
      * @return $this
      */
     public function setBalance(?float $balance): self
     {
         $this->balance = $balance;
+
         return $this;
     }
 
     /**
      * Setzt die externe Referenz
      *
-     * @param string|null $externalReference
      * @return $this
      */
     public function setExternalReference(?string $externalReference): self
     {
         $this->externalReference = $externalReference;
+
         return $this;
     }
 
     /**
      * Setzt die IBAN
      *
-     * @param string|null $iban
      * @return $this
      */
     public function setIban(?string $iban): self
     {
         $this->iban = $iban;
+
         return $this;
     }
 
     /**
      * Setzt die BIC
      *
-     * @param string|null $bic
      * @return $this
      */
     public function setBic(?string $bic): self
     {
         $this->bic = $bic;
+
         return $this;
     }
 
     /**
      * Setzt den Kreditkartenanbieter
      *
-     * @param CreditCardProvider|null $provider
      * @return $this
      */
     public function setProvider(?CreditCardProvider $provider): self
     {
         $this->provider = $provider;
+
         return $this;
     }
 
     /**
      * Setzt die Kreditkartennummer
      *
-     * @param string|null $creditCardNumber
      * @return $this
      */
     public function setCreditCardNumber(?string $creditCardNumber): self
     {
         $this->creditCardNumber = $creditCardNumber;
+
         return $this;
     }
 }

@@ -1,0 +1,24 @@
+{
+  "name": "laravel-lexware-office",
+  "version": "1.0.0",
+  "description": "![Pirabyte Lexware Office Hero Image](/public/img/og-image.png)",
+  "homepage": "https://github.com/pirabyte/laravel-lexware-office#readme",
+  "bugs": {
+    "url": "https://github.com/pirabyte/laravel-lexware-office/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pirabyte/laravel-lexware-office.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

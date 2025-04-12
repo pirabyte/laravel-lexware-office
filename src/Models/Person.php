@@ -5,7 +5,9 @@ namespace Pirabyte\LaravelLexwareOffice\Models;
 class Person
 {
     private ?string $salutation = null;
+
     private ?string $firstName = null;
+
     private ?string $lastName = null;
 
     public function getSalutation(): ?string
@@ -16,6 +18,7 @@ class Person
     public function setSalutation(?string $salutation): self
     {
         $this->salutation = $salutation;
+
         return $this;
     }
 
@@ -27,6 +30,7 @@ class Person
     public function setFirstName(?string $firstName): self
     {
         $this->firstName = $firstName;
+
         return $this;
     }
 
@@ -38,6 +42,7 @@ class Person
     public function setLastName(?string $lastName): self
     {
         $this->lastName = $lastName;
+
         return $this;
     }
 

@@ -24,11 +24,11 @@ class TransactionAssignmentHintTest extends TestCase
         // Mock Response
         $mockResponse = [
             'voucherId' => 'ee143016-f177-4da7-a3b7-513a525a25a4',
-            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407'
+            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407',
         ];
 
         $mock = new MockHandler([
-            new Response(201, ['Content-Type' => 'application/json'], json_encode($mockResponse))
+            new Response(201, ['Content-Type' => 'application/json'], json_encode($mockResponse)),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -45,7 +45,7 @@ class TransactionAssignmentHintTest extends TestCase
         // Create Hint
         $hint = TransactionAssignmentHint::fromArray([
             'voucherId' => 'ee143016-f177-4da7-a3b7-513a525a25a4',
-            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407'
+            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407',
         ]);
 
         // Test Create
@@ -62,7 +62,7 @@ class TransactionAssignmentHintTest extends TestCase
     {
         $data = [
             'voucherId' => 'ee143016-f177-4da7-a3b7-513a525a25a4',
-            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407'
+            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407',
         ];
 
         $hint = TransactionAssignmentHint::fromArray($data);
@@ -72,7 +72,7 @@ class TransactionAssignmentHintTest extends TestCase
         $this->assertEquals($data['externalReference'], $serialized['externalReference']);
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         Mockery::close();
         parent::tearDown();

@@ -3,11 +3,10 @@
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\RequestException;
-use Psr\Http\Message\StreamInterface;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Voucher;
+use Psr\Http\Message\StreamInterface;
 
 class VoucherResource
 {
@@ -21,8 +20,6 @@ class VoucherResource
     /**
      * Erstellt einen neuen Beleg
      *
-     * @param Voucher $voucher
-     * @return Voucher
      * @throws LexwareOfficeApiException
      * @throws GuzzleException
      */
@@ -43,27 +40,21 @@ class VoucherResource
         return Voucher::fromArray(array_merge($data, $response));
     }
 
-
-
     /**
      * Ruft einen Beleg anhand der ID ab
      *
-     * @param string $id
-     * @return Voucher
      * @throws LexwareOfficeApiException
      */
     public function get(string $id): Voucher
     {
         $response = $this->client->get("vouchers/{$id}");
+
         return Voucher::fromArray($response);
     }
 
     /**
      * Aktualisiert einen bestehenden Beleg
      *
-     * @param string $id
-     * @param Voucher $voucher
-     * @return Voucher
      * @throws LexwareOfficeApiException
      * @throws GuzzleException
      */
@@ -87,17 +78,18 @@ class VoucherResource
     /**
      * Belege nach verschiedenen Kriterien filtern
      *
-     * @param string $voucherNumber Filterung nach Belegnummer
+     * @param  string  $voucherNumber  Filterung nach Belegnummer
      * @return array Liste der gefilterten Belege als Voucher-Objekte und Paginierungsinformationen
+     *
      * @throws LexwareOfficeApiException
      */
     public function filter(string $voucherNumber): array
     {
         $query = [];
 
-        if(!empty($voucherNumber)) {
+        if (! empty($voucherNumber)) {
             $query = [
-                'voucherNumber' => $voucherNumber
+                'voucherNumber' => $voucherNumber,
             ];
         }
 
@@ -110,16 +102,17 @@ class VoucherResource
     /**
      * Alle Belege abrufen mit Paginierung
      *
-     * @param int $page Seitennummer (beginnend bei 0)
-     * @param int $size Anzahl der Ergebnisse pro Seite (max. 100)
+     * @param  int  $page  Seitennummer (beginnend bei 0)
+     * @param  int  $size  Anzahl der Ergebnisse pro Seite (max. 100)
      * @return array Liste aller Belege als Voucher-Objekte und Paginierungsinformationen
+     *
      * @throws LexwareOfficeApiException
      */
     public function all(int $page = 0, int $size = 25): array
     {
         $response = $this->client->get('vouchers', [
             'page' => $page,
-            'size' => min($size, 100) // Maximal 100 Einträge pro Seite
+            'size' => min($size, 100), // Maximal 100 Einträge pro Seite
         ]);
 
         return $this->processVouchersResponse($response);
@@ -128,7 +121,7 @@ class VoucherResource
     /**
      * Verarbeitet die Antwort der Belege-API und erstellt daraus ein strukturiertes Array
      *
-     * @param array $response API-Antwort
+     * @param  array  $response  API-Antwort
      * @return array Strukturiertes Array mit Belegen und Paginierungsinformationen
      */
     protected function processVouchersResponse(array $response): array
@@ -141,7 +134,7 @@ class VoucherResource
                 'totalPages' => $response['totalPages'] ?? 0,
                 'totalElements' => $response['totalElements'] ?? 0,
                 'numberOfElements' => $response['numberOfElements'] ?? 0,
-            ]
+            ],
         ];
 
         if (isset($response['content']) && is_array($response['content'])) {
@@ -156,8 +149,9 @@ class VoucherResource
     /**
      * Generiert ein Dokument (z.B. PDF) für einen Beleg
      *
-     * @param string $id Beleg-ID
+     * @param  string  $id  Beleg-ID
      * @return array Informationen zum generierten Dokument (fileId, fileName, mimeType, etc.)
+     *
      * @throws LexwareOfficeApiException|GuzzleException
      */
     public function document(string $id): array
@@ -168,9 +162,10 @@ class VoucherResource
     /**
      * Lädt ein Dokument für einen Beleg herunter
      *
-     * @param string $voucherId Beleg-ID
-     * @param string $fileId Datei-ID
+     * @param  string  $voucherId  Beleg-ID
+     * @param  string  $fileId  Datei-ID
      * @return array Dateiinhalt und Metadaten
+     *
      * @throws LexwareOfficeApiException
      */
     public function downloadDocument(string $voucherId, string $fileId): array
@@ -181,11 +176,12 @@ class VoucherResource
     /**
      * Fügt eine Datei an einen Beleg an
      *
-     * @param string $id Beleg-ID
-     * @param StreamInterface $stream Datei-Inhalt als Stream
-     * @param string $filename Optional: Name der Datei (Standard: voucher.pdf)
-     * @param string $type Optional: Typ der Datei (Standard: voucher)
+     * @param  string  $id  Beleg-ID
+     * @param  StreamInterface  $stream  Datei-Inhalt als Stream
+     * @param  string  $filename  Optional: Name der Datei (Standard: voucher.pdf)
+     * @param  string  $type  Optional: Typ der Datei (Standard: voucher)
      * @return array Informationen zur angehängten Datei
+     *
      * @throws LexwareOfficeApiException
      * @throws GuzzleException
      */
@@ -198,15 +194,16 @@ class VoucherResource
                 [
                     'name' => 'file',
                     'contents' => $stream,
-                    'filename' => $filename
+                    'filename' => $filename,
                 ],
                 [
                     'name' => 'type',
-                    'contents' => $type
-                ]
-            ]
+                    'contents' => $type,
+                ],
+            ],
         ];
         $response = $this->client->client()->request('POST', $endpoint, $options);
+
         return json_decode($response->getBody()->getContents(), true);
     }
 }

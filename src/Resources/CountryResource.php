@@ -19,18 +19,20 @@ class CountryResource
      * Ruft alle verfügbaren Länder ab
      *
      * @return array Eine Liste aller Länder
+     *
      * @throws LexwareOfficeApiException
      */
     public function all(): array
     {
         $response = $this->client->get('countries');
+
         return $this->processCountriesResponse($response);
     }
 
     /**
      * Verarbeitet die Antwort der Countries-API und erstellt daraus ein strukturiertes Array
      *
-     * @param array $response API-Antwort
+     * @param  array  $response  API-Antwort
      * @return array Ein Array mit Country-Objekten
      */
     protected function processCountriesResponse(array $response): array

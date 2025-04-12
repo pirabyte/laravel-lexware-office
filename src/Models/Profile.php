@@ -26,40 +26,40 @@ class Profile
     {
         $profile = new self();
 
-        if(isset($data["organizationId"])) {
-            $profile->organizationId = $data["organizationId"];
+        if (isset($data['organizationId'])) {
+            $profile->organizationId = $data['organizationId'];
         }
 
-        if(isset($data["companyName"])) {
-            $profile->companyName = $data["companyName"];
+        if (isset($data['companyName'])) {
+            $profile->companyName = $data['companyName'];
         }
 
-        if(isset($data["created"])) {
-            $profile->created = $data["created"];
+        if (isset($data['created'])) {
+            $profile->created = $data['created'];
         }
 
-        if(isset($data["connectionId"])) {
-            $profile->connectionId = $data["connectionId"];
+        if (isset($data['connectionId'])) {
+            $profile->connectionId = $data['connectionId'];
         }
 
-        if(isset($data["features"])) {
-            $profile->features = $data["features"];
+        if (isset($data['features'])) {
+            $profile->features = $data['features'];
         }
 
-        if(isset($data["businessFeatures"])) {
-            $profile->businessFeatures = $data["businessFeatures"];
+        if (isset($data['businessFeatures'])) {
+            $profile->businessFeatures = $data['businessFeatures'];
         }
 
-        if(isset($data["subscriptionStatus"])) {
-            $profile->subscriptionStatus = $data["subscriptionStatus"];
+        if (isset($data['subscriptionStatus'])) {
+            $profile->subscriptionStatus = $data['subscriptionStatus'];
         }
 
-        if(isset($data["taxType"])) {
-            $profile->taxType = $data["taxType"];
+        if (isset($data['taxType'])) {
+            $profile->taxType = $data['taxType'];
         }
 
-        if(isset($data["smallBusiness"])) {
-            $profile->smallBusiness = $data["smallBusiness"];
+        if (isset($data['smallBusiness'])) {
+            $profile->smallBusiness = $data['smallBusiness'];
         }
 
         return $profile;

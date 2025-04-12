@@ -16,7 +16,8 @@
         "orchestra/testbench": "^8.0|^9.0",
         "phpstan/phpstan": "^1.10",
         "friendsofphp/php-cs-fixer": "^3.14",
-        "mockery/mockery": "^1.5"
+        "mockery/mockery": "^1.5",
+        "laravel/pint": "^1.22"
     },
     "autoload": {
         "psr-4": {
@@ -40,9 +41,10 @@
     },
     "scripts": {
         "test": "vendor/bin/phpunit --testdox",
-        "cs": "vendor/bin/php-cs-fixer fix --dry-run --diff",
-        "cs-fix": "vendor/bin/php-cs-fixer fix",
-        "phpstan": "vendor/bin/phpstan analyse"
+        "cs": "vendor/bin/php-cs-fixer fix --dry-run --diff src",
+        "cs-fix": "vendor/bin/php-cs-fixer fix src",
+        "phpstan": "vendor/bin/phpstan analyse src",
+        "format": "vendor/bin/pint"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

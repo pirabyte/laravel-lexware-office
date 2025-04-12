@@ -1,0 +1,30 @@
+
+{
+  "statusCode": 401,
+  "reasonPhrase": "Unauthorized",
+  "headers": {
+    "Date": [
+      "Sat, 12 Apr 2025 17:01:16 GMT"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Content-Length": [
+      "27"
+    ],
+    "Connection": [
+      "keep-alive"
+    ],
+    "x-amzn-RequestId": [
+      "dae54d7d-e8dc-45d7-8d1c-c6cea1cdb9d8"
+    ],
+    "x-amzn-ErrorType": [
+      "UnauthorizedException"
+    ],
+    "x-amz-apigw-id": [
+      "I61ehHBtliAEIOg="
+    ]
+  },
+  "protocolVersion": "1.1",
+  "body": "{\"message\":\"Unauthorized\"}"
+}

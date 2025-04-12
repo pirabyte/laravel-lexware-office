@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUnhandledExceptionInspection */
+<?php
+
+/** @noinspection PhpUnhandledExceptionInspection */
 
 namespace Pirabyte\LaravelLexwareOffice\Tests\Feature;
 
@@ -27,20 +29,20 @@ class ContactApiTest extends TestCase
                 'resourceUri' => 'https://api.lexoffice.io/v1/contacts/123e4567-e89b-12d3-a456-426614174000',
                 'createdDate' => '2023-06-29T15:15:09.447+02:00',
                 'updatedDate' => '2023-06-29T15:15:09.447+02:00',
-                'version' => 1
+                'version' => 1,
             ])),
             // Response für get (innerhalb von create)
             new Response(200, ['Content-Type' => 'application/json'], json_encode([
                 'id' => '123e4567-e89b-12d3-a456-426614174000',
                 'version' => 1,
                 'roles' => [
-                    'customer' => ['number' => 'K-12345']
+                    'customer' => ['number' => 'K-12345'],
                 ],
                 'person' => [
                     'salutation' => 'Herr',
                     'firstName' => 'Max',
-                    'lastName' => 'Mustermann'
-                ]
+                    'lastName' => 'Mustermann',
+                ],
             ])),
         ];
 
@@ -59,7 +61,7 @@ class ContactApiTest extends TestCase
         // Kontakt erstellen
         $contact = Contact::createPerson('Max', 'Mustermann', 'Herr');
         $contact->setAsCustomer(['number' => 'K-12345']);
-        
+
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
 
@@ -70,7 +72,7 @@ class ContactApiTest extends TestCase
         $this->assertEquals('Mustermann', $savedContact->getPerson()->getLastName());
         $this->assertEquals('K-12345', $savedContact->getRoles()['customer']['number']);
     }
-    
+
     /** @test */
     public function it_can_create_a_person_contact_with_complete_data(): void
     {
@@ -82,7 +84,7 @@ class ContactApiTest extends TestCase
                 'resourceUri' => 'https://api-sandbox.grld.eu/v1/contacts/66196c43-baf3-4335-bfee-d610367059db',
                 'createdDate' => '2023-06-29T15:15:09.447+02:00',
                 'updatedDate' => '2023-06-29T15:15:09.447+02:00',
-                'version' => 1
+                'version' => 1,
             ])),
             // Response für get (innerhalb von create)
             new Response(200, ['Content-Type' => 'application/json'], json_encode([
@@ -92,7 +94,7 @@ class ContactApiTest extends TestCase
                 'person' => [
                     'salutation' => 'Frau',
                     'firstName' => 'Inge',
-                    'lastName' => 'Musterfrau'
+                    'lastName' => 'Musterfrau',
                 ],
                 'note' => 'Notizen',
                 'addresses' => [
@@ -101,16 +103,16 @@ class ContactApiTest extends TestCase
                             'street' => 'Musterstraße 1',
                             'zip' => '12345',
                             'city' => 'Musterstadt',
-                            'countryCode' => 'DE'
-                        ]
-                    ]]
+                            'countryCode' => 'DE',
+                        ],
+                    ]],
                 ],
                 'emailAddresses' => [
-                    ['business' => ['inge@example.com']]
+                    ['business' => ['inge@example.com']],
                 ],
                 'phoneNumbers' => [
-                    ['business' => ['+49123456789']]
-                ]
+                    ['business' => ['+49123456789']],
+                ],
             ])),
         ];
 
@@ -121,7 +123,7 @@ class ContactApiTest extends TestCase
         // Client mit Mock-Handler ersetzen
         $instance = app('lexware-office');
         $instance->setClient($client);
-        
+
         // Kontakt mit allen Daten erstellen
         $contact = Contact::createPerson('Inge', 'Musterfrau', 'Frau');
         $contact->setAsCustomer()
@@ -134,17 +136,17 @@ class ContactApiTest extends TestCase
             )
             ->addEmailAddress('inge@example.com', 'business')
             ->addPhoneNumber('+49123456789', 'business');
-        
+
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
-        
+
         $this->assertEquals('66196c43-baf3-4335-bfee-d610367059db', $savedContact->getId());
         $this->assertEquals('Frau', $savedContact->getPerson()->getSalutation());
         $this->assertEquals('Inge', $savedContact->getPerson()->getFirstName());
         $this->assertEquals('Musterfrau', $savedContact->getPerson()->getLastName());
         $this->assertEquals('Notizen', $savedContact->getNote());
     }
-    
+
     /** @test */
     public function it_can_handle_multiple_email_and_phone_types(): void
     {
@@ -156,7 +158,7 @@ class ContactApiTest extends TestCase
                 'resourceUri' => 'https://api-sandbox.grld.eu/v1/contacts/12345678-abcd-1234-efgh-123456789012',
                 'createdDate' => '2023-06-29T15:15:09.447+02:00',
                 'updatedDate' => '2023-06-29T15:15:09.447+02:00',
-                'version' => 1
+                'version' => 1,
             ])),
             // Response für get (innerhalb von create)
             new Response(200, ['Content-Type' => 'application/json'], json_encode([
@@ -166,18 +168,18 @@ class ContactApiTest extends TestCase
                 'person' => [
                     'salutation' => 'Herr',
                     'firstName' => 'Hans',
-                    'lastName' => 'Schmidt'
+                    'lastName' => 'Schmidt',
                 ],
                 'emailAddresses' => [
                     ['business' => ['hans.business@example.com']],
                     ['private' => ['hans.private@example.com']],
-                    ['office' => ['hans.office@example.com']]
+                    ['office' => ['hans.office@example.com']],
                 ],
                 'phoneNumbers' => [
                     ['business' => ['+4912345678901']],
                     ['mobile' => ['+4915123456789']],
-                    ['fax' => ['+49123456789999']]
-                ]
+                    ['fax' => ['+49123456789999']],
+                ],
             ])),
         ];
 
@@ -188,7 +190,7 @@ class ContactApiTest extends TestCase
         // Client mit Mock-Handler ersetzen
         $instance = app('lexware-office');
         $instance->setClient($client);
-        
+
         // Kontakt mit verschiedenen E-Mail und Telefonnummern erstellen
         $contact = Contact::createPerson('Hans', 'Schmidt', 'Herr');
         $contact->setAsCustomer()
@@ -198,33 +200,33 @@ class ContactApiTest extends TestCase
             ->addPhoneNumber('+4912345678901', 'business')
             ->addPhoneNumber('+4915123456789', 'mobile')
             ->addPhoneNumber('+49123456789999', 'fax');
-        
+
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
-        
+
         $this->assertEquals('12345678-abcd-1234-efgh-123456789012', $savedContact->getId());
-        
+
         // Test email addresses using the collection
         $emailAddresses = $savedContact->getEmailAddresses();
         $this->assertCount(3, $emailAddresses);
-        
+
         // Test individual email getters
         $this->assertEquals('hans.business@example.com', $savedContact->getEmailAddress('business'));
         $this->assertEquals('hans.private@example.com', $savedContact->getEmailAddress('private'));
         $this->assertEquals('hans.office@example.com', $savedContact->getEmailAddress('office'));
         $this->assertNull($savedContact->getEmailAddress('other'));
-        
+
         // Test phone numbers using the collection
         $phoneNumbers = $savedContact->getPhoneNumbers();
         $this->assertCount(3, $phoneNumbers);
-        
+
         // Test individual phone getters
         $this->assertEquals('+4912345678901', $savedContact->getPhoneNumber('business'));
         $this->assertEquals('+4915123456789', $savedContact->getPhoneNumber('mobile'));
         $this->assertEquals('+49123456789999', $savedContact->getPhoneNumber('fax'));
         $this->assertNull($savedContact->getPhoneNumber('private'));
     }
-    
+
     /** @test */
     public function it_can_handle_multiple_address_types(): void
     {
@@ -236,7 +238,7 @@ class ContactApiTest extends TestCase
                 'resourceUri' => 'https://api-sandbox.grld.eu/v1/contacts/44444444-bbbb-4444-cccc-444444444444',
                 'createdDate' => '2023-06-29T15:15:09.447+02:00',
                 'updatedDate' => '2023-06-29T15:15:09.447+02:00',
-                'version' => 1
+                'version' => 1,
             ])),
             // Response für get (innerhalb von create)
             new Response(200, ['Content-Type' => 'application/json'], json_encode([
@@ -246,7 +248,7 @@ class ContactApiTest extends TestCase
                 'person' => [
                     'salutation' => 'Herr',
                     'firstName' => 'Peter',
-                    'lastName' => 'Beispiel'
+                    'lastName' => 'Beispiel',
                 ],
                 'addresses' => [
                     ['billing' => [
@@ -255,8 +257,8 @@ class ContactApiTest extends TestCase
                             'street' => 'Hauptstr. 5',
                             'zip' => '12345',
                             'city' => 'Musterort',
-                            'countryCode' => 'DE'
-                        ]
+                            'countryCode' => 'DE',
+                        ],
                     ]],
                     ['shipping' => [
                         [
@@ -264,10 +266,10 @@ class ContactApiTest extends TestCase
                             'street' => 'Schulstr. 13',
                             'zip' => '76543',
                             'city' => 'Musterstadt',
-                            'countryCode' => 'DE'
-                        ]
-                    ]]
-                ]
+                            'countryCode' => 'DE',
+                        ],
+                    ]],
+                ],
             ])),
         ];
 
@@ -278,7 +280,7 @@ class ContactApiTest extends TestCase
         // Client mit Mock-Handler ersetzen
         $instance = app('lexware-office');
         $instance->setClient($client);
-        
+
         // Kontakt mit verschiedenen Adresstypen erstellen
         $contact = Contact::createPerson('Peter', 'Beispiel', 'Herr');
         $contact->setAsCustomer()
@@ -296,13 +298,13 @@ class ContactApiTest extends TestCase
                 'DE',
                 'Lieferadressenzusatz'
             );
-        
+
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
-        
+
         // Prüfen der Ergebnisse
         $this->assertEquals('44444444-bbbb-4444-cccc-444444444444', $savedContact->getId());
-        
+
         // Billing address test
         $billingAddress = $savedContact->getAddress('billing');
         $this->assertNotNull($billingAddress);
@@ -311,7 +313,7 @@ class ContactApiTest extends TestCase
         $this->assertEquals('Musterort', $billingAddress['city']);
         $this->assertEquals('DE', $billingAddress['countryCode']);
         $this->assertEquals('Rechnungsadressenzusatz', $billingAddress['supplement']);
-        
+
         // Shipping address test
         $shippingAddress = $savedContact->getAddress('shipping');
         $this->assertNotNull($shippingAddress);
@@ -321,7 +323,7 @@ class ContactApiTest extends TestCase
         $this->assertEquals('DE', $shippingAddress['countryCode']);
         $this->assertEquals('Lieferadressenzusatz', $shippingAddress['supplement']);
     }
-    
+
     /** @test */
     public function it_can_create_a_company_contact(): void
     {
@@ -333,14 +335,14 @@ class ContactApiTest extends TestCase
                 'resourceUri' => 'https://api-sandbox.grld.eu/v1/contacts/87654321-abcd-1234-efgh-987654321987',
                 'createdDate' => '2023-06-29T15:15:09.447+02:00',
                 'updatedDate' => '2023-06-29T15:15:09.447+02:00',
-                'version' => 1
+                'version' => 1,
             ])),
             // Response für get (innerhalb von create)
             new Response(200, ['Content-Type' => 'application/json'], json_encode([
                 'id' => '87654321-abcd-1234-efgh-987654321987',
                 'version' => 1,
                 'roles' => [
-                    'vendor' => ['number' => 'L-789']
+                    'vendor' => ['number' => 'L-789'],
                 ],
                 'company' => [
                     'name' => 'Musterfirma GmbH',
@@ -348,8 +350,8 @@ class ContactApiTest extends TestCase
                     'vatRegistrationId' => 'DE987654321',
                     'allowTaxFreeInvoices' => false,
                     'contactPersons' => [
-                        ['lastName' => 'Müller']
-                    ]
+                        ['lastName' => 'Müller'],
+                    ],
                 ],
                 'addresses' => [
                     ['billing' => [
@@ -357,10 +359,10 @@ class ContactApiTest extends TestCase
                             'street' => 'Industriestraße 42',
                             'zip' => '54321',
                             'city' => 'Musterstadt',
-                            'countryCode' => 'DE'
-                        ]
-                    ]]
-                ]
+                            'countryCode' => 'DE',
+                        ],
+                    ]],
+                ],
             ])),
         ];
 
@@ -371,7 +373,7 @@ class ContactApiTest extends TestCase
         // Client mit Mock-Handler ersetzen
         $instance = app('lexware-office');
         $instance->setClient($client);
-        
+
         // Firmenkontakt erstellen
         $contact = Contact::createCompany('Musterfirma GmbH');
         $contact->setAsVendor(['number' => 'L-789'])
@@ -381,10 +383,10 @@ class ContactApiTest extends TestCase
                 'Musterstadt',
                 'DE'
             );
-        
+
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
-        
+
         $this->assertEquals('87654321-abcd-1234-efgh-987654321987', $savedContact->getId());
         $this->assertEquals('Musterfirma GmbH', $savedContact->getCompany()->getName());
         $this->assertEquals('L-789', $savedContact->getRoles()['vendor']['number']);
