@@ -1,0 +1,29 @@
+{
+  "statusCode": 500,
+  "reasonPhrase": "Internal Server Error",
+  "headers": {
+    "Date": [
+      "Sat, 13 Apr 2025 10:15:30 GMT"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Content-Length": [
+      "87"
+    ],
+    "Connection": [
+      "keep-alive"
+    ],
+    "x-amzn-RequestId": [
+      "g56h8d7d-e2dc-44d7-0i8c-c6cea1cdf345"
+    ],
+    "x-amzn-ErrorType": [
+      "InternalServerException"
+    ],
+    "x-amz-apigw-id": [
+      "Q15ghIJvliAEIOg="
+    ]
+  },
+  "protocolVersion": "1.1",
+  "body": "{\"message\":\"Internal server error\",\"details\":\"An unexpected error occurred\"}"
+}

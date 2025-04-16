@@ -91,7 +91,7 @@ class RateLimitTest extends TestCase
 
         // Erwarten, dass eine Exception geworfen wird
         $this->expectException(LexwareOfficeApiException::class);
-        $this->expectExceptionMessage('Rate limit erreicht. Bitte warten Sie 30 Sekunden.');
+        $this->expectExceptionMessage('Rate limit exceeded');
         $this->expectExceptionCode(429);
 
         // Anfrage senden (sollte Exception werfen)

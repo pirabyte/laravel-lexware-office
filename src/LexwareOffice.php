@@ -296,13 +296,44 @@ class LexwareOffice
     }
 
     /**
-     * Behandelt Anfrage-Exceptions
+     * Handles request exceptions from the API
+     *
+     * This method processes exceptions from the Lexware Office API and
+     * converts them into a standardized LexwareOfficeApiException format
+     * with proper error information and type.
+     *
+     * @param RequestException $e The original request exception
+     * @return LexwareOfficeApiException The standardized API exception
      */
     protected function handleRequestException(RequestException $e): LexwareOfficeApiException
     {
         $response = $e->getResponse();
-        $statusCode = $response ? $response->getStatusCode() : 500;
-        $message = $response ? $response->getBody()->getContents() : $e->getMessage();
+        
+        if (!$response) {
+            // No response from the server - likely a connection error
+            return new LexwareOfficeApiException(
+                'Could not connect to the Lexware Office API: ' . $e->getMessage(),
+                500,
+                $e
+            );
+        }
+        
+        $statusCode = $response->getStatusCode();
+        $message = $response->getBody()->getContents();
+        
+        // Special handling for rate limit errors
+        if ($statusCode === 429) {
+            $retryAfter = $response->hasHeader('Retry-After')
+                ? (int)$response->getHeaderLine('Retry-After')
+                : 60;
+                
+            // Add retry information to the message if it's a JSON response
+            $responseData = json_decode($message, true);
+            if (is_array($responseData)) {
+                $responseData['retryAfter'] = $retryAfter;
+                $message = json_encode($responseData);
+            }
+        }
 
         return new LexwareOfficeApiException($message, $statusCode, $e);
     }
@@ -328,26 +359,53 @@ class LexwareOffice
     }
 
     /**
-     * Führt eine Anfrage mit Rate Limiting aus
+     * Executes a request with rate limiting
      *
+     * This method manages the application-side rate limiting and
+     * executes API requests with proper error handling.
+     *
+     * @param callable $callback The request callback to execute
+     * @return array The decoded JSON response data
      * @throws LexwareOfficeApiException
      */
     protected function makeRequest(callable $callback)
     {
+        // Check if we've exceeded our self-imposed rate limit
         if (RateLimiter::tooManyAttempts($this->rateLimitKey, $this->maxRequestsPerMinute)) {
             $seconds = RateLimiter::availableIn($this->rateLimitKey);
+            
+            // Create a properly structured rate limit error
+            $errorData = [
+                'message' => 'Rate limit exceeded',
+                'details' => "Too many requests. Please wait {$seconds} seconds before retrying.",
+                'retryAfter' => $seconds
+            ];
+            
             throw new LexwareOfficeApiException(
-                "Rate limit erreicht. Bitte warten Sie {$seconds} Sekunden.",
-                429
+                json_encode($errorData),
+                LexwareOfficeApiException::STATUS_RATE_LIMITED
             );
         }
 
         try {
+            // Execute the request
             $response = $callback();
+            
+            // Track the request for our rate limiter
             RateLimiter::hit($this->rateLimitKey, 60);
 
-            return json_decode($response->getBody()->getContents(), true);
+            // Parse and return the response data
+            $content = $response->getBody()->getContents();
+            $data = json_decode($content, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                // Handle non-JSON responses
+                return ['raw' => $content];
+            }
+            
+            return $data;
         } catch (RequestException $e) {
+            // Handle request exceptions (HTTP errors, etc.)
             throw $this->handleRequestException($e);
         }
     }

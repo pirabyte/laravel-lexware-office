@@ -1,0 +1,29 @@
+{
+  "statusCode": 404,
+  "reasonPhrase": "Not Found",
+  "headers": {
+    "Date": [
+      "Sat, 13 Apr 2025 10:15:30 GMT"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Content-Length": [
+      "95"
+    ],
+    "Connection": [
+      "keep-alive"
+    ],
+    "x-amzn-RequestId": [
+      "e34f6d7d-c0dc-42d7-8g6c-c6cea1cdc789"
+    ],
+    "x-amzn-ErrorType": [
+      "ResourceNotFoundException"
+    ],
+    "x-amz-apigw-id": [
+      "M93efGHtliAEIOg="
+    ]
+  },
+  "protocolVersion": "1.1",
+  "body": "{\"message\":\"Resource not found\",\"details\":\"The requested resource could not be found\"}"
+}

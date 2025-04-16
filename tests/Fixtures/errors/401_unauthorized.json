@@ -1,0 +1,29 @@
+{
+  "statusCode": 401,
+  "reasonPhrase": "Unauthorized",
+  "headers": {
+    "Date": [
+      "Sat, 13 Apr 2025 10:15:30 GMT"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Content-Length": [
+      "85"
+    ],
+    "Connection": [
+      "keep-alive"
+    ],
+    "x-amzn-RequestId": [
+      "a23e5d7d-b9dc-41d7-7f5c-c6cea1cdb123"
+    ],
+    "x-amzn-ErrorType": [
+      "UnauthorizedException"
+    ],
+    "x-amz-apigw-id": [
+      "J72abCDtliAEIOg="
+    ]
+  },
+  "protocolVersion": "1.1",
+  "body": "{\"message\":\"Unauthorized\",\"details\":\"API key is invalid or expired\"}"
+}

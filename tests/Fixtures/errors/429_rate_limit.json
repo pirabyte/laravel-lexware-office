@@ -1,0 +1,32 @@
+{
+  "statusCode": 429,
+  "reasonPhrase": "Too Many Requests",
+  "headers": {
+    "Date": [
+      "Sat, 13 Apr 2025 10:15:30 GMT"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Content-Length": [
+      "97"
+    ],
+    "Connection": [
+      "keep-alive"
+    ],
+    "x-amzn-RequestId": [
+      "f45g7d7d-d1dc-43d7-9h7c-c6cea1cde012"
+    ],
+    "x-amzn-ErrorType": [
+      "ThrottlingException"
+    ],
+    "Retry-After": [
+      "30"
+    ],
+    "x-amz-apigw-id": [
+      "P04fgHIuliAEIOg="
+    ]
+  },
+  "protocolVersion": "1.1",
+  "body": "{\"message\":\"Rate limit exceeded\",\"details\":\"You have exceeded the API rate limit\"}"
+}

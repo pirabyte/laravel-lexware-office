@@ -1,0 +1,29 @@
+{
+  "statusCode": 400,
+  "reasonPhrase": "Bad Request",
+  "headers": {
+    "Date": [
+      "Sat, 13 Apr 2025 10:15:30 GMT"
+    ],
+    "Content-Type": [
+      "application/json"
+    ],
+    "Content-Length": [
+      "234"
+    ],
+    "Connection": [
+      "keep-alive"
+    ],
+    "x-amzn-RequestId": [
+      "b12c4d7d-a8dc-40d7-6e4c-c6cea1cda456"
+    ],
+    "x-amzn-ErrorType": [
+      "ValidationException"
+    ],
+    "x-amz-apigw-id": [
+      "K51abCDtliAEIOg="
+    ]
+  },
+  "protocolVersion": "1.1",
+  "body": "{\"message\":\"Validation error\",\"details\":\"The request contains invalid data\",\"validationErrors\":[{\"field\":\"email\",\"message\":\"Invalid email format\"},{\"field\":\"name\",\"message\":\"Name is required\"}]}"
+}
