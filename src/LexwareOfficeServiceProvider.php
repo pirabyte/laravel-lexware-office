@@ -19,7 +19,9 @@ class LexwareOfficeServiceProvider extends ServiceProvider
         $this->app->singleton('lexware-office', function ($app) {
             return new LexwareOffice(
                 $app['config']['lexware-office.base_url'],
-                $app['config']['lexware-office.api_key']
+                $app['config']['lexware-office.api_key'],
+                $app['config']['lexware-office.rate_limit_key'] ?? 'lexware_office_api',
+                $app['config']['lexware-office.max_requests_per_minute'] ?? 50
             );
         });
     }

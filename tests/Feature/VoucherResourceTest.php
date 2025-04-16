@@ -2,8 +2,14 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Tests\Feature;
 
+use Faker\Core\Uuid;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
+use Pirabyte\LaravelLexwareOffice\Models\TransactionAssignmentHint;
 use Pirabyte\LaravelLexwareOffice\Models\Voucher;
 use Pirabyte\LaravelLexwareOffice\Models\VoucherItem;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
@@ -15,8 +21,22 @@ class VoucherResourceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Erstelle einen Mock für den LexwareOffice Client
-        $this->clientMock = $this->createMock(LexwareOffice::class);
+        // Mock-Responses für die API-Aufrufe bei Personen-Kontakt
+        $personMockResponses = [
+            // Response für create
+            new Response(201, ['Content-Type' => 'application/json'], json_encode([
+                "voucherId" => "ee143016-f177-4da7-a3b7-513a525a25a4",
+                "externalReference" => "C205CD6E49F319AE9B03CAD01F555E2B9F188407"
+            ])),
+        ];
+
+        $mock = new MockHandler($personMockResponses);
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // Client mit Mock-Handler ersetzen
+        $instance = app('lexware-office');
+        $instance->setClient($client);
     }
 
     /**
@@ -107,6 +127,19 @@ class VoucherResourceTest extends TestCase
         }
     }
 
+    public function test_it_can_create_voucher_assignments()
+    {
+        $hint = TransactionAssignmentHint::fromArray([
+            'voucherId' => 'ee143016-f177-4da7-a3b7-513a525a25a4',
+            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407'
+
+        ]);
+        $created = \Pirabyte\LaravelLexwareOffice\Facades\LexwareOffice::transactionAssignmentHints()->create($hint);
+
+        $this->assertEquals($hint->getVoucherId(), $created->getVoucherId());
+        $this->assertEquals($hint->getExternalReference(), $created->getExternalReference());
+    }
+
     private function assert_voucher_data(Voucher $voucher, array $fixtureData): void
     {
         $this->assertInstanceOf(Voucher::class, $voucher);
@@ -148,4 +181,5 @@ class VoucherResourceTest extends TestCase
 
         $this->assertEquals(count($voucher->jsonSerialize()), count($fixtureData));
     }
+
 }

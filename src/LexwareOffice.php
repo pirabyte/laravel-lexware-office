@@ -11,6 +11,7 @@ use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
 use Pirabyte\LaravelLexwareOffice\Resources\CountryResource;
 use Pirabyte\LaravelLexwareOffice\Resources\FinancialAccountResource;
 use Pirabyte\LaravelLexwareOffice\Resources\FinancialTransactionResource;
+use Pirabyte\LaravelLexwareOffice\Resources\PartnerIntegrationResource;
 use Pirabyte\LaravelLexwareOffice\Resources\PostingCategoryResource;
 use Pirabyte\LaravelLexwareOffice\Resources\ProfileResource;
 use Pirabyte\LaravelLexwareOffice\Resources\TransactionAssignmentHintResource;
@@ -44,15 +45,18 @@ class LexwareOffice
 
     protected TransactionAssignmentHintResource $transactionAssignmentHints;
 
+    protected PartnerIntegrationResource $partnerIntegrations;
+
     public function __construct(
         string $baseUrl,
         string $apiKey,
-        string $rateLimitKey = 'lexware_office_api'
+        string $rateLimitKey = 'lexware_office_api',
+        int $maxRequestsPerMinute = 50
     ) {
         $this->baseUrl = $baseUrl;
         $this->apiKey = $apiKey;
-
         $this->rateLimitKey = $rateLimitKey;
+        $this->maxRequestsPerMinute = $maxRequestsPerMinute;
 
         $uri = $this->prepareBaseUri($this->baseUrl);
 
@@ -73,6 +77,7 @@ class LexwareOffice
         $this->financialAccounts = new FinancialAccountResource($this);
         $this->financialTransactions = new FinancialTransactionResource($this);
         $this->transactionAssignmentHints = new TransactionAssignmentHintResource($this);
+        $this->partnerIntegrations = new PartnerIntegrationResource($this);
     }
 
     /**
@@ -178,6 +183,18 @@ class LexwareOffice
     }
 
     // endregion TransactionAssignmentHints
+
+    // region PartnerIntegrations
+
+    /**
+     * Retrieves the Partner Integration Resource
+     */
+    public function partnerIntegrations(): PartnerIntegrationResource
+    {
+        return $this->partnerIntegrations;
+    }
+
+    // endregion PartnerIntegrations
 
     // region Requests
 

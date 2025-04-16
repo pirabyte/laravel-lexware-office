@@ -43,7 +43,10 @@ class ExceptionTest extends TestCase
             function (LexwareOfficeApiException $exception) {
                 $this->assertInstanceOf(LexwareOfficeApiException::class, $exception);
                 $this->assertEquals("Unauthorized", $exception->getMessage());
-                $this->assertEquals(401, $exception->getCode());
+                $this->assertEquals(401, $exception->getStatusCode());
+                $this->assertEquals([
+                    'message' => 'Unauthorized'
+                ], $exception->getResponseData());
                 return true;
             }
         );

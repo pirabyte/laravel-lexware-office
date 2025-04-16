@@ -1,0 +1,9 @@
+{
+    "partnerId": "partner123",
+    "customerNumber": "customer456",
+    "externalId": "ext789",
+    "data": {
+        "additionalData1": "value1",
+        "additionalData2": "value2"
+    }
+}
