@@ -15,8 +15,7 @@ use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class FinancialAccountTest extends TestCase
 {
-    /** @test */
-    public function it_can_get_financial_account_by_id(): void
+    public function test_it_can_get_financial_account_by_id(): void
     {
         // Mock-Response erstellen
         $accountData = [
@@ -70,8 +69,7 @@ class FinancialAccountTest extends TestCase
         $this->assertFalse($account->isDeactivated());
     }
 
-    /** @test */
-    public function it_can_filter_financial_accounts(): void
+    public function test_it_can_filter_financial_accounts(): void
     {
         // Mock-Response erstellen
         $accountsData = [
@@ -139,8 +137,7 @@ class FinancialAccountTest extends TestCase
         $this->assertEquals('************1234', $accounts[1]->getCreditCardNumber());
     }
 
-    /** @test */
-    public function it_can_handle_empty_filter_values(): void
+    public function test_it_can_handle_empty_filter_values(): void
     {
         // Mock-Response erstellen
         $accountsData = [
@@ -223,8 +220,7 @@ class FinancialAccountTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
-    public function it_throws_exception_if_financial_account_has_transactions(): void
+    public function test_it_throws_exception_if_financial_account_has_transactions(): void
     {
         // Mock für Fehler 406 (Not Acceptable)
         $mock = new MockHandler([
