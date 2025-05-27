@@ -1,0 +1,36 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # For creating releases
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Need full history for release notes
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          generate_release_notes: true
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## ${{ github.ref_name }}
+            
+            Please see [CHANGELOG.md](https://github.com/pirabyte/laravel-lexware-office/blob/main/CHANGELOG.md) for details.
+            
+            ### Installation
+            
+            ```bash
+            composer require pirabyte/laravel-lexware-office
+            ```

@@ -1,13 +1,23 @@
 name: Tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write # For test results upload
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2 # For coverage comparisons
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -15,26 +25,38 @@ jobs:
           php-version: '8.4'
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
           coverage: xdebug
+          ini-values: error_reporting=E_ALL
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer packages
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
       - name: Install dependencies
-        run: composer self-update && composer install && composer dump-autoload
+        run: composer install --prefer-dist --no-progress
 
       - name: Execute tests
         run: vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_ORG_TOKEN }}
+        uses: codecov/codecov-action@v3
         with:
-          token: ${{ secrets.CODECOV_ORG_TOKEN }}
-          slug: "pirabyte/laravel-lexware-office"
-          verbose: true # <--- Hinzufügen
+          files: ./coverage.xml
+          verbose: true
 
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+      - name: Upload test results
+        if: always() # Run even if tests fail
+        uses: actions/upload-artifact@v3
         with:
-          token: ${{ secrets.CODECOV_ORG_TOKEN }}
-          slug: "pirabyte/laravel-lexware-office"
-          verbose: true # <--- Hinzufügen
+          name: test-results
+          path: junit.xml

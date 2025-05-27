@@ -10,12 +10,15 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # This gives the job permission to create tags and releases
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }} # Use the default GITHUB_TOKEN
 
       - name: Get version from composer.json
         id: get-version
@@ -38,10 +41,10 @@ jobs:
       - name: Create and push tag
         if: steps.check-tag.outputs.exists == 'false'
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git tag -a "v${{ env.VERSION }}" -m "Release v${{ env.VERSION }}"
-          git push "https://x-access-token:${{ secrets.ACTION_TOKEN }}@github.com/pirabyte/laravel-lexware-office.git" "v${{ env.VERSION }}"
+          git push origin "v${{ env.VERSION }}"
 
       - name: Create GitHub Release
         if: steps.check-tag.outputs.exists == 'false'
@@ -52,5 +55,3 @@ jobs:
           draft: false
           generate_release_notes: true
           make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.ACTION_TOKEN }}
