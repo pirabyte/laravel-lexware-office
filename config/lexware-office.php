@@ -20,4 +20,24 @@ return [
     // Rate Limiting
     'rate_limit_key' => env('LEXWARE_OFFICE_RATE_LIMIT_KEY', 'lexware_office_api'),
     'max_requests_per_minute' => env('LEXWARE_OFFICE_MAX_REQUESTS', 50),
+    
+    // OAuth2 Configuration (optional, for automatic token management)
+    'oauth2' => [
+        'enabled' => env('LEXWARE_OFFICE_OAUTH2_ENABLED', false),
+        'client_id' => env('LEXWARE_OFFICE_OAUTH2_CLIENT_ID'),
+        'client_secret' => env('LEXWARE_OFFICE_OAUTH2_CLIENT_SECRET'),
+        'redirect_uri' => env('LEXWARE_OFFICE_OAUTH2_REDIRECT_URI'),
+        'scopes' => [
+            // Add required scopes here, e.g.:
+            // 'profile', 'contacts', 'vouchers', 'financial_accounts'
+        ],
+        
+        // Token Storage Configuration
+        'token_storage' => [
+            'driver' => env('LEXWARE_OFFICE_TOKEN_STORAGE', 'cache'), // 'cache' or 'database'
+            'cache_key' => 'lexware_office_token',
+            'database_table' => 'lexware_tokens',
+            'user_column' => 'user_id',
+        ],
+    ],
 ];

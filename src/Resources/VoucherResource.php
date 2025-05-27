@@ -4,6 +4,7 @@ namespace Pirabyte\LaravelLexwareOffice\Resources;
 
 use GuzzleHttp\Exception\GuzzleException;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
+use Pirabyte\LaravelLexwareOffice\Exceptions\OptimisticLockingException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Voucher;
 use Psr\Http\Message\StreamInterface;
@@ -53,15 +54,42 @@ class VoucherResource
     }
 
     /**
-     * Aktualisiert einen bestehenden Beleg
+     * Aktualisiert einen bestehenden Beleg mit optimistic locking
      *
      * @throws LexwareOfficeApiException
+     * @throws OptimisticLockingException
      * @throws GuzzleException
      */
     public function update(string $id, Voucher $voucher): Voucher
     {
         $data = $voucher->jsonSerialize();
-        $response = $this->client->put("vouchers/{$id}", $data);
+        
+        // Include version for optimistic locking
+        $version = $voucher->getVersion();
+        if ($version !== null) {
+            $data['version'] = $version;
+        }
+
+        try {
+            $response = $this->client->put("vouchers/{$id}", $data);
+        } catch (LexwareOfficeApiException $e) {
+            // Check if this is a conflict error (409) indicating optimistic locking failure
+            if ($e->isConflictError()) {
+                // Try to extract current version from error response
+                $currentVersion = $this->extractVersionFromErrorResponse($e);
+                
+                throw new OptimisticLockingException(
+                    'Voucher update failed due to version conflict',
+                    $id,
+                    $version,
+                    $currentVersion,
+                    $e
+                );
+            }
+            
+            // Re-throw other API exceptions
+            throw $e;
+        }
 
         // Holen des kompletten Belegs wenn erfolgreich
         if (isset($response['id'])) {
@@ -205,5 +233,19 @@ class VoucherResource
         $response = $this->client->client()->request('POST', $endpoint, $options);
 
         return json_decode($response->getBody()->getContents(), true);
+    }
+
+    /**
+     * Extract current version from API error response
+     */
+    protected function extractVersionFromErrorResponse(LexwareOfficeApiException $e): ?int
+    {
+        $responseData = $e->getResponseData();
+        
+        // Try different possible fields where the current version might be returned
+        return $responseData['currentVersion'] 
+            ?? $responseData['version'] 
+            ?? $responseData['lockVersion'] 
+            ?? null;
     }
 }

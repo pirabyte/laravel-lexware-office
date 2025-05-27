@@ -7,6 +7,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\RateLimiter;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
+use Pirabyte\LaravelLexwareOffice\OAuth2\LexwareOAuth2Service;
 use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
 use Pirabyte\LaravelLexwareOffice\Resources\CountryResource;
 use Pirabyte\LaravelLexwareOffice\Resources\FinancialAccountResource;
@@ -46,6 +47,8 @@ class LexwareOffice
     protected TransactionAssignmentHintResource $transactionAssignmentHints;
 
     protected PartnerIntegrationResource $partnerIntegrations;
+
+    protected ?LexwareOAuth2Service $oauth2Service = null;
 
     public function __construct(
         string $baseUrl,
@@ -195,6 +198,35 @@ class LexwareOffice
     }
 
     // endregion PartnerIntegrations
+
+    // region OAuth2
+
+    /**
+     * Set OAuth2 service for automatic token management
+     */
+    public function setOAuth2Service(LexwareOAuth2Service $oauth2Service): self
+    {
+        $this->oauth2Service = $oauth2Service;
+        return $this;
+    }
+
+    /**
+     * Get OAuth2 service instance
+     */
+    public function oauth2(): ?LexwareOAuth2Service
+    {
+        return $this->oauth2Service;
+    }
+
+    /**
+     * Check if OAuth2 is configured
+     */
+    public function hasOAuth2(): bool
+    {
+        return $this->oauth2Service !== null;
+    }
+
+    // endregion OAuth2
 
     // region Requests
 
@@ -387,6 +419,9 @@ class LexwareOffice
             );
         }
 
+        // Ensure valid OAuth2 token if OAuth2 is configured
+        $this->ensureValidToken();
+
         try {
             // Execute the request
             $response = $callback();
@@ -405,6 +440,29 @@ class LexwareOffice
             
             return $data;
         } catch (RequestException $e) {
+            // Check if this is an authentication error and we have OAuth2
+            if ($this->oauth2Service && $e->getResponse() && $e->getResponse()->getStatusCode() === 401) {
+                // Try to refresh token and retry request once
+                if ($this->refreshTokenAndRetry()) {
+                    try {
+                        $response = $callback();
+                        RateLimiter::hit($this->rateLimitKey, 60);
+                        
+                        $content = $response->getBody()->getContents();
+                        $data = json_decode($content, true);
+                        
+                        if (json_last_error() !== JSON_ERROR_NONE) {
+                            return ['raw' => $content];
+                        }
+                        
+                        return $data;
+                    } catch (RequestException $retryException) {
+                        // If retry also fails, throw the original exception
+                        throw $this->handleRequestException($e);
+                    }
+                }
+            }
+            
             // Handle request exceptions (HTTP errors, etc.)
             throw $this->handleRequestException($e);
         }
@@ -418,6 +476,59 @@ class LexwareOffice
         $this->maxRequestsPerMinute = $maxRequests;
 
         return $this;
+    }
+
+    /**
+     * Ensure we have a valid OAuth2 token
+     */
+    protected function ensureValidToken(): void
+    {
+        if (!$this->oauth2Service) {
+            return; // No OAuth2 configured, use static API key
+        }
+
+        $token = $this->oauth2Service->getValidAccessToken();
+        
+        if ($token) {
+            // Update client with fresh token
+            $this->client = $this->client->getConfig('handler') ? 
+                new Client(array_merge($this->client->getConfig(), [
+                    'headers' => array_merge($this->client->getConfig('headers') ?? [], [
+                        'Authorization' => $token->getAuthorizationHeader(),
+                    ]),
+                ])) :
+                new Client([
+                    'base_uri' => $this->client->getConfig('base_uri'),
+                    'headers' => array_merge($this->client->getConfig('headers') ?? [], [
+                        'Authorization' => $token->getAuthorizationHeader(),
+                    ]),
+                ]);
+        }
+    }
+
+    /**
+     * Try to refresh token and update client
+     */
+    protected function refreshTokenAndRetry(): bool
+    {
+        if (!$this->oauth2Service) {
+            return false;
+        }
+
+        try {
+            $token = $this->oauth2Service->refreshToken();
+            
+            if ($token) {
+                // Update client with new token
+                $this->ensureValidToken();
+                return true;
+            }
+        } catch (LexwareOfficeApiException $e) {
+            // Token refresh failed, can't retry
+            return false;
+        }
+
+        return false;
     }
 
     // endregion Helper

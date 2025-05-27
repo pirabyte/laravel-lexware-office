@@ -11,12 +11,14 @@ class LexwareOfficeApiException extends Exception
     public const STATUS_BAD_REQUEST = 400;
     public const STATUS_UNAUTHORIZED = 401;
     public const STATUS_NOT_FOUND = 404;
+    public const STATUS_CONFLICT = 409;
     public const STATUS_RATE_LIMITED = 429;
     public const STATUS_SERVER_ERROR = 500;
     
     // Error types from the API (using actual AWS API Gateway error types)
     public const ERROR_TYPE_AUTHORIZATION = 'UnauthorizedException';
     public const ERROR_TYPE_VALIDATION = 'ValidationException';
+    public const ERROR_TYPE_CONFLICT = 'ConflictException';
     public const ERROR_TYPE_RATE_LIMIT = 'ThrottlingException';
     public const ERROR_TYPE_RESOURCE_NOT_FOUND = 'ResourceNotFoundException';
     public const ERROR_TYPE_SERVER_ERROR = 'InternalServerException';
@@ -102,6 +104,7 @@ class LexwareOfficeApiException extends Exception
             self::STATUS_BAD_REQUEST => self::ERROR_TYPE_VALIDATION,
             self::STATUS_UNAUTHORIZED => self::ERROR_TYPE_AUTHORIZATION,
             self::STATUS_NOT_FOUND => self::ERROR_TYPE_RESOURCE_NOT_FOUND,
+            self::STATUS_CONFLICT => self::ERROR_TYPE_CONFLICT,
             self::STATUS_RATE_LIMITED => self::ERROR_TYPE_RATE_LIMIT,
             default => self::ERROR_TYPE_SERVER_ERROR,
         };
@@ -177,6 +180,14 @@ class LexwareOfficeApiException extends Exception
     public function isNotFoundError(): bool
     {
         return $this->statusCode === self::STATUS_NOT_FOUND;
+    }
+
+    /**
+     * Check if this is a conflict error (optimistic locking)
+     */
+    public function isConflictError(): bool
+    {
+        return $this->statusCode === self::STATUS_CONFLICT;
     }
 
     /**

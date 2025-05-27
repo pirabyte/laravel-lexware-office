@@ -6,6 +6,7 @@ use Generator;
 use GuzzleHttp\Exception\GuzzleException;
 use Pirabyte\LaravelLexwareOffice\Classes\PaginatedResource;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
+use Pirabyte\LaravelLexwareOffice\Exceptions\OptimisticLockingException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Contact;
 
@@ -54,15 +55,42 @@ class ContactResource
     }
 
     /**
-     * Aktualisiert einen bestehenden Kontakt
+     * Aktualisiert einen bestehenden Kontakt mit optimistic locking
      *
      * @throws LexwareOfficeApiException
+     * @throws OptimisticLockingException
      * @throws GuzzleException
      */
     public function update(string $id, Contact $contact): Contact
     {
         $data = $contact->jsonSerialize();
-        $response = $this->client->put("contacts/{$id}", $data);
+        
+        // Include version for optimistic locking
+        $version = $contact->getVersion();
+        if ($version !== null) {
+            $data['version'] = $version;
+        }
+
+        try {
+            $response = $this->client->put("contacts/{$id}", $data);
+        } catch (LexwareOfficeApiException $e) {
+            // Check if this is a conflict error (409) indicating optimistic locking failure
+            if ($e->isConflictError()) {
+                // Try to extract current version from error response
+                $currentVersion = $this->extractVersionFromErrorResponse($e);
+                
+                throw new OptimisticLockingException(
+                    'Contact update failed due to version conflict',
+                    $id,
+                    $version,
+                    $currentVersion,
+                    $e
+                );
+            }
+            
+            // Re-throw other API exceptions
+            throw $e;
+        }
 
         // Holen des kompletten Kontakts wenn erfolgreich
         if (isset($response['id'])) {
@@ -221,5 +249,19 @@ class ContactResource
             $hasMore = ! $paginatedResource->jsonSerialize()['last'];
             $page++;
         }
+    }
+
+    /**
+     * Extract current version from API error response
+     */
+    protected function extractVersionFromErrorResponse(LexwareOfficeApiException $e): ?int
+    {
+        $responseData = $e->getResponseData();
+        
+        // Try different possible fields where the current version might be returned
+        return $responseData['currentVersion'] 
+            ?? $responseData['version'] 
+            ?? $responseData['lockVersion'] 
+            ?? null;
     }
 }

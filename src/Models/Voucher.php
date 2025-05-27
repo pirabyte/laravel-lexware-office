@@ -2,8 +2,11 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Models;
 
+use Pirabyte\LaravelLexwareOffice\Traits\SupportsOptimisticLocking;
+
 class Voucher implements \JsonSerializable
 {
+    use SupportsOptimisticLocking;
     // region Properties
     /**
      * Die ID des Vouchers.
@@ -243,7 +246,7 @@ class Voucher implements \JsonSerializable
      *
      * @param  int  $version  Die Version
      */
-    private function setVersion(int $version): void
+    public function setVersion(int $version): void
     {
         $this->version = $version;
     }

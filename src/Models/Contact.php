@@ -2,8 +2,11 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Models;
 
+use Pirabyte\LaravelLexwareOffice\Traits\SupportsOptimisticLocking;
+
 class Contact implements \JsonSerializable
 {
+    use SupportsOptimisticLocking;
     private ?string $id = null;
 
     private ?string $organizationId = null;
