@@ -100,40 +100,15 @@ class FinancialTransactionResource
      *
      * @throws LexwareOfficeApiException
      */
-    public function latest(array $filters = []): array
+    public function latest(string $financialAccountId): array
     {
-        $validFilters = [
-            'financialAccountId', 'page', 'size',
+        // HTTP-Query vorbereiten
+        $query = [
+            'financialAccountId' => $financialAccountId,
         ];
 
-        // HTTP-Query vorbereiten
-        $query = [];
-
-        // Nur gültige und nicht-leere Filter einbeziehen
-        foreach ($filters as $key => $value) {
-            // Leere oder ungültige Filter überspringen
-            if (! in_array($key, $validFilters) || $value === null || $value === '') {
-                continue;
-            }
-
-            // Multiple Werte für den gleichen Filter unterstützen
-            if (isset($query[$key])) {
-                // Wenn bereits ein Array, füge neuen Wert hinzu
-                if (is_array($query[$key])) {
-                    $query[$key][] = $value;
-                } else {
-                    // Sonst konvertiere zu Array mit beiden Werten
-                    $query[$key] = [$query[$key], $value];
-                }
-            } else {
-                // Bei einem neuen Filter-Key setzen wir den Wert einfach
-                $query[$key] = $value;
-            }
-        }
-
-        $response = $this->client->get('finance/transactions/latest', $query);
-
-        return $this->processTransactionsResponse($response);
+        //Hier wird direkt die einzelne Transaktion als Array ausgegeben
+        return $this->client->get('finance/transactions/latest-transaction', $query);
     }
 
     /**
