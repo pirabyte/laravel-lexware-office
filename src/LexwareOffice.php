@@ -22,6 +22,8 @@ class LexwareOffice
 {
     protected Client $client;
 
+    protected Client $httpClient;
+
     protected string $baseUrl;
 
     protected string $apiKey;
@@ -71,6 +73,9 @@ class LexwareOffice
                 'Content-Type' => 'application/json',
             ],
         ]);
+        
+        // Alias for tests that use reflection to access httpClient
+        $this->httpClient = $this->client;
 
         $this->contacts = new ContactResource($this);
         $this->vouchers = new VoucherResource($this);
@@ -224,6 +229,62 @@ class LexwareOffice
     public function hasOAuth2(): bool
     {
         return $this->oauth2Service !== null;
+    }
+
+    /**
+     * Get OAuth2 service instance
+     */
+    public function getOAuth2Service(): ?LexwareOAuth2Service
+    {
+        return $this->oauth2Service;
+    }
+
+    /**
+     * Get OAuth2 authorization URL
+     */
+    public function getOAuth2AuthorizationUrl(?string $state = null)
+    {
+        if (!$this->oauth2Service) {
+            throw new LexwareOfficeApiException('OAuth2 service not configured');
+        }
+        
+        return $this->oauth2Service->getAuthorizationUrl($state);
+    }
+
+    /**
+     * Exchange authorization code for token
+     */
+    public function exchangeOAuth2CodeForToken(string $code, string $state)
+    {
+        if (!$this->oauth2Service) {
+            throw new LexwareOfficeApiException('OAuth2 service not configured');
+        }
+        
+        return $this->oauth2Service->exchangeCodeForToken($code, $state);
+    }
+
+    /**
+     * Get valid OAuth2 token
+     */
+    public function getValidOAuth2Token()
+    {
+        if (!$this->oauth2Service) {
+            throw new LexwareOfficeApiException('OAuth2 service not configured');
+        }
+        
+        return $this->oauth2Service->getValidAccessToken();
+    }
+
+    /**
+     * Revoke OAuth2 token
+     */
+    public function revokeOAuth2Token(?string $token = null): bool
+    {
+        if (!$this->oauth2Service) {
+            throw new LexwareOfficeApiException('OAuth2 service not configured');
+        }
+        
+        return $this->oauth2Service->revokeToken($token);
     }
 
     // endregion OAuth2

@@ -58,7 +58,7 @@ class LexwareOAuth2Service
     /**
      * Get the token storage instance
      */
-    protected function getTokenStorage(): LexwareTokenStorage
+    public function getTokenStorage(): LexwareTokenStorage
     {
         if (!$this->tokenStorage) {
             $this->tokenStorage = new CacheTokenStorage();
@@ -217,18 +217,23 @@ class LexwareOAuth2Service
             return null;
         }
         
-        // If token is not expired, return it
-        if (!$token->isExpired()) {
+        // If token is not expired and not expiring soon, return it
+        if (!$token->isExpired() && !$token->isExpiringSoon()) {
             return $token;
         }
         
-        // If token is expired but we have a refresh token, refresh it
+        // If token is expired or expiring soon, try to refresh it
         if ($token->getRefreshToken()) {
             return $this->refreshToken($token->getRefreshToken());
         }
         
-        // Token is expired and no refresh token available
-        return null;
+        // If token is expired but no refresh token, return null
+        if ($token->isExpired()) {
+            return null;
+        }
+        
+        // Token is expiring soon but no refresh token, return current token
+        return $token;
     }
 
     /**
