@@ -215,24 +215,19 @@ class VoucherResource
      */
     public function attachFile(string $id, StreamInterface $stream, string $filename = 'voucher.pdf', string $type = 'voucher'): array
     {
-        $endpoint = "vouchers/{$id}/files";
-
-        $options = [
-            'multipart' => [
-                [
-                    'name' => 'file',
-                    'contents' => $stream,
-                    'filename' => $filename,
-                ],
-                [
-                    'name' => 'type',
-                    'contents' => $type,
-                ],
+        $multipartData = [
+            [
+                'name' => 'file',
+                'contents' => $stream,
+                'filename' => $filename,
+            ],
+            [
+                'name' => 'type',
+                'contents' => $type,
             ],
         ];
-        $response = $this->client->client()->request('POST', $endpoint, $options);
 
-        return json_decode($response->getBody()->getContents(), true);
+        return $this->client->postMultipart("vouchers/{$id}/files", $multipartData);
     }
 
     /**

@@ -329,6 +329,24 @@ class LexwareOffice
     }
 
     /**
+     * POST-Anfrage mit Multipart-Daten (für Datei-Uploads)
+     *
+     * @throws LexwareOfficeApiException|GuzzleException
+     */
+    public function postMultipart(string $endpoint, array $multipartData): array
+    {
+        try {
+            return $this->makeRequest(function () use ($endpoint, $multipartData) {
+                return $this->client->post($endpoint, [
+                    'multipart' => $multipartData,
+                ]);
+            });
+        } catch (RequestException $e) {
+            throw $this->handleRequestException($e);
+        }
+    }
+
+    /**
      * PUT-Anfrage
      *
      * @throws LexwareOfficeApiException|GuzzleException
