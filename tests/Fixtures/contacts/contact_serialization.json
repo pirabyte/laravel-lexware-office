@@ -1,0 +1,89 @@
+{
+  "id": "be9475f4-ef80-442b-8ab9-3ab8b1a2aeb9",
+  "organizationId": "aa93e8a8-2aa3-470b-b914-caad8a255dd8",
+  "version": 1,
+  "roles": {
+    "customer": {
+      "number": 10307
+    },
+    "vendor": {
+      "number": 70303
+    }
+  },
+  "company": {
+    "name": "Testfirma",
+    "taxNumber": "12345/12345",
+    "vatRegistrationId": "DE123456789",
+    "allowTaxFreeInvoices": true,
+    "contactPersons": [
+      {
+        "salutation": "Herr",
+        "firstName": "Max",
+        "lastName": "Mustermann",
+        "primary": true,
+        "emailAddress": "contactpersonmail@lexware.de",
+        "phoneNumber": "08000/11111"
+      }
+    ]
+  },
+  "addresses": {
+    "billing": [
+      {
+        "supplement": "Rechnungsadressenzusatz",
+        "street": "Hauptstr. 5",
+        "zip": "12345",
+        "city": "Musterort",
+        "countryCode": "DE"
+      }
+    ],
+    "shipping": [
+      {
+        "supplement": "Lieferadressenzusatz",
+        "street": "Schulstr. 13",
+        "zip": "76543",
+        "city": "MUsterstadt",
+        "countryCode": "DE"
+      }
+    ]
+  },
+  "xRechnung": {
+    "buyerReference": "04011000-1234512345-35",
+    "vendorNumberAtCustomer": "70123456"
+  },
+  "emailAddresses": {
+    "business": [
+      "business@lexware.de"
+    ],
+    "office": [
+      "office@lexware.de"
+    ],
+    "private": [
+      "private@lexware.de"
+    ],
+    "other": [
+      "other@lexware.de"
+    ]
+  },
+  "phoneNumbers": {
+    "business": [
+      "08000/1231"
+    ],
+    "office": [
+      "08000/1232"
+    ],
+    "mobile": [
+      "08000/1233"
+    ],
+    "private": [
+      "08000/1234"
+    ],
+    "fax": [
+      "08000/1235"
+    ],
+    "other": [
+      "08000/1236"
+    ]
+  },
+  "note": "Notizen",
+  "archived": false
+}

@@ -165,6 +165,11 @@ class Contact implements \JsonSerializable
         return $this->archived;
     }
 
+    public function getArchived(): bool
+    {
+        return $this->archived;
+    }
+
     public function setArchived(bool $archived): self
     {
         $this->archived = $archived;
@@ -210,7 +215,13 @@ class Contact implements \JsonSerializable
         }
 
         if (isset($data['addresses'])) {
-            $contact->setAddresses($data['addresses']);
+            $addresses = [];
+            foreach ($data['addresses'] as $addressType => $addressData) {
+                foreach ($addressData as $address) {
+                    $addresses[$addressType][] = Address::fromArray($address);
+                }
+            }
+            $contact->setAddresses($addresses);
         }
 
         if (isset($data['emailAddresses'])) {

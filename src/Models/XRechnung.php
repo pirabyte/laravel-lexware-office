@@ -40,13 +40,23 @@ class XRechnung implements \JsonSerializable
         return $data;
     }
 
-    private function setBuyerReference(?string $buyerReference): void
+    public function setBuyerReference(?string $buyerReference): void
     {
         $this->buyerReference = $buyerReference;
     }
 
-    private function setVendorNumberAtCustomer(?string $vendorNumberAtCustomer): void
+    public function getBuyerReference(): ?string
+    {
+        return $this->buyerReference;
+    }
+
+    public function setVendorNumberAtCustomer(?string $vendorNumberAtCustomer): void
     {
         $this->vendorNumberAtCustomer = $vendorNumberAtCustomer;
+    }
+
+    public function getVendorNumberAtCustomer(): ?string
+    {
+        return $this->vendorNumberAtCustomer;
     }
 }

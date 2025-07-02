@@ -10,6 +10,7 @@ use Pirabyte\LaravelLexwareOffice\Classes\PaginatedResource;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Contact;
 use Pirabyte\LaravelLexwareOffice\Models\Person;
+use Pirabyte\LaravelLexwareOffice\Models\Profile;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 /**
@@ -658,5 +659,67 @@ class ContactTest extends TestCase
         $this->assertEquals('Muster', $query2['name']);
         $this->assertEquals('2', $query2['size']);
         $this->assertEquals('1', $query2['page']);
+    }
+
+    public function test_it_can_deserialize_contacts_correctly(): void
+    {
+        $fixtureFile = __DIR__.'/../Fixtures/contacts/contact_serialization.json';
+        $fixtureContents = file_get_contents($fixtureFile);
+        $fixtureData = json_decode($fixtureContents, true);
+        $contact = Contact::fromArray($fixtureData);
+
+        $this->assertEquals('be9475f4-ef80-442b-8ab9-3ab8b1a2aeb9', $contact->getId());
+        $this->assertEquals(1, $contact->getVersion());
+
+        $this->assertEquals(10307, $contact->getRoles()['customer']['number']);
+        $this->assertEquals(70303, $contact->getRoles()['vendor']['number']);
+
+        $this->assertEquals('Testfirma', $contact->getCompany()->getName());
+        $this->assertEquals('12345/12345', $contact->getCompany()->getTaxNumber());
+        $this->assertEquals('DE123456789', $contact->getCompany()->getVatRegistrationId());
+        $this->assertTrue($contact->getCompany()->getAllowTaxFreeInvoices());
+
+        $this->assertCount(1, $contact->getCompany()->getContactPersons());
+        $contactPerson = $contact->getCompany()->getContactPersons()[0];
+        $this->assertEquals('Herr', $contactPerson->getSalutation());
+        $this->assertEquals('Max', $contactPerson->getFirstName());
+        $this->assertEquals('Mustermann', $contactPerson->getLastName());
+        $this->assertTrue($contactPerson->getPrimary());
+        $this->assertEquals('contactpersonmail@lexware.de', $contactPerson->getEmailAddress());
+        $this->assertEquals('08000/11111', $contactPerson->getPhoneNumber());
+
+        $this->assertCount(1, $contact->getAddresses()['billing']);
+        $billingAddress = $contact->getAddresses()['billing'][0];
+        $this->assertEquals('Rechnungsadressenzusatz', $billingAddress->getSupplement());
+        $this->assertEquals('Hauptstr. 5', $billingAddress->getStreet());
+        $this->assertEquals('12345', $billingAddress->getZip());
+        $this->assertEquals('Musterort', $billingAddress->getCity());
+        $this->assertEquals('DE', $billingAddress->getCountryCode());
+
+        $this->assertCount(1, $contact->getAddresses()['shipping']);
+        $shippingAddress = $contact->getAddresses()['shipping'][0];
+        $this->assertEquals('Lieferadressenzusatz', $shippingAddress->getSupplement());
+        $this->assertEquals('Schulstr. 13', $shippingAddress->getStreet());
+        $this->assertEquals('76543', $shippingAddress->getZip());
+        $this->assertEquals('MUsterstadt', $shippingAddress->getCity());
+        $this->assertEquals('DE', $shippingAddress->getCountryCode());
+
+        $this->assertEquals('04011000-1234512345-35', $contact->getXRechnung()->getBuyerReference());
+        $this->assertEquals('70123456', $contact->getXRechnung()->getVendorNumberAtCustomer());
+
+        $this->assertEquals(['business@lexware.de'], $contact->getEmailAddresses()['business']);
+        $this->assertEquals(['office@lexware.de'], $contact->getEmailAddresses()['office']);
+        $this->assertEquals(['private@lexware.de'], $contact->getEmailAddresses()['private']);
+        $this->assertEquals(['other@lexware.de'], $contact->getEmailAddresses()['other']);
+
+        $this->assertEquals(['08000/1231'], $contact->getPhoneNumbers()['business']);
+        $this->assertEquals(['08000/1232'], $contact->getPhoneNumbers()['office']);
+        $this->assertEquals(['08000/1233'], $contact->getPhoneNumbers()['mobile']);
+        $this->assertEquals(['08000/1234'], $contact->getPhoneNumbers()['private']);
+        $this->assertEquals(['08000/1235'], $contact->getPhoneNumbers()['fax']);
+        $this->assertEquals(['08000/1236'], $contact->getPhoneNumbers()['other']);
+
+        $this->assertEquals('Notizen', $contact->getNote());
+        $this->assertFalse($contact->getArchived());
     }
 }

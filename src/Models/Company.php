@@ -37,7 +37,11 @@ class Company implements \JsonSerializable
         }
 
         if (isset($data['contactPersons'])) {
-            $company->setContactPersons($data['contactPersons']);
+            $contactPersons = [];
+            foreach ($data['contactPersons'] as $contactPersonData) {
+                $contactPersons[] = ContactPerson::fromArray($contactPersonData);
+            }
+            $company->setContactPersons($contactPersons);
         }
 
         return $company;

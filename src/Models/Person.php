@@ -2,7 +2,7 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Models;
 
-class Person
+class Person implements \JsonSerializable
 {
     private ?string $salutation = null;
 
