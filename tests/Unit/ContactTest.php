@@ -10,7 +10,10 @@ use Pirabyte\LaravelLexwareOffice\Classes\PaginatedResource;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Contact;
 use Pirabyte\LaravelLexwareOffice\Models\Person;
-use Pirabyte\LaravelLexwareOffice\Models\Profile;
+use Pirabyte\LaravelLexwareOffice\Models\Address;
+use Pirabyte\LaravelLexwareOffice\Models\Company;
+use Pirabyte\LaravelLexwareOffice\Models\ContactPerson;
+use Pirabyte\LaravelLexwareOffice\Models\XRechnung;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 /**
@@ -721,5 +724,79 @@ class ContactTest extends TestCase
 
         $this->assertEquals('Notizen', $contact->getNote());
         $this->assertFalse($contact->getArchived());
+    }
+
+    /** @test */
+    public function test_it_can_serialize_contacts_correctly(): void
+    {
+        $fixtureFile = __DIR__ . '/../Fixtures/contacts/contact_serialization.json';
+        $fixtureContents = file_get_contents($fixtureFile);
+        $expectedJson = json_decode($fixtureContents, true);
+
+        $contact = new Contact();
+        $contact->setId('be9475f4-ef80-442b-8ab9-3ab8b1a2aeb9');
+        $contact->setOrganizationId('aa93e8a8-2aa3-470b-b914-caad8a255dd8');
+        $contact->setVersion(1);
+        $contact->setRoles([
+            'customer' => ['number' => 10307],
+            'vendor' => ['number' => 70303],
+        ]);
+
+        $company = new Company();
+        $company->setName('Testfirma');
+        $company->setTaxNumber('12345/12345');
+        $company->setVatRegistrationId('DE123456789');
+        $company->setAllowTaxFreeInvoices(true);
+
+        $contactPerson = new ContactPerson();
+        $contactPerson->setSalutation('Herr');
+        $contactPerson->setFirstName('Max');
+        $contactPerson->setLastName('Mustermann');
+        $contactPerson->setPrimary(true);
+        $contactPerson->setEmailAddress('contactpersonmail@lexware.de');
+        $contactPerson->setPhoneNumber('08000/11111');
+        $company->setContactPersons([$contactPerson]);
+        $contact->setCompany($company);
+
+        $billingAddress = new Address();
+        $billingAddress->supplement = 'Rechnungsadressenzusatz';
+        $billingAddress->street = 'Hauptstr. 5';
+        $billingAddress->zip = '12345';
+        $billingAddress->city = 'Musterort';
+        $billingAddress->countryCode = 'DE';
+
+        $shippingAddress = new Address();
+        $shippingAddress->supplement = 'Lieferadressenzusatz';
+        $shippingAddress->street = 'Schulstr. 13';
+        $shippingAddress->zip = '76543';
+        $shippingAddress->city = 'MUsterstadt';
+        $shippingAddress->countryCode = 'DE';
+        $contact->setAddresses(['billing' => [$billingAddress], 'shipping' => [$shippingAddress]]);
+
+        $xRechnung = new XRechnung();
+        $xRechnung->setBuyerReference('04011000-1234512345-35');
+        $xRechnung->setVendorNumberAtCustomer('70123456');
+        $contact->setXRechnung($xRechnung);
+
+        $contact->setEmailAddresses([
+            'business' => ['business@lexware.de'],
+            'office' => ['office@lexware.de'],
+            'private' => ['private@lexware.de'],
+            'other' => ['other@lexware.de'],
+        ]);
+
+        $contact->setPhoneNumbers([
+            'business' => ['08000/1231'],
+            'office' => ['08000/1232'],
+            'mobile' => ['08000/1233'],
+            'private' => ['08000/1234'],
+            'fax' => ['08000/1235'],
+            'other' => ['08000/1236'],
+        ]);
+
+        $contact->setNote('Notizen');
+        $contact->setArchived(false);
+
+        $this->assertEquals($expectedJson, $contact->jsonSerialize());
     }
 }

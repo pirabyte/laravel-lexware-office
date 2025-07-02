@@ -263,24 +263,31 @@ class Contact implements \JsonSerializable
     public function jsonSerialize(): array
     {
         $data = [
+            'id' => $this->id,
+            'organizationId' => $this->organizationId,
             'version' => $this->version,
             'roles' => $this->roles,
         ];
 
-        if (isset($this->id)) {
-            $data['id'] = $this->id;
-        }
-
         if ($this->person) {
-            $data['person'] = $this->person;
+            $data['person'] = $this->person->jsonSerialize();
         }
 
         if ($this->company) {
-            $data['company'] = $this->company;
+            $data['company'] = $this->company->jsonSerialize();
         }
 
         if (! empty($this->addresses)) {
-            $data['addresses'] = $this->addresses;
+            $data['addresses'] = [];
+            foreach ($this->addresses as $type => $addresses) {
+                foreach ($addresses as $address) {
+                    $data['addresses'][$type][] = $address->jsonSerialize();
+                }
+            }
+        }
+
+        if ($this->xRechnung) {
+            $data['xRechnung'] = $this->xRechnung->jsonSerialize();
         }
 
         if (! empty($this->emailAddresses)) {
@@ -291,17 +298,11 @@ class Contact implements \JsonSerializable
             $data['phoneNumbers'] = $this->phoneNumbers;
         }
 
-        if ($this->xRechnung) {
-            $data['xRechnung'] = $this->xRechnung;
-        }
-
         if ($this->note) {
             $data['note'] = $this->note;
         }
 
-        if ($this->archived) {
-            $data['archived'] = $this->archived;
-        }
+        $data['archived'] = $this->archived;
 
         return $data;
     }
@@ -564,14 +565,14 @@ class Contact implements \JsonSerializable
         return $this;
     }
 
-    private function setCompany(Company $company): self
+    public function setCompany(Company $company): self
     {
         $this->company = $company;
 
         return $this;
     }
 
-    private function setPerson(Person $person): self
+    public function setPerson(Person $person): self
     {
         $this->person = $person;
 
@@ -585,16 +586,16 @@ class Contact implements \JsonSerializable
         return $this;
     }
 
-    private function setOrganizationId(?string $organizationId): self
+    public function setId(string $id): self
     {
-        $this->organizationId = $organizationId;
+        $this->id = $id;
 
         return $this;
     }
 
-    private function setId(string $id): self
+    public function setOrganizationId(?string $organizationId): self
     {
-        $this->id = $id;
+        $this->organizationId = $organizationId;
 
         return $this;
     }
@@ -622,5 +623,35 @@ class Contact implements \JsonSerializable
     public function getVersion(): int
     {
         return $this->version;
+    }
+
+    public function getCustomerNumber(): ?int
+    {
+        return $this->roles['customer']['number'] ?? null;
+    }
+
+    public function getVendorNumber(): ?int
+    {
+        return $this->roles['vendor']['number'] ?? null;
+    }
+
+    public function isCustomer(): bool
+    {
+        return isset($this->roles['customer']);
+    }
+
+    public function isVendor(): bool
+    {
+        return isset($this->roles['vendor']);
+    }
+
+    public function getBillingAddress(): ?Address
+    {
+        return $this->addresses['billing'][0] ?? null;
+    }
+
+    public function getShippingAddress(): ?Address
+    {
+        return $this->addresses['shipping'][0] ?? null;
     }
 }

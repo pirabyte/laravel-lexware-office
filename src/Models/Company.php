@@ -66,7 +66,10 @@ class Company implements \JsonSerializable
         }
 
         if (! empty($this->contactPersons)) {
-            $data['contactPersons'] = $this->contactPersons;
+            $data['contactPersons'] = [];
+            foreach ($this->contactPersons as $contactPerson) {
+                $data['contactPersons'][] = $contactPerson->jsonSerialize();
+            }
         }
 
         return $data;
