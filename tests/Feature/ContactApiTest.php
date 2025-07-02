@@ -23,27 +23,8 @@ class ContactApiTest extends TestCase
 
         // Mock-Responses für die API-Aufrufe bei Personen-Kontakt
         $personMockResponses = [
-            // Response für create
-            new Response(201, ['Content-Type' => 'application/json'], json_encode([
-                'id' => '123e4567-e89b-12d3-a456-426614174000',
-                'resourceUri' => 'https://api.lexoffice.io/v1/contacts/123e4567-e89b-12d3-a456-426614174000',
-                'createdDate' => '2023-06-29T15:15:09.447+02:00',
-                'updatedDate' => '2023-06-29T15:15:09.447+02:00',
-                'version' => 1,
-            ])),
-            // Response für get (innerhalb von create)
-            new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                'id' => '123e4567-e89b-12d3-a456-426614174000',
-                'version' => 1,
-                'roles' => [
-                    'customer' => ['number' => 'K-12345'],
-                ],
-                'person' => [
-                    'salutation' => 'Herr',
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
-                ],
-            ])),
+            new Response(201, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/contacts/api_responses/person_contact_create_response.json')),
+            new Response(200, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/contacts/api_responses/person_contact_get_response.json')),
         ];
 
         $mock = new MockHandler($personMockResponses);
@@ -78,42 +59,8 @@ class ContactApiTest extends TestCase
     {
         // Prepare mock responses for complete contact data creation
         $mockResponses = [
-            // Response für create
-            new Response(201, ['Content-Type' => 'application/json'], json_encode([
-                'id' => '66196c43-baf3-4335-bfee-d610367059db',
-                'resourceUri' => 'https://api-sandbox.grld.eu/v1/contacts/66196c43-baf3-4335-bfee-d610367059db',
-                'createdDate' => '2023-06-29T15:15:09.447+02:00',
-                'updatedDate' => '2023-06-29T15:15:09.447+02:00',
-                'version' => 1,
-            ])),
-            // Response für get (innerhalb von create)
-            new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                'id' => '66196c43-baf3-4335-bfee-d610367059db',
-                'version' => 1,
-                'roles' => ['customer' => []],
-                'person' => [
-                    'salutation' => 'Frau',
-                    'firstName' => 'Inge',
-                    'lastName' => 'Musterfrau',
-                ],
-                'note' => 'Notizen',
-                'addresses' => [
-                    ['billing' => [
-                        [
-                            'street' => 'Musterstraße 1',
-                            'zip' => '12345',
-                            'city' => 'Musterstadt',
-                            'countryCode' => 'DE',
-                        ],
-                    ]],
-                ],
-                'emailAddresses' => [
-                    ['business' => ['inge@example.com']],
-                ],
-                'phoneNumbers' => [
-                    ['business' => ['+49123456789']],
-                ],
-            ])),
+            new Response(201, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/contacts/api_responses/complete_person_contact_create_response.json')),
+            new Response(200, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/contacts/api_responses/complete_person_contact_get_response.json')),
         ];
 
         $mock = new MockHandler($mockResponses);
@@ -152,35 +99,8 @@ class ContactApiTest extends TestCase
     {
         // Prepare mock responses for complete contact data creation
         $mockResponses = [
-            // Response für create
-            new Response(201, ['Content-Type' => 'application/json'], json_encode([
-                'id' => '12345678-abcd-1234-efgh-123456789012',
-                'resourceUri' => 'https://api-sandbox.grld.eu/v1/contacts/12345678-abcd-1234-efgh-123456789012',
-                'createdDate' => '2023-06-29T15:15:09.447+02:00',
-                'updatedDate' => '2023-06-29T15:15:09.447+02:00',
-                'version' => 1,
-            ])),
-            // Response für get (innerhalb von create)
-            new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                'id' => '12345678-abcd-1234-efgh-123456789012',
-                'version' => 1,
-                'roles' => ['customer' => []],
-                'person' => [
-                    'salutation' => 'Herr',
-                    'firstName' => 'Hans',
-                    'lastName' => 'Schmidt',
-                ],
-                'emailAddresses' => [
-                    ['business' => ['hans.business@example.com']],
-                    ['private' => ['hans.private@example.com']],
-                    ['office' => ['hans.office@example.com']],
-                ],
-                'phoneNumbers' => [
-                    ['business' => ['+4912345678901']],
-                    ['mobile' => ['+4915123456789']],
-                    ['fax' => ['+49123456789999']],
-                ],
-            ])),
+            new Response(201, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/contacts/api_responses/multiple_email_phone_create_response.json')),
+            new Response(200, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/contacts/api_responses/multiple_email_phone_get_response.json')),
         ];
 
         $mock = new MockHandler($mockResponses);
@@ -232,45 +152,8 @@ class ContactApiTest extends TestCase
     {
         // Prepare mock responses for contact with multiple address types
         $mockResponses = [
-            // Response für create
-            new Response(201, ['Content-Type' => 'application/json'], json_encode([
-                'id' => '44444444-bbbb-4444-cccc-444444444444',
-                'resourceUri' => 'https://api-sandbox.grld.eu/v1/contacts/44444444-bbbb-4444-cccc-444444444444',
-                'createdDate' => '2023-06-29T15:15:09.447+02:00',
-                'updatedDate' => '2023-06-29T15:15:09.447+02:00',
-                'version' => 1,
-            ])),
-            // Response für get (innerhalb von create)
-            new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                'id' => '44444444-bbbb-4444-cccc-444444444444',
-                'version' => 1,
-                'roles' => ['customer' => []],
-                'person' => [
-                    'salutation' => 'Herr',
-                    'firstName' => 'Peter',
-                    'lastName' => 'Beispiel',
-                ],
-                'addresses' => [
-                    ['billing' => [
-                        [
-                            'supplement' => 'Rechnungsadressenzusatz',
-                            'street' => 'Hauptstr. 5',
-                            'zip' => '12345',
-                            'city' => 'Musterort',
-                            'countryCode' => 'DE',
-                        ],
-                    ]],
-                    ['shipping' => [
-                        [
-                            'supplement' => 'Lieferadressenzusatz',
-                            'street' => 'Schulstr. 13',
-                            'zip' => '76543',
-                            'city' => 'Musterstadt',
-                            'countryCode' => 'DE',
-                        ],
-                    ]],
-                ],
-            ])),
+            new Response(201, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/contacts/api_responses/multiple_address_types_create_response.json')),
+            new Response(200, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/contacts/api_responses/multiple_address_types_get_response.json')),
         ];
 
         $mock = new MockHandler($mockResponses);
@@ -308,20 +191,20 @@ class ContactApiTest extends TestCase
         // Billing address test
         $billingAddress = $savedContact->getAddress('billing');
         $this->assertNotNull($billingAddress);
-        $this->assertEquals('Hauptstr. 5', $billingAddress['street']);
-        $this->assertEquals('12345', $billingAddress['zip']);
-        $this->assertEquals('Musterort', $billingAddress['city']);
-        $this->assertEquals('DE', $billingAddress['countryCode']);
-        $this->assertEquals('Rechnungsadressenzusatz', $billingAddress['supplement']);
+        $this->assertEquals('Hauptstr. 5', $billingAddress->street);
+        $this->assertEquals('12345', $billingAddress->zip);
+        $this->assertEquals('Musterort', $billingAddress->city);
+        $this->assertEquals('DE', $billingAddress->countryCode);
+        $this->assertEquals('Rechnungsadressenzusatz', $billingAddress->supplement);
 
         // Shipping address test
         $shippingAddress = $savedContact->getAddress('shipping');
         $this->assertNotNull($shippingAddress);
-        $this->assertEquals('Schulstr. 13', $shippingAddress['street']);
-        $this->assertEquals('76543', $shippingAddress['zip']);
-        $this->assertEquals('Musterstadt', $shippingAddress['city']);
-        $this->assertEquals('DE', $shippingAddress['countryCode']);
-        $this->assertEquals('Lieferadressenzusatz', $shippingAddress['supplement']);
+        $this->assertEquals('Schulstr. 13', $shippingAddress->street);
+        $this->assertEquals('76543', $shippingAddress->zip);
+        $this->assertEquals('Musterstadt', $shippingAddress->city);
+        $this->assertEquals('DE', $shippingAddress->countryCode);
+        $this->assertEquals('Lieferadressenzusatz', $shippingAddress->supplement);
     }
 
     /** @test */
@@ -329,41 +212,8 @@ class ContactApiTest extends TestCase
     {
         // Prepare mock responses for company contact creation
         $mockResponses = [
-            // Response für create
-            new Response(201, ['Content-Type' => 'application/json'], json_encode([
-                'id' => '87654321-abcd-1234-efgh-987654321987',
-                'resourceUri' => 'https://api-sandbox.grld.eu/v1/contacts/87654321-abcd-1234-efgh-987654321987',
-                'createdDate' => '2023-06-29T15:15:09.447+02:00',
-                'updatedDate' => '2023-06-29T15:15:09.447+02:00',
-                'version' => 1,
-            ])),
-            // Response für get (innerhalb von create)
-            new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                'id' => '87654321-abcd-1234-efgh-987654321987',
-                'version' => 1,
-                'roles' => [
-                    'vendor' => ['number' => 'L-789'],
-                ],
-                'company' => [
-                    'name' => 'Musterfirma GmbH',
-                    'taxNumber' => 'DE123456789',
-                    'vatRegistrationId' => 'DE987654321',
-                    'allowTaxFreeInvoices' => false,
-                    'contactPersons' => [
-                        ['lastName' => 'Müller'],
-                    ],
-                ],
-                'addresses' => [
-                    ['billing' => [
-                        [
-                            'street' => 'Industriestraße 42',
-                            'zip' => '54321',
-                            'city' => 'Musterstadt',
-                            'countryCode' => 'DE',
-                        ],
-                    ]],
-                ],
-            ])),
+            new Response(201, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/contacts/api_responses/company_contact_create_response.json')),
+            new Response(200, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/contacts/api_responses/company_contact_get_response.json')),
         ];
 
         $mock = new MockHandler($mockResponses);
@@ -391,6 +241,6 @@ class ContactApiTest extends TestCase
         $this->assertEquals('Musterfirma GmbH', $savedContact->getCompany()->getName());
         $this->assertEquals('L-789', $savedContact->getRoles()['vendor']['number']);
         $billingAddress = $savedContact->getAddress('billing');
-        $this->assertEquals('DE', $billingAddress['countryCode']);
+        $this->assertEquals('DE', $billingAddress->countryCode);
     }
 }

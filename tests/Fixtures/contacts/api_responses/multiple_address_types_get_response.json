@@ -1,0 +1,32 @@
+{
+    "id": "44444444-bbbb-4444-cccc-444444444444",
+    "version": 1,
+    "roles": {
+        "customer": []
+    },
+    "person": {
+        "salutation": "Herr",
+        "firstName": "Peter",
+        "lastName": "Beispiel"
+    },
+    "addresses": {
+        "billing": [
+            {
+                "supplement": "Rechnungsadressenzusatz",
+                "street": "Hauptstr. 5",
+                "zip": "12345",
+                "city": "Musterort",
+                "countryCode": "DE"
+            }
+        ],
+        "shipping": [
+            {
+                "supplement": "Lieferadressenzusatz",
+                "street": "Schulstr. 13",
+                "zip": "76543",
+                "city": "Musterstadt",
+                "countryCode": "DE"
+            }
+        ]
+    }
+}

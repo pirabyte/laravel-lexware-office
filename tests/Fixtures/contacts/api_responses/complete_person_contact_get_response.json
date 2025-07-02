@@ -1,0 +1,33 @@
+{
+    "id": "66196c43-baf3-4335-bfee-d610367059db",
+    "version": 1,
+    "roles": {
+        "customer": []
+    },
+    "person": {
+        "salutation": "Frau",
+        "firstName": "Inge",
+        "lastName": "Musterfrau"
+    },
+    "note": "Notizen",
+    "addresses": {
+        "billing": [
+            {
+                "street": "Musterstraße 1",
+                "zip": "12345",
+                "city": "Musterstadt",
+                "countryCode": "DE"
+            }
+        ]
+    },
+    "emailAddresses": {
+        "business": [
+            "inge@example.com"
+        ]
+    },
+    "phoneNumbers": {
+        "business": [
+            "+49123456789"
+        ]
+    }
+}

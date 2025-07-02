@@ -1,0 +1,34 @@
+{
+    "id": "12345678-abcd-1234-efgh-123456789012",
+    "version": 1,
+    "roles": {
+        "customer": []
+    },
+    "person": {
+        "salutation": "Herr",
+        "firstName": "Hans",
+        "lastName": "Schmidt"
+    },
+    "emailAddresses": {
+        "business": [
+            "hans.business@example.com"
+        ],
+        "private": [
+            "hans.private@example.com"
+        ],
+        "office": [
+            "hans.office@example.com"
+        ]
+    },
+    "phoneNumbers": {
+        "business": [
+            "+4912345678901"
+        ],
+        "mobile": [
+            "+4915123456789"
+        ],
+        "fax": [
+            "+49123456789999"
+        ]
+    }
+}

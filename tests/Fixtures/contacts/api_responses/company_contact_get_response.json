@@ -1,0 +1,30 @@
+{
+    "id": "87654321-abcd-1234-efgh-987654321987",
+    "version": 1,
+    "roles": {
+        "vendor": {
+            "number": "L-789"
+        }
+    },
+    "company": {
+        "name": "Musterfirma GmbH",
+        "taxNumber": "DE123456789",
+        "vatRegistrationId": "DE987654321",
+        "allowTaxFreeInvoices": false,
+        "contactPersons": [
+            {
+                "lastName": "Müller"
+            }
+        ]
+    },
+    "addresses": {
+        "billing": [
+            {
+                "street": "Industriestraße 42",
+                "zip": "54321",
+                "city": "Musterstadt",
+                "countryCode": "DE"
+            }
+        ]
+    }
+}

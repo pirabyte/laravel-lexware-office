@@ -87,7 +87,17 @@ class Contact implements \JsonSerializable
 
     public function setAddresses(array $addresses): self
     {
-        $this->addresses = $addresses;
+        $processedAddresses = [];
+        foreach ($addresses as $type => $addressCollection) {
+            foreach ($addressCollection as $addressData) {
+                if ($addressData instanceof Address) {
+                    $processedAddresses[$type][] = $addressData;
+                } else {
+                    $processedAddresses[$type][] = Address::fromArray($addressData);
+                }
+            }
+        }
+        $this->addresses = $processedAddresses;
 
         return $this;
     }
@@ -105,13 +115,7 @@ class Contact implements \JsonSerializable
      */
     public function getEmailAddress(string $type): ?string
     {
-        foreach ($this->emailAddresses as $emailAddress) {
-            if (isset($emailAddress[$type]) && ! empty($emailAddress[$type])) {
-                return $emailAddress[$type][0];
-            }
-        }
-
-        return null;
+        return $this->emailAddresses[$type][0] ?? null;
     }
 
     public function getPhoneNumbers(): array
@@ -127,13 +131,7 @@ class Contact implements \JsonSerializable
      */
     public function getPhoneNumber(string $type): ?string
     {
-        foreach ($this->phoneNumbers as $phoneNumber) {
-            if (isset($phoneNumber[$type]) && ! empty($phoneNumber[$type])) {
-                return $phoneNumber[$type][0];
-            }
-        }
-
-        return null;
+        return $this->phoneNumbers[$type][0] ?? null;
     }
 
     public function getXRechnung(): ?XRechnung
@@ -215,13 +213,7 @@ class Contact implements \JsonSerializable
         }
 
         if (isset($data['addresses'])) {
-            $addresses = [];
-            foreach ($data['addresses'] as $addressType => $addressData) {
-                foreach ($addressData as $address) {
-                    $addresses[$addressType][] = Address::fromArray($address);
-                }
-            }
-            $contact->setAddresses($addresses);
+            $contact->setAddresses($data['addresses']);
         }
 
         if (isset($data['emailAddresses'])) {
@@ -278,12 +270,13 @@ class Contact implements \JsonSerializable
         }
 
         if (! empty($this->addresses)) {
-            $data['addresses'] = [];
-            foreach ($this->addresses as $type => $addresses) {
-                foreach ($addresses as $address) {
-                    $data['addresses'][$type][] = $address->jsonSerialize();
+            $serializedAddresses = [];
+            foreach ($this->addresses as $type => $addressCollection) {
+                foreach ($addressCollection as $addressObject) {
+                    $serializedAddresses[$type][] = $addressObject->jsonSerialize();
                 }
             }
+            $data['addresses'] = $serializedAddresses;
         }
 
         if ($this->xRechnung) {
@@ -370,18 +363,8 @@ class Contact implements \JsonSerializable
             throw new \InvalidArgumentException("Invalid address type: $type. Must be one of: ".implode(', ', $validTypes));
         }
 
-        // Check if the type already exists in addresses
-        foreach ($this->addresses as $key => $address) {
-            if (isset($address[$type])) {
-                // Replace existing address of this type
-                $this->addresses[$key] = [$type => [$addressData]];
-
-                return $this;
-            }
-        }
-
-        // Add new address with correct format
-        $this->addresses[] = [$type => [$addressData]];
+        // Replace existing address of this type or add new one
+        $this->addresses[$type] = [Address::fromArray($addressData)];
 
         return $this;
     }
@@ -392,15 +375,9 @@ class Contact implements \JsonSerializable
      * @param  string  $type  The type of address ('billing' or 'shipping')
      * @return array|null The address data or null if not found
      */
-    public function getAddress(string $type): ?array
+    public function getAddress(string $type): ?Address
     {
-        foreach ($this->addresses as $address) {
-            if (isset($address[$type]) && ! empty($address[$type])) {
-                return $address[$type][0];
-            }
-        }
-
-        return null;
+        return $this->addresses[$type][0] ?? null;
     }
 
     /**
@@ -465,7 +442,15 @@ class Contact implements \JsonSerializable
      */
     public function setEmailAddresses(array $emailAddresses): self
     {
-        $this->emailAddresses = $emailAddresses;
+        $processedEmails = [];
+        foreach ($emailAddresses as $key => $value) {
+            if (is_array($value)) {
+                $processedEmails[$key] = $value;
+            } else {
+                $processedEmails[$key] = [$value];
+            }
+        }
+        $this->emailAddresses = $processedEmails;
 
         return $this;
     }
@@ -487,18 +472,8 @@ class Contact implements \JsonSerializable
             throw new \InvalidArgumentException("Invalid email type: $type. Must be one of: ".implode(', ', $validTypes));
         }
 
-        // Check if type already exists
-        foreach ($this->emailAddresses as $index => $existingEmail) {
-            if (isset($existingEmail[$type])) {
-                // Replace existing email of this type
-                $this->emailAddresses[$index] = [$type => [$email]];
-
-                return $this;
-            }
-        }
-
-        // Add new email address with correct format
-        $this->emailAddresses[] = [$type => [$email]];
+        // Add or replace email address of this type
+        $this->emailAddresses[$type] = [$email];
 
         return $this;
     }
@@ -513,7 +488,15 @@ class Contact implements \JsonSerializable
      */
     public function setPhoneNumbers(array $phoneNumbers): self
     {
-        $this->phoneNumbers = $phoneNumbers;
+        $processedPhones = [];
+        foreach ($phoneNumbers as $key => $value) {
+            if (is_array($value)) {
+                $processedPhones[$key] = $value;
+            } else {
+                $processedPhones[$key] = [$value];
+            }
+        }
+        $this->phoneNumbers = $processedPhones;
 
         return $this;
     }
@@ -535,18 +518,8 @@ class Contact implements \JsonSerializable
             throw new \InvalidArgumentException("Invalid phone type: $type. Must be one of: ".implode(', ', $validTypes));
         }
 
-        // Check if type already exists
-        foreach ($this->phoneNumbers as $index => $existingPhone) {
-            if (isset($existingPhone[$type])) {
-                // Replace existing phone of this type
-                $this->phoneNumbers[$index] = [$type => [$number]];
-
-                return $this;
-            }
-        }
-
-        // Add new phone number with correct format
-        $this->phoneNumbers[] = [$type => [$number]];
+        // Add or replace phone number of this type
+        $this->phoneNumbers[$type] = [$number];
 
         return $this;
     }

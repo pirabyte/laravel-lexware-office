@@ -3,6 +3,7 @@
 namespace Pirabyte\LaravelLexwareOffice\Tests\Unit;
 
 use Pirabyte\LaravelLexwareOffice\Models\Company;
+use Pirabyte\LaravelLexwareOffice\Models\ContactPerson;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class CompanyTest extends TestCase
@@ -16,19 +17,23 @@ class CompanyTest extends TestCase
             'vatRegistrationId' => 'DE123456789',
             'allowTaxFreeInvoices' => true,
             'contactPersons' => [
-                ['id' => '1', 'name' => 'John Doe'],
-                ['id' => '2', 'name' => 'Jane Doe'],
+                ['salutation' => 'Mr.', 'firstName' => 'John', 'lastName' => 'Doe', 'primary' => true, 'emailAddress' => 'john.doe@example.com', 'phoneNumber' => '12345'],
+                ['salutation' => 'Ms.', 'firstName' => 'Jane', 'lastName' => 'Doe', 'primary' => false, 'emailAddress' => 'jane.doe@example.com', 'phoneNumber' => '67890'],
             ],
         ];
 
         $company = Company::fromArray($data);
-        $serialized = $company->jsonSerialize();
 
-        $this->assertEquals($data['name'], $serialized['name']);
-        $this->assertEquals($data['taxNumber'], $serialized['taxNumber']);
-        $this->assertEquals($data['vatRegistrationId'], $serialized['vatRegistrationId']);
-        $this->assertEquals($data['allowTaxFreeInvoices'], $serialized['allowTaxFreeInvoices']);
-        $this->assertEquals($data['contactPersons'], $serialized['contactPersons']);
+        $this->assertEquals($data['name'], $company->getName());
+        $this->assertEquals($data['taxNumber'], $company->getTaxNumber());
+        $this->assertEquals($data['vatRegistrationId'], $company->getVatRegistrationId());
+        $this->assertEquals($data['allowTaxFreeInvoices'], $company->getAllowTaxFreeInvoices());
+
+        $contactPersons = $company->getContactPersons();
+        $this->assertCount(2, $contactPersons);
+        $this->assertInstanceOf(ContactPerson::class, $contactPersons[0]);
+        $this->assertEquals('John', $contactPersons[0]->getFirstName());
+        $this->assertEquals('Jane', $contactPersons[1]->getFirstName());
     }
 
     /** @test */
@@ -58,7 +63,7 @@ class CompanyTest extends TestCase
             'vatRegistrationId' => 'DE987654321',
             'allowTaxFreeInvoices' => true,
             'contactPersons' => [
-                ['id' => '3', 'name' => 'Max Mustermann'],
+                ['salutation' => 'Mr.', 'firstName' => 'Max', 'lastName' => 'Mustermann', 'primary' => true, 'emailAddress' => 'max@example.com', 'phoneNumber' => '12345'],
             ],
         ];
 
@@ -70,6 +75,10 @@ class CompanyTest extends TestCase
         $this->assertEquals($data['taxNumber'], $decoded['taxNumber']);
         $this->assertEquals($data['vatRegistrationId'], $decoded['vatRegistrationId']);
         $this->assertEquals($data['allowTaxFreeInvoices'], $decoded['allowTaxFreeInvoices']);
-        $this->assertEquals($data['contactPersons'], $decoded['contactPersons']);
+
+        // Manually compare contactPersons as they are now objects
+        $this->assertCount(1, $decoded['contactPersons']);
+        $this->assertEquals('Max', $decoded['contactPersons'][0]['firstName']);
+        $this->assertEquals('max@example.com', $decoded['contactPersons'][0]['emailAddress']);
     }
 }

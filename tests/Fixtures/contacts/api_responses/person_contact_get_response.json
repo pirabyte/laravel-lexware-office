@@ -1,0 +1,14 @@
+{
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "version": 1,
+    "roles": {
+        "customer": {
+            "number": "K-12345"
+        }
+    },
+    "person": {
+        "salutation": "Herr",
+        "firstName": "Max",
+        "lastName": "Mustermann"
+    }
+}
