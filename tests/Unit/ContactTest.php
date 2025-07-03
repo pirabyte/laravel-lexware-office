@@ -799,4 +799,13 @@ class ContactTest extends TestCase
 
         $this->assertEquals($expectedJson, $contact->jsonSerialize());
     }
+
+    public function test_setting_role_creates_an_empty_json_class() : void
+    {
+        $contact = Contact::createCompany('Musterfirma');
+        $contact->setAsCustomer();
+        $this->assertIsObject($contact->getRoles()['customer']);
+        $json = json_encode($contact->jsonSerialize());
+        $this->assertStringContainsString('"roles":{"customer":{}}', $json);
+    }
 }

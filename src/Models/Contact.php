@@ -315,7 +315,7 @@ class Contact implements \JsonSerializable
      */
     public function addRole(string $roleType): self
     {
-        $this->roles[$roleType] = null;
+        $this->roles[$roleType] = new \stdClass();
 
         return $this;
     }
@@ -610,12 +610,12 @@ class Contact implements \JsonSerializable
 
     public function isCustomer(): bool
     {
-        return isset($this->roles['customer']);
+        return array_key_exists('customer', $this->roles);
     }
 
     public function isVendor(): bool
     {
-        return isset($this->roles['vendor']);
+        return array_key_exists('vendor', $this->roles);
     }
 
     public function getBillingAddress(): ?Address
