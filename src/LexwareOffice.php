@@ -73,7 +73,7 @@ class LexwareOffice
                 'Content-Type' => 'application/json',
             ],
         ]);
-        
+
         // Alias for tests that use reflection to access httpClient
         $this->httpClient = $this->client;
 
@@ -247,7 +247,7 @@ class LexwareOffice
         if (!$this->oauth2Service) {
             throw new LexwareOfficeApiException('OAuth2 service not configured');
         }
-        
+
         return $this->oauth2Service->getAuthorizationUrl($state);
     }
 
@@ -259,7 +259,7 @@ class LexwareOffice
         if (!$this->oauth2Service) {
             throw new LexwareOfficeApiException('OAuth2 service not configured');
         }
-        
+
         return $this->oauth2Service->exchangeCodeForToken($code, $state);
     }
 
@@ -271,7 +271,7 @@ class LexwareOffice
         if (!$this->oauth2Service) {
             throw new LexwareOfficeApiException('OAuth2 service not configured');
         }
-        
+
         return $this->oauth2Service->getValidAccessToken();
     }
 
@@ -283,7 +283,7 @@ class LexwareOffice
         if (!$this->oauth2Service) {
             throw new LexwareOfficeApiException('OAuth2 service not configured');
         }
-        
+
         return $this->oauth2Service->revokeToken($token);
     }
 
@@ -419,7 +419,7 @@ class LexwareOffice
     protected function handleRequestException(RequestException $e): LexwareOfficeApiException
     {
         $response = $e->getResponse();
-        
+
         if (!$response) {
             // No response from the server - likely a connection error
             return new LexwareOfficeApiException(
@@ -428,16 +428,16 @@ class LexwareOffice
                 $e
             );
         }
-        
+
         $statusCode = $response->getStatusCode();
         $message = $response->getBody()->getContents();
-        
+
         // Special handling for rate limit errors
         if ($statusCode === 429) {
             $retryAfter = $response->hasHeader('Retry-After')
                 ? (int)$response->getHeaderLine('Retry-After')
                 : 60;
-                
+
             // Add retry information to the message if it's a JSON response
             $responseData = json_decode($message, true);
             if (is_array($responseData)) {
@@ -484,14 +484,14 @@ class LexwareOffice
         // Check if we've exceeded our self-imposed rate limit
         if (RateLimiter::tooManyAttempts($this->rateLimitKey, $this->maxRequestsPerMinute)) {
             $seconds = RateLimiter::availableIn($this->rateLimitKey);
-            
+
             // Create a properly structured rate limit error
             $errorData = [
                 'message' => 'Rate limit exceeded',
                 'details' => "Too many requests. Please wait {$seconds} seconds before retrying.",
                 'retryAfter' => $seconds
             ];
-            
+
             throw new LexwareOfficeApiException(
                 json_encode($errorData),
                 LexwareOfficeApiException::STATUS_RATE_LIMITED
@@ -504,19 +504,19 @@ class LexwareOffice
         try {
             // Execute the request
             $response = $callback();
-            
+
             // Track the request for our rate limiter
             RateLimiter::hit($this->rateLimitKey, 60);
 
             // Parse and return the response data
             $content = $response->getBody()->getContents();
             $data = json_decode($content, true);
-            
+
             if (json_last_error() !== JSON_ERROR_NONE) {
                 // Handle non-JSON responses
                 return ['raw' => $content];
             }
-            
+
             return $data;
         } catch (RequestException $e) {
             // Check if this is an authentication error and we have OAuth2
@@ -526,14 +526,14 @@ class LexwareOffice
                     try {
                         $response = $callback();
                         RateLimiter::hit($this->rateLimitKey, 60);
-                        
+
                         $content = $response->getBody()->getContents();
                         $data = json_decode($content, true);
-                        
+
                         if (json_last_error() !== JSON_ERROR_NONE) {
                             return ['raw' => $content];
                         }
-                        
+
                         return $data;
                     } catch (RequestException $retryException) {
                         // If retry also fails, throw the original exception
@@ -541,7 +541,7 @@ class LexwareOffice
                     }
                 }
             }
-            
+
             // Handle request exceptions (HTTP errors, etc.)
             throw $this->handleRequestException($e);
         }
@@ -567,10 +567,10 @@ class LexwareOffice
         }
 
         $token = $this->oauth2Service->getValidAccessToken();
-        
+
         if ($token) {
             // Update client with fresh token
-            $this->client = $this->client->getConfig('handler') ? 
+            $this->client = $this->client->getConfig('handler') ?
                 new Client(array_merge($this->client->getConfig(), [
                     'headers' => array_merge($this->client->getConfig('headers') ?? [], [
                         'Authorization' => $token->getAuthorizationHeader(),
@@ -596,7 +596,7 @@ class LexwareOffice
 
         try {
             $token = $this->oauth2Service->refreshToken();
-            
+
             if ($token) {
                 // Update client with new token
                 $this->ensureValidToken();

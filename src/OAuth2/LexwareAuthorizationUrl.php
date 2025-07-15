@@ -5,9 +5,9 @@ namespace Pirabyte\LaravelLexwareOffice\OAuth2;
 class LexwareAuthorizationUrl
 {
     protected string $url;
-    
+
     protected string $state;
-    
+
     protected string $codeVerifier;
 
     public function __construct(string $url, string $state, string $codeVerifier)

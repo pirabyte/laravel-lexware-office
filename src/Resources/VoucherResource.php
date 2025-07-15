@@ -63,7 +63,7 @@ class VoucherResource
     public function update(string $id, Voucher $voucher): Voucher
     {
         $data = $voucher->jsonSerialize();
-        
+
         // Include version for optimistic locking
         $version = $voucher->getVersion();
         if ($version !== null) {
@@ -77,7 +77,7 @@ class VoucherResource
             if ($e->isConflictError()) {
                 // Try to extract current version from error response
                 $currentVersion = $this->extractVersionFromErrorResponse($e);
-                
+
                 throw new OptimisticLockingException(
                     'Voucher update failed due to version conflict',
                     $id,
@@ -86,7 +86,7 @@ class VoucherResource
                     $e
                 );
             }
-            
+
             // Re-throw other API exceptions
             throw $e;
         }
@@ -236,11 +236,11 @@ class VoucherResource
     protected function extractVersionFromErrorResponse(LexwareOfficeApiException $e): ?int
     {
         $responseData = $e->getResponseData();
-        
+
         // Try different possible fields where the current version might be returned
-        return $responseData['currentVersion'] 
-            ?? $responseData['version'] 
-            ?? $responseData['lockVersion'] 
+        return $responseData['currentVersion']
+            ?? $responseData['version']
+            ?? $responseData['lockVersion']
             ?? null;
     }
 }

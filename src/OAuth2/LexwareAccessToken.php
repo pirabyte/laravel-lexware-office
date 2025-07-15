@@ -5,15 +5,15 @@ namespace Pirabyte\LaravelLexwareOffice\OAuth2;
 class LexwareAccessToken implements \JsonSerializable
 {
     protected string $accessToken;
-    
+
     protected string $tokenType;
-    
+
     protected int $expiresIn;
-    
+
     protected ?string $refreshToken;
-    
+
     protected array $scopes;
-    
+
     protected \DateTimeInterface $createdAt;
 
     public function __construct(
@@ -38,15 +38,15 @@ class LexwareAccessToken implements \JsonSerializable
     private static function parseScopes($scopes): array
     {
         if (is_array($scopes)) {
-            return array_filter($scopes, function($scope) {
+            return array_filter($scopes, function ($scope) {
                 return !empty($scope);
             });
         }
-        
+
         if (is_string($scopes) && !empty($scopes)) {
             return explode(' ', $scopes);
         }
-        
+
         return [];
     }
 
@@ -56,7 +56,7 @@ class LexwareAccessToken implements \JsonSerializable
     public static function fromArray(array $data): self
     {
         $scopes = $data['scope'] ?? $data['scopes'] ?? null;
-        
+
         return new self(
             $data['access_token'],
             $data['token_type'] ?? 'Bearer',
@@ -138,10 +138,10 @@ class LexwareAccessToken implements \JsonSerializable
     {
         $expiresAt = $this->getExpiresAt();
         $now = new \DateTime();
-        
+
         // Add buffer to account for network delays
         $expiresAt->sub(new \DateInterval("PT{$bufferSeconds}S"));
-        
+
         return $now >= $expiresAt;
     }
 
@@ -152,7 +152,7 @@ class LexwareAccessToken implements \JsonSerializable
     {
         $expiresAt = $this->getExpiresAt();
         $checkTime = (new \DateTime())->add(new \DateInterval("PT{$seconds}S"));
-        
+
         return $checkTime >= $expiresAt;
     }
 
@@ -180,13 +180,13 @@ class LexwareAccessToken implements \JsonSerializable
         if (empty($scopes)) {
             return true;
         }
-        
+
         foreach ($scopes as $scope) {
             if (!$this->hasScope($scope)) {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -197,11 +197,11 @@ class LexwareAccessToken implements \JsonSerializable
     {
         $expiresAt = $this->getExpiresAt();
         $now = new \DateTime();
-        
+
         if ($now >= $expiresAt) {
             return 0;
         }
-        
+
         return $expiresAt->getTimestamp() - $now->getTimestamp();
     }
 
@@ -226,13 +226,13 @@ class LexwareAccessToken implements \JsonSerializable
     public static function fromJson(string $json): self
     {
         $data = json_decode($json, true);
-        
+
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \InvalidArgumentException('Invalid JSON for token data');
         }
-        
+
         $scopes = $data['scope'] ?? $data['scopes'] ?? null;
-        
+
         return new self(
             $data['access_token'],
             $data['token_type'] ?? 'Bearer',

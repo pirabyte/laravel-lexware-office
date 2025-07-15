@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\DB;
 class DatabaseTokenStorage implements LexwareTokenStorage
 {
     protected string $table;
-    
+
     protected string $userColumn;
-    
+
     protected mixed $userId;
 
     public function __construct(

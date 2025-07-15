@@ -64,7 +64,7 @@ class ContactResource
     public function update(string $id, Contact $contact): Contact
     {
         $data = $contact->jsonSerialize();
-        
+
         // Include version for optimistic locking
         $version = $contact->getVersion();
         if ($version !== null) {
@@ -78,7 +78,7 @@ class ContactResource
             if ($e->isConflictError()) {
                 // Try to extract current version from error response
                 $currentVersion = $this->extractVersionFromErrorResponse($e);
-                
+
                 throw new OptimisticLockingException(
                     'Contact update failed due to version conflict',
                     $id,
@@ -87,7 +87,7 @@ class ContactResource
                     $e
                 );
             }
-            
+
             // Re-throw other API exceptions
             throw $e;
         }
@@ -199,7 +199,13 @@ class ContactResource
 
         if (isset($response['content']) && is_array($response['content'])) {
             foreach ($response['content'] as $contactData) {
-                $resource->appendContent(Contact::fromArray($contactData));
+                try {
+                    $resource->appendContent(Contact::fromArray($contactData));
+                } catch (\Exception $e) {
+                    // Skip contacts with parsing failures (e.g., missing required fields like 'zip')
+                    // This prevents the entire operation from failing due to malformed data
+                    continue;
+                }
             }
         }
 
@@ -257,11 +263,11 @@ class ContactResource
     protected function extractVersionFromErrorResponse(LexwareOfficeApiException $e): ?int
     {
         $responseData = $e->getResponseData();
-        
+
         // Try different possible fields where the current version might be returned
-        return $responseData['currentVersion'] 
-            ?? $responseData['version'] 
-            ?? $responseData['lockVersion'] 
+        return $responseData['currentVersion']
+            ?? $responseData['version']
+            ?? $responseData['lockVersion']
             ?? null;
     }
 }

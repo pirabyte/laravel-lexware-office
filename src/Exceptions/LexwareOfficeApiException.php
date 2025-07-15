@@ -14,7 +14,7 @@ class LexwareOfficeApiException extends Exception
     public const STATUS_CONFLICT = 409;
     public const STATUS_RATE_LIMITED = 429;
     public const STATUS_SERVER_ERROR = 500;
-    
+
     // Error types from the API (using actual AWS API Gateway error types)
     public const ERROR_TYPE_AUTHORIZATION = 'UnauthorizedException';
     public const ERROR_TYPE_VALIDATION = 'ValidationException';
@@ -58,7 +58,7 @@ class LexwareOfficeApiException extends Exception
     public function __construct($message, $statusCode = 500, $previous = null)
     {
         $this->statusCode = $statusCode;
-        
+
         if ($previous instanceof RequestException) {
             $this->requestException = $previous;
         }
@@ -75,12 +75,12 @@ class LexwareOfficeApiException extends Exception
         // Extract error type from response headers if available
         if ($previous instanceof RequestException && $previous->getResponse()) {
             $response = $previous->getResponse();
-            
+
             // Check for x-amzn-ErrorType header
             if ($response->hasHeader('x-amzn-ErrorType')) {
                 $this->errorType = $response->getHeaderLine('x-amzn-ErrorType');
             }
-            
+
             // Check for Retry-After header for rate limit errors
             if ($statusCode === self::STATUS_RATE_LIMITED && $response->hasHeader('Retry-After')) {
                 $this->retryAfter = (int)$response->getHeaderLine('Retry-After');

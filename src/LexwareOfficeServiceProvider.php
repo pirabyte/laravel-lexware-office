@@ -15,12 +15,12 @@ class LexwareOfficeServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/lexware-office.php' => config_path('lexware-office.php'),
         ], 'lexware-office-config');
-        
+
         // Publish migration
         $this->publishes([
             __DIR__.'/../database/migrations/create_lexware_tokens_table.php.stub' => database_path('migrations/'.date('Y_m_d_His', time()).'_create_lexware_tokens_table.php'),
         ], 'lexware-office-migration');
-        
+
         // Publish both config and migration together
         $this->publishes([
             __DIR__.'/../config/lexware-office.php' => config_path('lexware-office.php'),
@@ -31,15 +31,15 @@ class LexwareOfficeServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/lexware-office.php', 'lexware-office');
-        
+
         // Register OAuth2 service
         $this->app->singleton('lexware-oauth2', function ($app) {
             $config = $app['config']['lexware-office.oauth2'];
-            
+
             if (!$config['enabled']) {
                 return null;
             }
-            
+
             $oauth2Service = new LexwareOAuth2Service(
                 $config['client_id'],
                 $config['client_secret'],
@@ -47,7 +47,7 @@ class LexwareOfficeServiceProvider extends ServiceProvider
                 rtrim($app['config']['lexware-office.base_url'], '/v1'), // Remove /v1 for OAuth endpoints
                 $config['scopes'] ?? []
             );
-            
+
             // Set up token storage based on configuration
             $storageConfig = $config['token_storage'];
             if ($storageConfig['driver'] === 'database') {
@@ -57,12 +57,12 @@ class LexwareOfficeServiceProvider extends ServiceProvider
             } else {
                 $tokenStorage = new CacheTokenStorage($storageConfig['cache_key']);
             }
-            
+
             $oauth2Service->setTokenStorage($tokenStorage);
-            
+
             return $oauth2Service;
         });
-        
+
         // Register main LexwareOffice service
         $this->app->singleton('lexware-office', function ($app) {
             $lexwareOffice = new LexwareOffice(
@@ -71,7 +71,7 @@ class LexwareOfficeServiceProvider extends ServiceProvider
                 $app['config']['lexware-office.rate_limit_key'] ?? 'lexware_office_api',
                 $app['config']['lexware-office.max_requests_per_minute'] ?? 50
             );
-            
+
             // Set OAuth2 service if enabled
             if ($app['config']['lexware-office.oauth2.enabled']) {
                 $oauth2Service = $app->make('lexware-oauth2');
@@ -79,7 +79,7 @@ class LexwareOfficeServiceProvider extends ServiceProvider
                     $lexwareOffice->setOAuth2Service($oauth2Service);
                 }
             }
-            
+
             return $lexwareOffice;
         });
     }

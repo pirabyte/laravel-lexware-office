@@ -42,7 +42,7 @@ class PartnerIntegration implements \JsonSerializable
     public function set(string $key, $value): self
     {
         $this->data[$key] = $value;
-        
+
         return $this;
     }
 }

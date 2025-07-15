@@ -12,10 +12,10 @@ class LexwareOfficeFactory
 {
     /**
      * Create a LexwareOffice instance for a specific user with OAuth2
-     * 
+     *
      * @param mixed $userId User identifier for token storage
      * @param string|null $clientId OAuth2 client ID (defaults to config)
-     * @param string|null $clientSecret OAuth2 client secret (defaults to config) 
+     * @param string|null $clientSecret OAuth2 client secret (defaults to config)
      * @param string|null $redirectUri OAuth2 redirect URI (defaults to config)
      * @param array|null $scopes OAuth2 scopes (defaults to config)
      * @param string $tokenStorage Token storage driver ('database' or 'cache')
@@ -35,7 +35,7 @@ class LexwareOfficeFactory
         $redirectUri = $redirectUri ?: config('lexware-office.oauth2.redirect_uri');
         $scopes = $scopes ?: config('lexware-office.oauth2.scopes', []);
         $tokenStorage = $tokenStorage ?: config('lexware-office.oauth2.token_storage', 'cache');
-        
+
         // Create LexwareOffice instance
         $lexwareOffice = new LexwareOffice(
             config('lexware-office.base_url'),
@@ -43,7 +43,7 @@ class LexwareOfficeFactory
             config('lexware-office.rate_limit_key', 'lexware_office_api') . '_user_' . $userId,
             config('lexware-office.max_requests_per_minute', 50)
         );
-        
+
         // Create OAuth2 service if credentials are available
         if ($clientId && $clientSecret && $redirectUri) {
             $oauth2Service = new LexwareOAuth2Service(
@@ -53,20 +53,20 @@ class LexwareOfficeFactory
                 rtrim(config('lexware-office.base_url'), '/v1'), // Remove /v1 for OAuth endpoints
                 $scopes
             );
-            
+
             // Set up user-specific token storage
             $tokenStorageInstance = self::createTokenStorage($userId, $tokenStorage);
             $oauth2Service->setTokenStorage($tokenStorageInstance);
-            
+
             $lexwareOffice->setOAuth2Service($oauth2Service);
         }
-        
+
         return $lexwareOffice;
     }
-    
+
     /**
      * Create a LexwareOffice instance with static API key (no OAuth2)
-     * 
+     *
      * @param string $apiKey Static API key
      * @param mixed|null $userId Optional user identifier for rate limiting
      * @return LexwareOffice
@@ -77,7 +77,7 @@ class LexwareOfficeFactory
         if ($userId) {
             $rateLimitKey .= '_user_' . $userId;
         }
-        
+
         return new LexwareOffice(
             $baseUrl ?: config('lexware-office.base_url'),
             $apiKey,
@@ -85,11 +85,11 @@ class LexwareOfficeFactory
             config('lexware-office.max_requests_per_minute', 50)
         );
     }
-    
+
     /**
      * Create OAuth2 service without LexwareOffice instance
      * Useful for handling authorization flow before creating main instance
-     * 
+     *
      * @param mixed $userId User identifier for token storage
      * @param string|null $clientId OAuth2 client ID (defaults to config)
      * @param string|null $clientSecret OAuth2 client secret (defaults to config)
@@ -111,7 +111,7 @@ class LexwareOfficeFactory
         $redirectUri = $redirectUri ?: config('lexware-office.oauth2.redirect_uri');
         $scopes = $scopes ?: config('lexware-office.oauth2.scopes', []);
         $tokenStorage = $tokenStorage ?: config('lexware-office.oauth2.token_storage', 'cache');
-        
+
         $oauth2Service = new LexwareOAuth2Service(
             $clientId,
             $clientSecret,
@@ -119,16 +119,16 @@ class LexwareOfficeFactory
             rtrim(config('lexware-office.base_url'), '/v1'),
             $scopes
         );
-        
+
         $tokenStorageInstance = self::createTokenStorage($userId, $tokenStorage);
         $oauth2Service->setTokenStorage($tokenStorageInstance);
-        
+
         return $oauth2Service;
     }
-    
+
     /**
      * Create token storage instance based on driver
-     * 
+     *
      * @param mixed $userId User identifier
      * @param string $driver Storage driver ('database' or 'cache')
      * @return LexwareTokenStorage

@@ -20,7 +20,7 @@ class CacheTokenStorage implements LexwareTokenStorage
     {
         // Store until the token expires plus some buffer
         $ttl = max($token->getRemainingTime() + 300, 60); // At least 1 minute
-        
+
         Cache::put($this->cacheKey, $token->toJson(), $ttl);
     }
 
@@ -30,7 +30,7 @@ class CacheTokenStorage implements LexwareTokenStorage
     public function getToken(): ?LexwareAccessToken
     {
         $tokenData = Cache::get($this->cacheKey);
-        
+
         if (!$tokenData) {
             return null;
         }
