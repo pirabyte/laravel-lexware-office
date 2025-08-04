@@ -52,11 +52,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
-          verbose: true
-
-      - name: Upload test results
-        if: always() # Run even if tests fail
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: junit.xml
+          verbose: true     
