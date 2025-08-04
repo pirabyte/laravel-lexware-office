@@ -18,9 +18,15 @@ composer require pirabyte/laravel-lexware-office
 ```
 
 ```bash
-php artisan vendor:publish --provider="Pirabyte\LexwareOffice\LexwareOfficeServiceProvider" --tag="config"
+php artisan vendor:publish --provider="Pirabyte\LaravelLexwareOffice\LexwareOfficeServiceProvider" --tag="lexware-office-config"
 ```
 
+Der Service Provider registriert die folgenden Tags:
+```bash
+  * lexware-office-config: Nur für die Konfigurationsdatei.
+  * lexware-office-migration: Nur für die Migrationsdatei.
+  * lexware-office: Für die Konfigurations- und Migrationsdatei zusammen.
+```
 ## Verwendung
 
 ### Mit Facade (Standard)
