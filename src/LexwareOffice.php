@@ -6,6 +6,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\RateLimiter;
+use Pirabyte\LaravelLexwareOffice\Classes\LexwareRateLimiter;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\OAuth2\LexwareOAuth2Service;
 use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
@@ -52,16 +53,24 @@ class LexwareOffice
 
     protected ?LexwareOAuth2Service $oauth2Service = null;
 
+    protected ?LexwareRateLimiter $advancedRateLimiter = null;
+
+    protected bool $useAdvancedRateLimiting = false;
+
     public function __construct(
         string $baseUrl,
         string $apiKey,
         string $rateLimitKey = 'lexware_office_api',
-        int $maxRequestsPerMinute = 50
+        int $maxRequestsPerMinute = 50,
+        ?LexwareRateLimiter $advancedRateLimiter = null,
+        bool $useAdvancedRateLimiting = false
     ) {
         $this->baseUrl = $baseUrl;
         $this->apiKey = $apiKey;
         $this->rateLimitKey = $rateLimitKey;
         $this->maxRequestsPerMinute = $maxRequestsPerMinute;
+        $this->advancedRateLimiter = $advancedRateLimiter;
+        $this->useAdvancedRateLimiting = $useAdvancedRateLimiting;
 
         $uri = $this->prepareBaseUri($this->baseUrl);
 
@@ -86,6 +95,43 @@ class LexwareOffice
         $this->financialTransactions = new FinancialTransactionResource($this);
         $this->transactionAssignmentHints = new TransactionAssignmentHintResource($this);
         $this->partnerIntegrations = new PartnerIntegrationResource($this);
+    }
+
+    /**
+     * Set advanced rate limiter for Lexware Office API compliance
+     */
+    public function setAdvancedRateLimiter(LexwareRateLimiter $rateLimiter): self
+    {
+        $this->advancedRateLimiter = $rateLimiter;
+        $this->useAdvancedRateLimiting = true;
+        return $this;
+    }
+
+    /**
+     * Enable or disable advanced rate limiting
+     */
+    public function useAdvancedRateLimiting(bool $enabled = true): self
+    {
+        $this->useAdvancedRateLimiting = $enabled;
+        return $this;
+    }
+
+    /**
+     * Get rate limiter status for debugging
+     */
+    public function getRateLimiterStatus(string $endpoint = 'contacts'): array
+    {
+        if ($this->useAdvancedRateLimiting && $this->advancedRateLimiter) {
+            return $this->advancedRateLimiter->getStatus($endpoint);
+        }
+        
+        return [
+            'legacy' => [
+                'key' => $this->rateLimitKey,
+                'max_per_minute' => $this->maxRequestsPerMinute,
+                'remaining' => RateLimiter::remaining($this->rateLimitKey, $this->maxRequestsPerMinute)
+            ]
+        ];
     }
 
     /**
@@ -304,7 +350,7 @@ class LexwareOffice
 
             return $this->makeRequest(function () use ($endpoint, $options) {
                 return $this->client->get($endpoint, $options);
-            });
+            }, $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -322,7 +368,7 @@ class LexwareOffice
                 return $this->client->post($endpoint, [
                     'json' => $data,
                 ]);
-            });
+            }, $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -340,7 +386,7 @@ class LexwareOffice
                 return $this->client->post($endpoint, [
                     'multipart' => $multipartData,
                 ]);
-            });
+            }, $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -358,7 +404,7 @@ class LexwareOffice
                 return $this->client->put($endpoint, [
                     'json' => $data,
                 ]);
-            });
+            }, $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -374,7 +420,7 @@ class LexwareOffice
         try {
             $this->makeRequest(function () use ($endpoint) {
                 return $this->client->delete($endpoint);
-            });
+            }, $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -476,26 +522,45 @@ class LexwareOffice
      * executes API requests with proper error handling.
      *
      * @param callable $callback The request callback to execute
+     * @param string $endpoint The endpoint being called (for advanced rate limiting)
      * @return array The decoded JSON response data
      * @throws LexwareOfficeApiException
      */
-    protected function makeRequest(callable $callback)
+    protected function makeRequest(callable $callback, string $endpoint = 'unknown')
     {
-        // Check if we've exceeded our self-imposed rate limit
-        if (RateLimiter::tooManyAttempts($this->rateLimitKey, $this->maxRequestsPerMinute)) {
-            $seconds = RateLimiter::availableIn($this->rateLimitKey);
+        // Use advanced rate limiting if enabled and configured
+        if ($this->useAdvancedRateLimiting && $this->advancedRateLimiter) {
+            $rateLimitResult = $this->advancedRateLimiter->isAllowed($endpoint);
+            
+            if (!$rateLimitResult['allowed']) {
+                $errorData = [
+                    'message' => 'Rate limit exceeded',
+                    'details' => "Rate limit exceeded for {$rateLimitResult['limitType']} limit. Please wait {$rateLimitResult['waitTime']} seconds before retrying.",
+                    'retryAfter' => $rateLimitResult['waitTime'],
+                    'limitType' => $rateLimitResult['limitType']
+                ];
 
-            // Create a properly structured rate limit error
-            $errorData = [
-                'message' => 'Rate limit exceeded',
-                'details' => "Too many requests. Please wait {$seconds} seconds before retrying.",
-                'retryAfter' => $seconds
-            ];
+                throw new LexwareOfficeApiException(
+                    json_encode($errorData),
+                    LexwareOfficeApiException::STATUS_RATE_LIMITED
+                );
+            }
+        } else {
+            // Fall back to legacy rate limiting
+            if (RateLimiter::tooManyAttempts($this->rateLimitKey, $this->maxRequestsPerMinute)) {
+                $seconds = RateLimiter::availableIn($this->rateLimitKey);
 
-            throw new LexwareOfficeApiException(
-                json_encode($errorData),
-                LexwareOfficeApiException::STATUS_RATE_LIMITED
-            );
+                $errorData = [
+                    'message' => 'Rate limit exceeded',
+                    'details' => "Too many requests. Please wait {$seconds} seconds before retrying.",
+                    'retryAfter' => $seconds
+                ];
+
+                throw new LexwareOfficeApiException(
+                    json_encode($errorData),
+                    LexwareOfficeApiException::STATUS_RATE_LIMITED
+                );
+            }
         }
 
         // Ensure valid OAuth2 token if OAuth2 is configured
@@ -505,8 +570,12 @@ class LexwareOffice
             // Execute the request
             $response = $callback();
 
-            // Track the request for our rate limiter
-            RateLimiter::hit($this->rateLimitKey, 60);
+            // Track the request for rate limiter
+            if ($this->useAdvancedRateLimiting && $this->advancedRateLimiter) {
+                $this->advancedRateLimiter->recordHit($endpoint);
+            } else {
+                RateLimiter::hit($this->rateLimitKey, 60);
+            }
 
             // Parse and return the response data
             $content = $response->getBody()->getContents();
@@ -525,7 +594,13 @@ class LexwareOffice
                 if ($this->refreshTokenAndRetry()) {
                     try {
                         $response = $callback();
-                        RateLimiter::hit($this->rateLimitKey, 60);
+                        
+                        // Track the request for rate limiter
+                        if ($this->useAdvancedRateLimiting && $this->advancedRateLimiter) {
+                            $this->advancedRateLimiter->recordHit($endpoint);
+                        } else {
+                            RateLimiter::hit($this->rateLimitKey, 60);
+                        }
 
                         $content = $response->getBody()->getContents();
                         $data = json_decode($content, true);
