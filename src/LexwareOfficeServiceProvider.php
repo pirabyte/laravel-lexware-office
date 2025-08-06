@@ -3,6 +3,7 @@
 namespace Pirabyte\LaravelLexwareOffice;
 
 use Illuminate\Support\ServiceProvider;
+use Pirabyte\LaravelLexwareOffice\Classes\LexwareRateLimiter;
 use Pirabyte\LaravelLexwareOffice\OAuth2\CacheTokenStorage;
 use Pirabyte\LaravelLexwareOffice\OAuth2\DatabaseTokenStorage;
 use Pirabyte\LaravelLexwareOffice\OAuth2\LexwareOAuth2Service;
@@ -65,15 +66,29 @@ class LexwareOfficeServiceProvider extends ServiceProvider
 
         // Register main LexwareOffice service
         $this->app->singleton('lexware-office', function ($app) {
+            $config = $app['config']['lexware-office'];
+            
+            // Create the base LexwareOffice instance
             $lexwareOffice = new LexwareOffice(
-                $app['config']['lexware-office.base_url'],
-                $app['config']['lexware-office.api_key'],
-                $app['config']['lexware-office.rate_limit_key'] ?? 'lexware_office_api',
-                $app['config']['lexware-office.max_requests_per_minute'] ?? 50
+                $config['base_url'],
+                $config['api_key'],
+                $config['rate_limiting']['rate_limit_key'] ?? 'lexware_office_api',
+                $config['rate_limiting']['max_requests_per_minute'] ?? 50
             );
 
+            // Set up advanced rate limiting if enabled
+            if ($config['rate_limiting']['enabled'] ?? true) {
+                $connectionId = $config['rate_limiting']['connection_id'] ?? 'default';
+                $clientId = $config['rate_limiting']['client_id'] ?? 'default';
+                $cachePrefix = $config['rate_limiting']['cache_prefix'] ?? 'lexware_rate_limit';
+                
+                $rateLimiter = new LexwareRateLimiter($connectionId, $clientId, $cachePrefix);
+                $lexwareOffice->setAdvancedRateLimiter($rateLimiter);
+                $lexwareOffice->useAdvancedRateLimiting(true);
+            }
+
             // Set OAuth2 service if enabled
-            if ($app['config']['lexware-office.oauth2.enabled']) {
+            if ($config['oauth2']['enabled'] ?? false) {
                 $oauth2Service = $app->make('lexware-oauth2');
                 if ($oauth2Service) {
                     $lexwareOffice->setOAuth2Service($oauth2Service);
