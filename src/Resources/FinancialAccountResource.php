@@ -53,10 +53,9 @@ class FinancialAccountResource
      * Finanzkonten nach verschiedenen Kriterien filtern
      *
      * @param  array  $filters  Filtermöglichkeiten:
-     *                          - type: string - Filtert nach Kontentyp (GIRO, SAVINGS, etc.)
-     *                          - deactivated: bool - Filtert nach deaktivierten Konten
-     *                          - page: int - Seitennummer (beginnend bei 0)
-     *                          - size: int - Anzahl der Ergebnisse pro Seite
+     *                          - iban: string
+     *                          - externalReference: string
+     *
      * @return array Liste der gefilterten Finanzkonten
      *
      * @throws LexwareOfficeApiException
