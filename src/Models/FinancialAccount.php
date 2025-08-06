@@ -109,7 +109,7 @@ class FinancialAccount implements \JsonSerializable
         }
 
         if (isset($data['state'])) {
-            $account->state = $data['state'];
+            $account->state = State::fromArray($data['state']);
         }
 
         if (isset($data['initialSyncDate'])) {

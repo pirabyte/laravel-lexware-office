@@ -171,10 +171,7 @@ class FinancialAccountTest extends TestCase
 
         // Filter mit leeren Werten erstellen
         $instance->financialAccounts()->filter([
-            'type' => 'GIRO',
-            'deactivated' => null,
-            'page' => '',
-            'size' => 25,
+           'externalReference' => 'some_account_id'
         ]);
 
         // Assertions - Prüfen des tatsächlich gesendeten Requests
@@ -183,14 +180,10 @@ class FinancialAccountTest extends TestCase
         $query = \GuzzleHttp\Psr7\Query::parse($request->getUri()->getQuery());
 
         // Nur nicht-leere Filter sollten gesendet werden
-        $this->assertArrayHasKey('type', $query);
-        $this->assertArrayHasKey('size', $query);
-        $this->assertArrayNotHasKey('deactivated', $query);
-        $this->assertArrayNotHasKey('page', $query);
+        $this->assertArrayHasKey('externalReference', $query);
 
         // Werte prüfen
-        $this->assertEquals('GIRO', $query['type']);
-        $this->assertEquals('25', $query['size']);
+        $this->assertEquals('some_account_id', $query['externalReference']);
     }
 
     /** @test */

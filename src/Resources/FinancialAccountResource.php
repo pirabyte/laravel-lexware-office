@@ -16,6 +16,25 @@ class FinancialAccountResource
     }
 
     /**
+     * @throws LexwareOfficeApiException
+     */
+    public function create(FinancialAccount $financialAccount): FinancialAccount
+    {
+        $data = $financialAccount->jsonSerialize();
+        $response = $this->client->post('finance/financial-accounts', $data);
+
+        if (isset($response['financialAccountId'])) {
+            try {
+                return $this->get($response['financialAccountId']);
+            } catch (\Exception $e) {
+                // Fallback zur Datenzusammenführung wenn Get fehlschlägt
+            }
+        }
+
+        return FinancialAccount::fromArray($response);
+    }
+
+    /**
      * Ruft ein Finanzkonto anhand der ID ab
      *
      * @param  string  $id  Die ID des Finanzkontos
@@ -25,7 +44,7 @@ class FinancialAccountResource
      */
     public function get(string $id): FinancialAccount
     {
-        $response = $this->client->get("financial-accounts/{$id}");
+        $response = $this->client->get("/finance/accounts/{$id}");
 
         return FinancialAccount::fromArray($response);
     }
@@ -45,7 +64,7 @@ class FinancialAccountResource
     public function filter(array $filters = []): array
     {
         $validFilters = [
-            'type', 'deactivated', 'page', 'size',
+            'iban', 'externalReference',
         ];
 
         // HTTP-Query vorbereiten
@@ -74,7 +93,7 @@ class FinancialAccountResource
         }
 
         // API-Anfrage senden
-        $response = $this->client->get('financial-accounts', $query);
+        $response = $this->client->get('/finance/accounts', $query);
 
         return $this->processFinancialAccountsResponse($response);
     }
