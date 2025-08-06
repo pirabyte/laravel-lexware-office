@@ -415,10 +415,10 @@ class LexwareOffice
      *
      * @throws LexwareOfficeApiException
      */
-    public function delete(string $endpoint): void
+    public function delete(string $endpoint): array
     {
         try {
-            $this->makeRequest(function () use ($endpoint) {
+            return $this->makeRequest(function () use ($endpoint) {
                 return $this->client->delete($endpoint);
             }, $endpoint);
         } catch (RequestException $e) {
@@ -476,7 +476,7 @@ class LexwareOffice
         }
 
         $statusCode = $response->getStatusCode();
-        $message = $response->getBody()->getContents();
+        $message = (string) $response->getBody();
 
         // Special handling for rate limit errors
         if ($statusCode === 429) {
@@ -578,7 +578,7 @@ class LexwareOffice
             }
 
             // Parse and return the response data
-            $content = $response->getBody()->getContents();
+            $content = (string) $response->getBody();
             $data = json_decode($content, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -602,7 +602,7 @@ class LexwareOffice
                             RateLimiter::hit($this->rateLimitKey, 60);
                         }
 
-                        $content = $response->getBody()->getContents();
+                        $content = (string) $response->getBody();
                         $data = json_decode($content, true);
 
                         if (json_last_error() !== JSON_ERROR_NONE) {

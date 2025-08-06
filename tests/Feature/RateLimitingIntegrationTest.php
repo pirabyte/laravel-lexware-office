@@ -105,9 +105,14 @@ class RateLimitingIntegrationTest extends TestCase
         // Exhaust limit for contacts endpoint
         for ($i = 0; $i < 5; $i++) {
             $result = $lexwareOffice->get('contacts');
-            $this->assertEquals(['data' => 'test'], $result);
+
+            $this->assertIsArray($result, 'Should return array');
+            $keys = join(', ', array_keys($result));
+            $this->assertArrayHasKey('data', $result, "Failed for Request {$i}. Keys {$keys}");
+            $this->assertEquals('test', $result['data'], );
         }
-        
+
+
         // contacts should be rate limited
         try {
             $lexwareOffice->get('contacts');
@@ -194,11 +199,11 @@ class RateLimitingIntegrationTest extends TestCase
             $lexwareOffice->get('contacts');
             $this->fail('Expected rate limit exception');
         } catch (LexwareOfficeApiException $e) {
-            $errorData = json_decode($e->getMessage(), true);
-            
-            $this->assertEquals('Rate limit exceeded', $errorData['message']);
-            $this->assertArrayHasKey('retryAfter', $errorData);
-            $this->assertArrayHasKey('limitType', $errorData);
+            $this->assertEquals('Rate limit exceeded', $e->getMessage());
+
+            $errorData = $e->getResponseData();
+
+            $this->assertEquals(1, $errorData['retryAfter']);
             $this->assertEquals('connection', $errorData['limitType']);
             $this->assertGreaterThan(0, $errorData['retryAfter']);
         }
