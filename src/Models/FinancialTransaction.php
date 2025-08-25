@@ -6,8 +6,7 @@ use Pirabyte\LaravelLexwareOffice\Enums\TransactionState;
 
 class FinancialTransaction implements \JsonSerializable
 {
-    // Read-only properties
-    private string $financialTransactionId;
+    private ?string $financialTransactionId = null;
 
     private ?string $transactionDate = null;
 
