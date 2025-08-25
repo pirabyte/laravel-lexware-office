@@ -2,6 +2,8 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Responses;
 
+use Illuminate\Support\Carbon;
+
 class UpdateResponse implements \JsonSerializable
 {
     private string $id;
@@ -34,5 +36,30 @@ class UpdateResponse implements \JsonSerializable
             'updatedDate' => $this->updatedDate,
             'version' => $this->version,
         ];
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getResourceUri(): string
+    {
+        return $this->resourceUri;
+    }
+
+    public function getCreatedDate(): Carbon
+    {
+        return Carbon::parse($this->createdDate);
+    }
+
+    public function getUpdatedDate(): Carbon
+    {
+        return Carbon::parse($this->updatedDate);
+    }
+
+    public function getVersion(): int
+    {
+        return $this->version;
     }
 }

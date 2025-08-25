@@ -6,9 +6,11 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Support\Carbon;
 use OutOfRangeException;
 use Pirabyte\LaravelLexwareOffice\Facades\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\FinancialTransaction;
+use Pirabyte\LaravelLexwareOffice\Responses\UpdateResponse;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class FinancialTransactionResourceTest extends TestCase
@@ -96,6 +98,21 @@ class FinancialTransactionResourceTest extends TestCase
         $this->assertThrows(function () use ($transactions) {
             LexwareOffice::financialTransactions()->create($transactions);
         }, OutOfRangeException::class);
+    }
+
+    public function test_it_can_parse_update_response_to_correct_type()
+    {
+        $fixtureFile = __DIR__.'/../Fixtures/financial-transactions/2_financial_transaction_update_response.json';
+        $fixtureContents = file_get_contents($fixtureFile);
+        $fixtureData = json_decode($fixtureContents, true);
+
+        $response = UpdateResponse::fromArray($fixtureData);
+
+        $this->assertEquals('016e0873-9a2b-41ca-a749-c1a3cc5945d8', $response->getId());
+        $this->assertEquals('https://api.lexware-sandbox.io/v1/finance/accounts/016e0873-9a2b-41ca-a749-c1a3cc5945d8', $response->getResourceUri());
+        $this->assertEquals(Carbon::parse('2023-04-05T12:30:00.000+02:00'), $response->getCreatedDate());
+        $this->assertEquals(Carbon::parse('2023-04-07T13:00:00.000+02:00'), $response->getUpdatedDate());
+        $this->assertEquals(2, $response->getVersion());
     }
 
     private function validate_financial_transaction_with_fixture_data(FinancialTransaction $transaction, array $fixtureData): void
