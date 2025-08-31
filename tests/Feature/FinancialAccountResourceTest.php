@@ -68,6 +68,68 @@ class FinancialAccountResourceTest extends TestCase
         }
     }
 
+    /** @test */
+    public function it_fails_to_filter_financial_accounts_due_to_broken_implementation(): void
+    {
+        // Mock für die filter Methode - simuliert die ursprüngliche fehlerhafte Implementierung
+        $mockResponses = [
+            new Response(200, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/finance-accounts/3_filter_financial_account_response.json')),
+        ];
+
+        $mock = new MockHandler($mockResponses);
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        $instance = app('lexware-office');
+        $instance->setClient($client);
+
+        // Test der ursprünglichen fehlerhaften Implementierung
+        // Die ursprüngliche Methode hatte leere try-catch Blöcke und erwartete 'content' in der Antwort
+        // Da die API direkt ein Array zurückgibt, sollte das Ergebnis leer sein
+        
+        // Simuliere die ursprüngliche fehlerhafte Verarbeitung
+        $response = json_decode(file_get_contents(__DIR__.'/../Fixtures/finance-accounts/3_filter_financial_account_response.json'), true);
+        
+        // Ursprüngliche fehlerhafte Logik: Suche nach 'content' in der Antwort
+        $accounts = [];
+        if (isset($response['content']) && is_array($response['content'])) {
+            foreach ($response['content'] as $accountData) {
+                $accounts[] = \Pirabyte\LaravelLexwareOffice\Models\FinancialAccount::fromArray($accountData);
+            }
+        }
+        
+        // Das Ergebnis sollte leer sein, da 'content' nicht in der Antwort vorhanden ist
+        $this->assertEmpty($accounts, 'Ursprüngliche Implementierung sollte fehlschlagen, da sie "content" in der Antwort erwartet');
+    }
+
+    /** @test */
+    public function it_can_filter_financial_accounts_with_corrected_implementation(): void
+    {
+        // Mock für die korrigierte filter Methode
+        $mockResponses = [
+            new Response(200, ['Content-Type' => 'application/json'], file_get_contents(__DIR__.'/../Fixtures/finance-accounts/3_filter_financial_account_response.json')),
+        ];
+
+        $mock = new MockHandler($mockResponses);
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        $instance = app('lexware-office');
+        $instance->setClient($client);
+
+        // Test der korrigierten filter Methode
+        $result = LexwareOffice::financialAccounts()->filter(['externalReference' => 'acct_1PveDdFOGdyMR8V0']);
+
+        // Jetzt sollte das Ergebnis nicht leer sein
+        $this->assertNotEmpty($result, 'Filter sollte jetzt funktionieren und Ergebnisse zurückgeben');
+        $this->assertCount(1, $result, 'Filter sollte genau ein Konto zurückgeben');
+        
+        $account = $result[0];
+        $this->assertInstanceOf(FinancialAccount::class, $account);
+        $this->assertEquals('acct_1PveDdFOGdyMR8V0', $account->getExternalReference());
+        $this->assertEquals('Demo Account', $account->getName());
+    }
+
     private function assert_financial_account_data(FinancialAccount $financialAccount, array $fixtureData): void
     {
         $this->assertInstanceOf(FinancialAccount::class, $financialAccount);

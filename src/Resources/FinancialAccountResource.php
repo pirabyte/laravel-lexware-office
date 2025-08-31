@@ -44,7 +44,7 @@ class FinancialAccountResource
      */
     public function get(string $id): FinancialAccount
     {
-        $response = $this->client->get("/finance/accounts/{$id}");
+        $response = $this->client->get("finance/accounts/{$id}");
 
         return FinancialAccount::fromArray($response);
     }
@@ -91,8 +91,10 @@ class FinancialAccountResource
             }
         }
 
+
+
         // API-Anfrage senden
-        $response = $this->client->get('/finance/accounts', $query);
+        $response = $this->client->get('finance/accounts', $query);
 
         return $this->processFinancialAccountsResponse($response);
     }
@@ -107,9 +109,18 @@ class FinancialAccountResource
     {
         $accounts = [];
 
+        // Unterstütze sowohl direkte Array-Antwort als auch content-Struktur
         if (isset($response['content']) && is_array($response['content'])) {
+            // Antwort hat content-Struktur
             foreach ($response['content'] as $accountData) {
                 $accounts[] = FinancialAccount::fromArray($accountData);
+            }
+        } elseif (is_array($response)) {
+            // Antwort ist direkt ein Array von Konten
+            foreach ($response as $accountData) {
+                if (is_array($accountData) && isset($accountData['financialAccountId'])) {
+                    $accounts[] = FinancialAccount::fromArray($accountData);
+                }
             }
         }
 
