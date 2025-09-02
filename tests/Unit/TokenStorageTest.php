@@ -14,9 +14,9 @@ class TokenStorageTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create the tokens table for database storage tests using Schema builder
-        if (!DB::getSchemaBuilder()->hasTable('lexware_tokens')) {
+        if (! DB::getSchemaBuilder()->hasTable('lexware_tokens')) {
             DB::getSchemaBuilder()->create('lexware_tokens', function ($table) {
                 $table->id();
                 $table->string('user_id')->unique();
@@ -64,7 +64,7 @@ class TokenStorageTest extends TestCase
     public function test_cache_storage_returns_null_when_no_token_stored()
     {
         $storage = new CacheTokenStorage('nonexistent_key');
-        
+
         $this->assertNull($storage->getToken());
     }
 
@@ -83,7 +83,7 @@ class TokenStorageTest extends TestCase
     public function test_cache_storage_overwrites_existing_token()
     {
         $storage = new CacheTokenStorage('test_key');
-        
+
         $token1 = new LexwareAccessToken('access_token_1', 'Bearer', 3600);
         $token2 = new LexwareAccessToken('access_token_2', 'Bearer', 3600);
 
@@ -135,7 +135,7 @@ class TokenStorageTest extends TestCase
     public function test_database_storage_returns_null_when_no_token_stored()
     {
         $storage = new DatabaseTokenStorage(999);
-        
+
         $this->assertNull($storage->getToken());
     }
 
@@ -154,7 +154,7 @@ class TokenStorageTest extends TestCase
     public function test_database_storage_updates_existing_token()
     {
         $storage = new DatabaseTokenStorage(125);
-        
+
         $token1 = new LexwareAccessToken('access_token_1', 'Bearer', 3600, 'refresh_1');
         $token2 = new LexwareAccessToken('access_token_2', 'Bearer', 7200, 'refresh_2');
 
@@ -187,7 +187,7 @@ class TokenStorageTest extends TestCase
     {
         $storage1 = new DatabaseTokenStorage(126);
         $storage2 = new DatabaseTokenStorage(127);
-        
+
         $token1 = new LexwareAccessToken('access_token_user_126', 'Bearer', 3600);
         $token2 = new LexwareAccessToken('access_token_user_127', 'Bearer', 3600);
 
@@ -235,7 +235,7 @@ class TokenStorageTest extends TestCase
     public function test_database_storage_handles_null_scopes()
     {
         $storage = new DatabaseTokenStorage(130);
-        
+
         // Manually insert record with NULL scopes
         DB::table('lexware_tokens')->insert([
             'user_id' => 130,
@@ -245,7 +245,7 @@ class TokenStorageTest extends TestCase
             'refresh_token' => 'refresh_token_456',
             'scopes' => null,
             'created_at' => now(),
-            'updated_at' => now()
+            'updated_at' => now(),
         ]);
 
         $retrievedToken = $storage->getToken();
@@ -256,7 +256,7 @@ class TokenStorageTest extends TestCase
     {
         $storage = new DatabaseTokenStorage(131);
         $createdAt = new \DateTime('2023-01-01 12:00:00');
-        
+
         $token = new LexwareAccessToken(
             'access_token_123',
             'Bearer',
@@ -279,7 +279,7 @@ class TokenStorageTest extends TestCase
     {
         $storage = new CacheTokenStorage('test_key');
         $createdAt = new \DateTime('2023-01-01 12:00:00');
-        
+
         $token = new LexwareAccessToken(
             'access_token_123',
             'Bearer',
@@ -309,12 +309,12 @@ class TokenStorageTest extends TestCase
 
         // Check that updated_at timestamp is within expected range
         $record = DB::table('lexware_tokens')->where('user_id', 132)->first();
-        
+
         $this->assertNotNull($record, 'Record should exist in database');
         $this->assertNotNull($record->updated_at, 'updated_at should not be null');
-        
+
         $updatedAt = \Carbon\Carbon::parse($record->updated_at);
-        
+
         $this->assertTrue($updatedAt->between($beforeStore, $afterStore));
     }
 

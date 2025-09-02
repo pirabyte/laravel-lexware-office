@@ -5,8 +5,8 @@ namespace Pirabyte\LaravelLexwareOffice\Resources;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\FinancialTransaction;
-use Pirabyte\LaravelLexwareOffice\Models\NewFinancialTransaction;
 use Pirabyte\LaravelLexwareOffice\Models\VoucherAssignment;
+use Pirabyte\LaravelLexwareOffice\Responses\UpdateResponse;
 
 class FinancialTransactionResource
 {
@@ -20,7 +20,7 @@ class FinancialTransactionResource
     /**
      * Creates transactions for the account referenced by the financialAccountId.
      *
-     * @param  array<NewFinancialTransaction>  $transactions  Up to 25 transactions
+     * @param  array<FinancialTransaction|array>  $transactions  Up to 25 transactions
      * @return array<FinancialTransaction>
      *
      * @throws LexwareOfficeApiException
@@ -31,18 +31,25 @@ class FinancialTransactionResource
             throw new \OutOfRangeException('only 25 transactions allowed per request');
         }
 
+        // Convert transactions to array format
+        $requestData = [];
         foreach ($transactions as $transaction) {
-            // Erforderliche Felder validieren
-            if (! isset($transaction['financialTransactionId']) || ! isset($transaction['valueDate']) ||
-                ! isset($transaction['bookingDate']) || ! isset($transaction['purpose']) ||
-                ! isset($transaction['amount']) || ! isset($transaction['financialAccountId'])) {
-                throw new \InvalidArgumentException('Fehlende erforderliche Felder für FinancialTransaction');
+            if ($transaction instanceof FinancialTransaction) {
+                $requestData[] = $transaction->jsonSerialize();
+            } else {
+                $requestData[] = $transaction;
             }
         }
 
-        $response = $this->client->post('finance/transactions', $transactions);
+        $response = $this->client->post('finance/transactions', $requestData);
 
-        return $this->processTransactionsResponse($response);
+        // Response is directly an array of transactions
+        $transactions = [];
+        foreach ($response as $transactionData) {
+            $transactions[] = FinancialTransaction::fromArray($transactionData);
+        }
+
+        return $transactions;
     }
 
     /**
@@ -65,16 +72,37 @@ class FinancialTransactionResource
      *
      * @param  string  $id  Die ID der Finanztransaktion
      * @param  FinancialTransaction  $transaction  Die aktualisierte Finanztransaktion
-     * @return FinancialTransaction Die aktualisierte Finanztransaktion
+     * @return UpdateResponse Die Update-Response mit der neuen Version
      *
      * @throws LexwareOfficeApiException
+     * @throws \InvalidArgumentException
      */
-    public function update(string $id, FinancialTransaction $transaction): FinancialTransaction
+    public function update(string $id, FinancialTransaction $transaction): UpdateResponse
     {
+        if ($transaction->getLockVersion() === null) {
+            throw new \InvalidArgumentException('lockVersion is required for updates (optimistic locking)');
+        }
+
         $data = $transaction->jsonSerialize();
+        
+        // Remove read-only fields that should not be sent in updates
+        unset($data['financialTransactionId']);
+        unset($data['transactionDate']);
+        unset($data['openAmount']);
+        unset($data['amountAsString']);
+        unset($data['openAmountAsString']);
+        unset($data['state']);
+        unset($data['createdDate']);
+        unset($data['lastModifiedDate']);
+        unset($data['endToEndId']);
+        unset($data['bookingText']);
+        unset($data['virtualAccountId']);
+        unset($data['ignore']);
+        unset($data['ignoreReason']);
+        
         $response = $this->client->put("finance/transactions/{$id}", $data);
 
-        return FinancialTransaction::fromArray($response);
+        return UpdateResponse::fromArray($response);
     }
 
     /**
@@ -93,22 +121,27 @@ class FinancialTransactionResource
     }
 
     /**
-     * Ruft die neuesten Finanztransaktionen ab
+     * Ruft die neueste Finanztransaktion für ein Konto ab
      *
-     * @param  array  $filters  Filtermöglichkeiten
-     * @return array Liste der Finanztransaktionen
+     * @param  string  $financialAccountId  Die ID des Finanzkontos
+     * @return FinancialTransaction|null Die neueste Transaktion oder null wenn keine vorhanden
      *
      * @throws LexwareOfficeApiException
      */
-    public function latest(string $financialAccountId): array
+    public function latest(string $financialAccountId): ?FinancialTransaction
     {
-        // HTTP-Query vorbereiten
         $query = [
             'financialAccountId' => $financialAccountId,
         ];
 
-        //Hier wird direkt die einzelne Transaktion als Array ausgegeben
-        return $this->client->get('finance/transactions/latest-transaction', $query);
+        $response = $this->client->get('finance/transactions/latest-transaction', $query);
+        
+        // Return null if no transaction found
+        if (empty($response)) {
+            return null;
+        }
+        
+        return FinancialTransaction::fromArray($response);
     }
 
     /**

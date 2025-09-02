@@ -52,6 +52,7 @@ class LexwareOAuth2Service
     public function setTokenStorage(LexwareTokenStorage $storage): self
     {
         $this->tokenStorage = $storage;
+
         return $this;
     }
 
@@ -60,8 +61,8 @@ class LexwareOAuth2Service
      */
     public function getTokenStorage(): LexwareTokenStorage
     {
-        if (!$this->tokenStorage) {
-            $this->tokenStorage = new CacheTokenStorage();
+        if (! $this->tokenStorage) {
+            $this->tokenStorage = new CacheTokenStorage;
         }
 
         return $this->tokenStorage;
@@ -70,8 +71,7 @@ class LexwareOAuth2Service
     /**
      * Generate authorization URL with PKCE
      *
-     * @param string|null $state Optional state parameter for additional security
-     * @return LexwareAuthorizationUrl
+     * @param  string|null  $state  Optional state parameter for additional security
      */
     public function getAuthorizationUrl(?string $state = null): LexwareAuthorizationUrl
     {
@@ -92,7 +92,7 @@ class LexwareOAuth2Service
             'code_challenge_method' => 'S256',
         ];
 
-        $url = $this->baseUrl . '/oauth2/authorize?' . http_build_query($params);
+        $url = $this->baseUrl.'/oauth2/authorize?'.http_build_query($params);
 
         return new LexwareAuthorizationUrl($url, $state, $codeVerifier);
     }
@@ -100,16 +100,16 @@ class LexwareOAuth2Service
     /**
      * Exchange authorization code for access token
      *
-     * @param string $code Authorization code from callback
-     * @param string $state State parameter from callback
-     * @return LexwareAccessToken
+     * @param  string  $code  Authorization code from callback
+     * @param  string  $state  State parameter from callback
+     *
      * @throws LexwareOfficeApiException
      */
     public function exchangeCodeForToken(string $code, string $state): LexwareAccessToken
     {
         $codeVerifier = $this->retrievePkceData($state);
 
-        if (!$codeVerifier) {
+        if (! $codeVerifier) {
             throw new LexwareOfficeApiException('Invalid or expired state parameter', 400);
         }
 
@@ -123,7 +123,7 @@ class LexwareOAuth2Service
         ];
 
         try {
-            $response = $this->httpClient->post($this->baseUrl . '/oauth2/token', [
+            $response = $this->httpClient->post($this->baseUrl.'/oauth2/token', [
                 'form_params' => $params,
             ]);
 
@@ -145,7 +145,7 @@ class LexwareOAuth2Service
 
         } catch (GuzzleException $e) {
             throw new LexwareOfficeApiException(
-                'Failed to exchange authorization code: ' . $e->getMessage(),
+                'Failed to exchange authorization code: '.$e->getMessage(),
                 $e->getCode() ?: 500,
                 $e
             );
@@ -155,15 +155,15 @@ class LexwareOAuth2Service
     /**
      * Refresh an access token using refresh token
      *
-     * @param string|null $refreshToken Optional specific refresh token, otherwise uses stored token
-     * @return LexwareAccessToken
+     * @param  string|null  $refreshToken  Optional specific refresh token, otherwise uses stored token
+     *
      * @throws LexwareOfficeApiException
      */
     public function refreshToken(?string $refreshToken = null): LexwareAccessToken
     {
-        if (!$refreshToken) {
+        if (! $refreshToken) {
             $currentToken = $this->getTokenStorage()->getToken();
-            if (!$currentToken || !$currentToken->getRefreshToken()) {
+            if (! $currentToken || ! $currentToken->getRefreshToken()) {
                 throw new LexwareOfficeApiException('No refresh token available', 400);
             }
             $refreshToken = $currentToken->getRefreshToken();
@@ -177,7 +177,7 @@ class LexwareOAuth2Service
         ];
 
         try {
-            $response = $this->httpClient->post($this->baseUrl . '/oauth2/token', [
+            $response = $this->httpClient->post($this->baseUrl.'/oauth2/token', [
                 'form_params' => $params,
             ]);
 
@@ -196,7 +196,7 @@ class LexwareOAuth2Service
 
         } catch (GuzzleException $e) {
             throw new LexwareOfficeApiException(
-                'Failed to refresh token: ' . $e->getMessage(),
+                'Failed to refresh token: '.$e->getMessage(),
                 $e->getCode() ?: 500,
                 $e
             );
@@ -206,19 +206,18 @@ class LexwareOAuth2Service
     /**
      * Get current valid access token (refreshes automatically if needed)
      *
-     * @return LexwareAccessToken|null
      * @throws LexwareOfficeApiException
      */
     public function getValidAccessToken(): ?LexwareAccessToken
     {
         $token = $this->getTokenStorage()->getToken();
 
-        if (!$token) {
+        if (! $token) {
             return null;
         }
 
         // If token is not expired and not expiring soon, return it
-        if (!$token->isExpired() && !$token->isExpiringSoon()) {
+        if (! $token->isExpired() && ! $token->isExpiringSoon()) {
             return $token;
         }
 
@@ -239,21 +238,20 @@ class LexwareOAuth2Service
     /**
      * Revoke token (logout)
      *
-     * @param string|null $token Token to revoke, defaults to current access token
-     * @return bool
+     * @param  string|null  $token  Token to revoke, defaults to current access token
      */
     public function revokeToken(?string $token = null): bool
     {
-        if (!$token) {
+        if (! $token) {
             $currentToken = $this->getTokenStorage()->getToken();
-            if (!$currentToken) {
+            if (! $currentToken) {
                 return true; // No token to revoke
             }
             $token = $currentToken->getAccessToken();
         }
 
         try {
-            $this->httpClient->post($this->baseUrl . '/oauth2/revoke', [
+            $this->httpClient->post($this->baseUrl.'/oauth2/revoke', [
                 'form_params' => [
                     'token' => $token,
                     'client_id' => $this->clientId,
@@ -269,6 +267,7 @@ class LexwareOAuth2Service
         } catch (GuzzleException $e) {
             // Even if revocation fails, clear the local token
             $this->getTokenStorage()->clearToken();
+
             return false;
         }
     }

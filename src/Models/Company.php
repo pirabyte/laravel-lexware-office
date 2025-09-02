@@ -18,7 +18,7 @@ class Company implements \JsonSerializable
 
     public static function fromArray(array $data): self
     {
-        $company = new self();
+        $company = new self;
 
         if (isset($data['name'])) {
             $company->setName($data['name']);

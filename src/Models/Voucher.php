@@ -7,6 +7,7 @@ use Pirabyte\LaravelLexwareOffice\Traits\SupportsOptimisticLocking;
 class Voucher implements \JsonSerializable
 {
     use SupportsOptimisticLocking;
+
     // region Properties
     /**
      * Die ID des Vouchers.
@@ -114,7 +115,7 @@ class Voucher implements \JsonSerializable
      */
     public static function fromArray(array $data): self
     {
-        $voucher = new self();
+        $voucher = new self;
 
         if (isset($data['id'])) {
             $voucher->setId($data['id']);

@@ -13,13 +13,12 @@ class LexwareOfficeFactory
     /**
      * Create a LexwareOffice instance for a specific user with OAuth2
      *
-     * @param mixed $userId User identifier for token storage
-     * @param string|null $clientId OAuth2 client ID (defaults to config)
-     * @param string|null $clientSecret OAuth2 client secret (defaults to config)
-     * @param string|null $redirectUri OAuth2 redirect URI (defaults to config)
-     * @param array|null $scopes OAuth2 scopes (defaults to config)
-     * @param string $tokenStorage Token storage driver ('database' or 'cache')
-     * @return LexwareOffice
+     * @param  mixed  $userId  User identifier for token storage
+     * @param  string|null  $clientId  OAuth2 client ID (defaults to config)
+     * @param  string|null  $clientSecret  OAuth2 client secret (defaults to config)
+     * @param  string|null  $redirectUri  OAuth2 redirect URI (defaults to config)
+     * @param  array|null  $scopes  OAuth2 scopes (defaults to config)
+     * @param  string  $tokenStorage  Token storage driver ('database' or 'cache')
      */
     public static function forUser(
         mixed $userId,
@@ -40,7 +39,7 @@ class LexwareOfficeFactory
         $lexwareOffice = new LexwareOffice(
             config('lexware-office.base_url'),
             config('lexware-office.api_key'), // Fallback API key
-            config('lexware-office.rate_limit_key', 'lexware_office_api') . '_user_' . $userId,
+            config('lexware-office.rate_limit_key', 'lexware_office_api').'_user_'.$userId,
             config('lexware-office.max_requests_per_minute', 50)
         );
 
@@ -67,15 +66,14 @@ class LexwareOfficeFactory
     /**
      * Create a LexwareOffice instance with static API key (no OAuth2)
      *
-     * @param string $apiKey Static API key
-     * @param mixed|null $userId Optional user identifier for rate limiting
-     * @return LexwareOffice
+     * @param  string  $apiKey  Static API key
+     * @param  mixed|null  $userId  Optional user identifier for rate limiting
      */
     public static function withApiKey(string $apiKey, ?string $baseUrl = null, mixed $userId = null): LexwareOffice
     {
         $rateLimitKey = config('lexware-office.rate_limit_key', 'lexware_office_api');
         if ($userId) {
-            $rateLimitKey .= '_user_' . $userId;
+            $rateLimitKey .= '_user_'.$userId;
         }
 
         return new LexwareOffice(
@@ -90,13 +88,12 @@ class LexwareOfficeFactory
      * Create OAuth2 service without LexwareOffice instance
      * Useful for handling authorization flow before creating main instance
      *
-     * @param mixed $userId User identifier for token storage
-     * @param string|null $clientId OAuth2 client ID (defaults to config)
-     * @param string|null $clientSecret OAuth2 client secret (defaults to config)
-     * @param string|null $redirectUri OAuth2 redirect URI (defaults to config)
-     * @param array|null $scopes OAuth2 scopes (defaults to config)
-     * @param string $tokenStorage Token storage driver ('database' or 'cache')
-     * @return LexwareOAuth2Service
+     * @param  mixed  $userId  User identifier for token storage
+     * @param  string|null  $clientId  OAuth2 client ID (defaults to config)
+     * @param  string|null  $clientSecret  OAuth2 client secret (defaults to config)
+     * @param  string|null  $redirectUri  OAuth2 redirect URI (defaults to config)
+     * @param  array|null  $scopes  OAuth2 scopes (defaults to config)
+     * @param  string  $tokenStorage  Token storage driver ('database' or 'cache')
      */
     public static function createOAuth2Service(
         mixed $userId,
@@ -129,9 +126,8 @@ class LexwareOfficeFactory
     /**
      * Create token storage instance based on driver
      *
-     * @param mixed $userId User identifier
-     * @param string $driver Storage driver ('database' or 'cache')
-     * @return LexwareTokenStorage
+     * @param  mixed  $userId  User identifier
+     * @param  string  $driver  Storage driver ('database' or 'cache')
      */
     protected static function createTokenStorage(mixed $userId, string $driver): LexwareTokenStorage
     {
@@ -142,7 +138,7 @@ class LexwareOfficeFactory
                 config('lexware-office.oauth2.token_storage.user_column', 'user_id')
             ),
             'cache' => new CacheTokenStorage(
-                config('lexware-office.oauth2.token_storage.cache_key', 'lexware_office_token') . '_user_' . $userId
+                config('lexware-office.oauth2.token_storage.cache_key', 'lexware_office_token').'_user_'.$userId
             ),
             default => throw new LexwareOfficeApiException("Invalid token storage type: {$driver}")
         };

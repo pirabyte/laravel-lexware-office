@@ -26,10 +26,10 @@ class ErrorHandlingTest extends TestCase
         $mockResponses = [
             new Response(401, [
                 'Content-Type' => 'application/json',
-                'x-amzn-ErrorType' => 'UnauthorizedException'
+                'x-amzn-ErrorType' => 'UnauthorizedException',
             ], json_encode([
                 'message' => 'Unauthorized',
-                'details' => 'API key is invalid or expired'
+                'details' => 'API key is invalid or expired',
             ])),
         ];
 
@@ -53,9 +53,10 @@ class ErrorHandlingTest extends TestCase
                 $this->assertEquals(LexwareOfficeApiException::ERROR_TYPE_AUTHORIZATION, $exception->getErrorType());
                 $this->assertEquals([
                     'message' => 'Unauthorized',
-                    'details' => 'API key is invalid or expired'
+                    'details' => 'API key is invalid or expired',
                 ], $exception->getResponseData());
                 $this->assertTrue($exception->isAuthError());
+
                 return true;
             }
         );
@@ -71,10 +72,10 @@ class ErrorHandlingTest extends TestCase
             new Response(429, [
                 'Content-Type' => 'application/json',
                 'Retry-After' => '30',
-                'x-amzn-ErrorType' => 'ThrottlingException'
+                'x-amzn-ErrorType' => 'ThrottlingException',
             ], json_encode([
                 'message' => 'Rate limit exceeded',
-                'details' => 'You have exceeded the API rate limit'
+                'details' => 'You have exceeded the API rate limit',
             ])),
         ];
 
@@ -96,12 +97,12 @@ class ErrorHandlingTest extends TestCase
                 $this->assertEquals('Rate limit exceeded', $exception->getMessage());
                 $this->assertEquals(429, $exception->getStatusCode());
                 $this->assertEquals(LexwareOfficeApiException::ERROR_TYPE_RATE_LIMIT, $exception->getErrorType());
-                
+
                 // Check for retry information
                 $this->assertTrue($exception->isRateLimitError());
                 $this->assertEquals(30, $exception->getRetryAfter());
                 $this->assertStringContainsString('30 seconds', $exception->getRetrySuggestion());
-                
+
                 return true;
             }
         );
@@ -116,14 +117,14 @@ class ErrorHandlingTest extends TestCase
         $mockResponses = [
             new Response(400, [
                 'Content-Type' => 'application/json',
-                'x-amzn-ErrorType' => 'ValidationException'
+                'x-amzn-ErrorType' => 'ValidationException',
             ], json_encode([
                 'message' => 'Validation error',
                 'details' => 'The request contains invalid data',
                 'validationErrors' => [
                     ['field' => 'email', 'message' => 'Invalid email format'],
-                    ['field' => 'name', 'message' => 'Name is required']
-                ]
+                    ['field' => 'name', 'message' => 'Name is required'],
+                ],
             ])),
         ];
 
@@ -146,12 +147,12 @@ class ErrorHandlingTest extends TestCase
                 $this->assertEquals(400, $exception->getStatusCode());
                 $this->assertEquals(LexwareOfficeApiException::ERROR_TYPE_VALIDATION, $exception->getErrorType());
                 $this->assertTrue($exception->isValidationError());
-                
+
                 // Check validation error details
                 $responseData = $exception->getResponseData();
                 $this->assertArrayHasKey('validationErrors', $responseData);
                 $this->assertCount(2, $responseData['validationErrors']);
-                
+
                 return true;
             }
         );
@@ -166,10 +167,10 @@ class ErrorHandlingTest extends TestCase
         $mockResponses = [
             new Response(404, [
                 'Content-Type' => 'application/json',
-                'x-amzn-ErrorType' => 'ResourceNotFoundException'
+                'x-amzn-ErrorType' => 'ResourceNotFoundException',
             ], json_encode([
                 'message' => 'Resource not found',
-                'details' => 'The requested resource could not be found'
+                'details' => 'The requested resource could not be found',
             ])),
         ];
 
@@ -192,7 +193,7 @@ class ErrorHandlingTest extends TestCase
                 $this->assertEquals(404, $exception->getStatusCode());
                 $this->assertEquals(LexwareOfficeApiException::ERROR_TYPE_RESOURCE_NOT_FOUND, $exception->getErrorType());
                 $this->assertTrue($exception->isNotFoundError());
-                
+
                 return true;
             }
         );
@@ -207,10 +208,10 @@ class ErrorHandlingTest extends TestCase
         $mockResponses = [
             new Response(500, [
                 'Content-Type' => 'application/json',
-                'x-amzn-ErrorType' => 'InternalServerException'
+                'x-amzn-ErrorType' => 'InternalServerException',
             ], json_encode([
                 'message' => 'Internal server error',
-                'details' => 'An unexpected error occurred'
+                'details' => 'An unexpected error occurred',
             ])),
         ];
 
@@ -233,7 +234,7 @@ class ErrorHandlingTest extends TestCase
                 $this->assertEquals(500, $exception->getStatusCode());
                 $this->assertEquals(LexwareOfficeApiException::ERROR_TYPE_SERVER_ERROR, $exception->getErrorType());
                 $this->assertTrue($exception->isServerError());
-                
+
                 return true;
             }
         );

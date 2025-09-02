@@ -5,14 +5,18 @@ namespace Pirabyte\LaravelLexwareOffice\Models;
 class Address implements \JsonSerializable
 {
     public ?string $supplement = null;
+
     public string $street;
+
     public string $zip;
+
     public string $city;
+
     public string $countryCode;
 
     public static function fromArray(array $data): self
     {
-        $address = new self();
+        $address = new self;
         $address->street = $data['street'];
         $address->zip = $data['zip'];
         $address->city = $data['city'];

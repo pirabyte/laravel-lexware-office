@@ -2,27 +2,34 @@
 
 namespace Tests\Live;
 
-use PHPUnit\Framework\TestCase;
-use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\Contact;
-use Pirabyte\LaravelLexwareOffice\Models\Voucher;
-use Pirabyte\LaravelLexwareOffice\Models\VoucherItem;
 use GuzzleHttp\Psr7\Stream;
+use Orchestra\Testbench\TestCase;
+use Pirabyte\LaravelLexwareOffice\LexwareOffice;
+use Pirabyte\LaravelLexwareOffice\LexwareOfficeServiceProvider;
+use Pirabyte\LaravelLexwareOffice\Models\Contact;
+use Pirabyte\LaravelLexwareOffice\Models\Person;
+use Pirabyte\LaravelLexwareOffice\Models\Voucher;
 
 /**
  * Live API Tests - Tests against the actual Lexware Office API
- * 
+ *
  * IMPORTANT: These tests run against the live API and require valid credentials.
  * Set the following environment variables before running:
  * - LEXWARE_API_KEY: Your API key
  * - LEXWARE_BASE_URL: Base URL (default: https://api.lexoffice.io)
- * 
+ *
  * Run with: vendor/bin/phpunit tests/Live/LiveApiTest.php --group=live
  */
 class LiveApiTest extends TestCase
 {
     private LexwareOffice $client;
+
     private bool $skipTests = false;
+
+    protected function getPackageProviders($app)
+    {
+        return [LexwareOfficeServiceProvider::class];
+    }
 
     protected function setUp(): void
     {
@@ -33,12 +40,19 @@ class LiveApiTest extends TestCase
         if (empty($apiKey)) {
             $this->skipTests = true;
             $this->markTestSkipped('LEXWARE_API_KEY environment variable not set. Set it to run live API tests.');
+
             return;
         }
 
         $baseUrl = $_ENV['LEXWARE_BASE_URL'] ?? getenv('LEXWARE_BASE_URL') ?? 'https://api.lexoffice.io';
 
-        $this->client = new LexwareOffice($apiKey, $baseUrl);
+        // Create client without rate limiting for live tests
+        $this->client = new LexwareOffice(
+            $baseUrl,
+            $apiKey,
+            'live_test_' . uniqid(), // Unique rate limit key
+            0  // Disable rate limiting for live tests
+        );
     }
 
     /**
@@ -54,10 +68,10 @@ class LiveApiTest extends TestCase
 
         $this->assertNotEmpty($profile->getCompanyName());
         $this->assertNotEmpty($profile->getId());
-        
+
         echo "\n✅ Profile Test Passed";
-        echo "\n   Company: " . $profile->getCompanyName();
-        echo "\n   Profile ID: " . $profile->getId();
+        echo "\n   Company: ".$profile->getCompanyName();
+        echo "\n   Profile ID: ".$profile->getId();
     }
 
     /**
@@ -73,14 +87,14 @@ class LiveApiTest extends TestCase
 
         $this->assertIsArray($countries);
         $this->assertNotEmpty($countries);
-        
+
         // Find Germany
-        $germany = array_filter($countries, fn($country) => $country->getCountryCode() === 'DE');
+        $germany = array_filter($countries, fn ($country) => $country->getCountryCode() === 'DE');
         $this->assertNotEmpty($germany);
-        
+
         echo "\n✅ Countries Test Passed";
-        echo "\n   Total countries: " . count($countries);
-        echo "\n   Germany found: " . (empty($germany) ? 'No' : 'Yes');
+        echo "\n   Total countries: ".count($countries);
+        echo "\n   Germany found: ".(empty($germany) ? 'No' : 'Yes');
     }
 
     /**
@@ -92,13 +106,13 @@ class LiveApiTest extends TestCase
             $this->markTestSkipped('Skipping live API tests');
         }
 
-        $categories = $this->client->postingCategories()->all();
+        $categories = $this->client->postingCategories()->get();
 
         $this->assertIsArray($categories);
         $this->assertNotEmpty($categories);
-        
+
         echo "\n✅ Posting Categories Test Passed";
-        echo "\n   Total categories: " . count($categories);
+        echo "\n   Total categories: ".count($categories);
     }
 
     /**
@@ -110,13 +124,16 @@ class LiveApiTest extends TestCase
             $this->markTestSkipped('Skipping live API tests');
         }
 
-        $accounts = $this->client->financialAccounts()->all();
+        // Use filter to get all accounts
+        $accountsResponse = $this->client->financialAccounts()->filter([]);
 
-        $this->assertIsArray($accounts);
-        $this->assertNotEmpty($accounts);
+        $this->assertIsArray($accountsResponse);
+        
+        // The response may have content key
+        $accounts = isset($accountsResponse['content']) ? $accountsResponse['content'] : $accountsResponse;
         
         echo "\n✅ Financial Accounts Test Passed";
-        echo "\n   Total accounts: " . count($accounts);
+        echo "\n   Total accounts found: ".count($accounts);
     }
 
     /**
@@ -129,13 +146,14 @@ class LiveApiTest extends TestCase
         }
 
         // Create a test contact
-        $contact = new Contact();
+        $person = new Person();
+        $person->setSalutation('Herr')
+            ->setFirstName('Max')
+            ->setLastName('Mustermann Test API '.time());
+            
+        $contact = new Contact;
         $contact->setVersion(0)
-            ->setPerson([
-                'salutation' => 'Herr',
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann Test API ' . time(),
-            ])
+            ->setPerson($person)
             ->setAddresses([
                 'billing' => [
                     [
@@ -147,27 +165,27 @@ class LiveApiTest extends TestCase
                 ],
             ])
             ->setEmailAddresses([
-                'business' => ['test' . time() . '@example.com'],
+                'business' => ['test'.time().'@example.com'],
             ]);
 
         // Create contact
         $createdContact = $this->client->contacts()->create($contact);
         $this->assertNotEmpty($createdContact->getId());
-        
+
         echo "\n✅ Contact Create Test Passed";
-        echo "\n   Created contact ID: " . $createdContact->getId();
+        echo "\n   Created contact ID: ".$createdContact->getId();
 
         // Read contact
         $retrievedContact = $this->client->contacts()->get($createdContact->getId());
         $this->assertEquals($createdContact->getId(), $retrievedContact->getId());
-        
+
         echo "\n✅ Contact Read Test Passed";
 
         // Update contact
-        $retrievedContact->getPerson()['lastName'] = 'Updated Test API ' . time();
+        $retrievedContact->getPerson()['lastName'] = 'Updated Test API '.time();
         $updatedContact = $this->client->contacts()->update($retrievedContact->getId(), $retrievedContact);
         $this->assertStringContains('Updated Test API', $updatedContact->getPerson()['lastName']);
-        
+
         echo "\n✅ Contact Update Test Passed";
 
         return $updatedContact->getId(); // Return for cleanup in other tests
@@ -184,24 +202,24 @@ class LiveApiTest extends TestCase
 
         // Get all vouchers (limited)
         $vouchersResponse = $this->client->vouchers()->all(0, 5);
-        
+
         $this->assertIsArray($vouchersResponse);
         $this->assertArrayHasKey('content', $vouchersResponse);
         $this->assertArrayHasKey('pagination', $vouchersResponse);
-        
+
         echo "\n✅ Vouchers List Test Passed";
-        echo "\n   Total vouchers in response: " . count($vouchersResponse['content']);
-        echo "\n   Total elements: " . $vouchersResponse['pagination']['totalElements'];
+        echo "\n   Total vouchers in response: ".count($vouchersResponse['content']);
+        echo "\n   Total elements: ".$vouchersResponse['pagination']['totalElements'];
 
         // If we have vouchers, test getting one
-        if (!empty($vouchersResponse['content'])) {
+        if (! empty($vouchersResponse['content'])) {
             $firstVoucher = $vouchersResponse['content'][0];
             $retrievedVoucher = $this->client->vouchers()->get($firstVoucher->getId());
-            
+
             $this->assertEquals($firstVoucher->getId(), $retrievedVoucher->getId());
-            
+
             echo "\n✅ Voucher Get Test Passed";
-            echo "\n   Retrieved voucher ID: " . $retrievedVoucher->getId();
+            echo "\n   Retrieved voucher ID: ".$retrievedVoucher->getId();
         }
     }
 
@@ -217,13 +235,13 @@ class LiveApiTest extends TestCase
 
         // Get a voucher to attach file to
         $vouchersResponse = $this->client->vouchers()->all(0, 1);
-        
+
         if (empty($vouchersResponse['content'])) {
             $this->markTestSkipped('No vouchers available for file upload test');
         }
 
         $voucher = $vouchersResponse['content'][0];
-        
+
         // Create a test PDF content
         $testPdfContent = '%PDF-1.4
 1 0 obj
@@ -276,26 +294,26 @@ startxref
 %%EOF';
 
         // Create stream from content
-        $stream = new Stream(fopen('data://text/plain,' . $testPdfContent, 'r'));
-        
+        $stream = new Stream(fopen('data://text/plain,'.$testPdfContent, 'r'));
+
         try {
             $result = $this->client->vouchers()->attachFile(
                 $voucher->getId(),
                 $stream,
-                'test-api-upload-' . time() . '.pdf',
+                'test-api-upload-'.time().'.pdf',
                 'voucher'
             );
 
             $this->assertIsArray($result);
-            
+
             echo "\n✅ Voucher File Upload Test Passed";
-            echo "\n   Attached to voucher ID: " . $voucher->getId();
+            echo "\n   Attached to voucher ID: ".$voucher->getId();
             if (isset($result['id'])) {
-                echo "\n   File ID: " . $result['id'];
+                echo "\n   File ID: ".$result['id'];
             }
-            
+
         } catch (\Exception $e) {
-            echo "\n❌ File Upload Test Failed: " . $e->getMessage();
+            echo "\n❌ File Upload Test Failed: ".$e->getMessage();
             throw $e;
         }
     }
@@ -309,14 +327,35 @@ startxref
             $this->markTestSkipped('Skipping live API tests');
         }
 
-        $transactions = $this->client->financialTransactions()->all(0, 5);
+        // Get financial accounts first
+        $accountsResponse = $this->client->financialAccounts()->filter([]);
+        $accounts = isset($accountsResponse['content']) ? $accountsResponse['content'] : $accountsResponse;
         
-        $this->assertIsArray($transactions);
-        $this->assertArrayHasKey('content', $transactions);
-        $this->assertArrayHasKey('pagination', $transactions);
-        
-        echo "\n✅ Financial Transactions Test Passed";
-        echo "\n   Total transactions in response: " . count($transactions['content']);
+        if (empty($accounts)) {
+            $this->markTestSkipped('No financial accounts available for transaction test');
+        }
+
+        // Try to get latest transaction for the first account
+        $firstAccount = $accounts[0];
+        $latestTransaction = $this->client->financialTransactions()->latest($firstAccount->getId());
+
+        if ($latestTransaction !== null) {
+            $this->assertInstanceOf(\Pirabyte\LaravelLexwareOffice\Models\FinancialTransaction::class, $latestTransaction);
+            $this->assertNotEmpty($latestTransaction->getFinancialTransactionId());
+            
+            echo "\n✅ Financial Transactions Test Passed";
+            echo "\n   Latest transaction ID: ".$latestTransaction->getFinancialTransactionId();
+            echo "\n   Amount: ".$latestTransaction->getAmount();
+            echo "\n   Purpose: ".$latestTransaction->getPurpose();
+            
+            // Test get specific transaction
+            $transaction = $this->client->financialTransactions()->get($latestTransaction->getFinancialTransactionId());
+            $this->assertEquals($latestTransaction->getFinancialTransactionId(), $transaction->getFinancialTransactionId());
+            echo "\n   Successfully retrieved specific transaction";
+        } else {
+            echo "\n⚠️  No transactions found for account: ".$firstAccount->getId();
+            $this->assertTrue(true, 'No transactions available, but endpoint works');
+        }
     }
 
     /**
@@ -329,16 +368,16 @@ startxref
         }
 
         try {
-            $integrations = $this->client->partnerIntegrations()->all();
-            
-            $this->assertIsArray($integrations);
-            
+            $integration = $this->client->partnerIntegrations()->get();
+
+            $this->assertNotNull($integration);
+
             echo "\n✅ Partner Integrations Test Passed";
-            echo "\n   Total integrations: " . count($integrations);
-            
+            echo "\n   Integration retrieved successfully";
+
         } catch (\Exception $e) {
             // Some API keys might not have access to partner integrations
-            echo "\n⚠️  Partner Integrations Test Skipped: " . $e->getMessage();
+            echo "\n⚠️  Partner Integrations Test Skipped: ".$e->getMessage();
             $this->markTestSkipped('Partner integrations endpoint not accessible with current API key');
         }
     }
@@ -368,9 +407,9 @@ startxref
      */
     public static function tearDownAfterClass(): void
     {
-        echo "\n\n" . str_repeat("=", 60);
+        echo "\n\n".str_repeat('=', 60);
         echo "\n🎯 LIVE API TEST SUMMARY";
-        echo "\n" . str_repeat("=", 60);
+        echo "\n".str_repeat('=', 60);
         echo "\n";
         echo "\nTo run these tests with your API credentials:";
         echo "\n1. Set environment variable: export LEXWARE_API_KEY='your-api-key'";

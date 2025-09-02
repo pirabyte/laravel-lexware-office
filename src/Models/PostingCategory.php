@@ -30,7 +30,7 @@ class PostingCategory implements \JsonSerializable
 
     public static function fromArray(array $data): self
     {
-        $postingCategory = new self();
+        $postingCategory = new self;
 
         if (isset($data['id'])) {
             $postingCategory->id = $data['id'];

@@ -1,0 +1,29 @@
+[
+  {
+    "valueDate": "2023-05-07T09:47:00+02:00",
+    "bookingDate": "2023-05-07T09:47:00+02:00",
+    "transactionDate": "2023-05-07T09:47:00+02:00",
+    "purpose": "Verwendungszweck 1",
+    "amount": 123,
+    "feeAmount": -5.00,
+    "feeTaxRatePercentage": 0,
+    "feePostingCategoryId": "16d04a23-fd91-11e1-a21f-0800200c9a66",
+    "additionalInfo": "Zusatztext1",
+    "financialAccountId": "31cdb9f9-3f81-4d05-962d-5c821d6f21bd",
+    "recipientOrSenderName": "Sender 1",
+    "externalReference": "ExtRef1"
+  },
+  {
+    "valueDate": "2023-05-06T10:20:00+02:00",
+    "bookingDate": "2023-05-06T10:20:00+02:00",
+    "transactionDate": "2023-05-06T10:20:00+02:00",
+    "purpose": "Verwendungszweck 2",
+    "amount": 120,
+    "feeAmount": -10.00,
+    "feeTaxRatePercentage": 19,
+    "feePostingCategoryId": "113476af-ac83-4bf2-941d-0daa37022945",
+    "financialAccountId": "31cdb9f9-3f81-4d05-962d-5c821d6f21bd",
+    "recipientOrSenderName": "Sender 2",
+    "externalReference": "ExtRef2"
+  }
+]

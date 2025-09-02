@@ -1,0 +1,20 @@
+{
+  "financialTransactionId": "016e0873-9a2b-41ca-a749-c1a3cc5945d8",
+  "valueDate": "2023-06-30T00:00:00+02:00",
+  "bookingDate": null,
+  "transactionDate": "2023-06-30T00:00:00+02:00",
+  "purpose": "The purpose has been changed due to exchange rate from foreign currency.",
+  "amount": -22.37,
+  "openAmount": null,
+  "amountAsString": "-22,33",
+  "openAmountAsString": null,
+  "additionalInfo": null,
+  "state": null,
+  "recipientOrSenderName": "",
+  "recipientOrSenderEmail": null,
+  "recipientOrSenderIban": null,
+  "recipientOrSenderBic": null,
+  "financialAccountId": "ebb47780-f417-4652-8d7d-727fd00e3a5f",
+  "externalReference": "ExtRef123",
+  "lockVersion": 1
+}

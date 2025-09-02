@@ -16,11 +16,11 @@ return [
     'base_url' => env('LEXWARE_OFFICE_BASE_URL', 'https://api.lexoffice.de/v1'),
     'api_key' => env('LEXWARE_OFFICE_API_KEY'),
     'timeout' => env('LEXWARE_OFFICE_TIMEOUT', 30),
-    
+
     // Rate Limiting
     'rate_limit_key' => env('LEXWARE_OFFICE_RATE_LIMIT_KEY', 'lexware_office_api'),
     'max_requests_per_minute' => env('LEXWARE_OFFICE_MAX_REQUESTS', 50),
-    
+
     // OAuth2 Configuration (optional, for automatic token management)
     'oauth2' => [
         'enabled' => env('LEXWARE_OFFICE_OAUTH2_ENABLED', false),
@@ -31,7 +31,7 @@ return [
             // Add required scopes here, e.g.:
             // 'profile', 'contacts', 'vouchers', 'financial_accounts'
         ],
-        
+
         // Token Storage Configuration
         'token_storage' => [
             'driver' => env('LEXWARE_OFFICE_TOKEN_STORAGE', 'cache'), // 'cache' or 'database'

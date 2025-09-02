@@ -10,7 +10,7 @@ class TransactionAssignmentHint implements \JsonSerializable
 
     public static function fromArray(array $data): self
     {
-        $hint = new self();
+        $hint = new self;
 
         if (isset($data['voucherId'])) {
             $hint->setVoucherId($data['voucherId']);

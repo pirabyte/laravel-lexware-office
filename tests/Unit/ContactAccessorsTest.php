@@ -11,7 +11,7 @@ class ContactAccessorsTest extends TestCase
     /** @test */
     public function it_can_get_customer_and_vendor_numbers(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setRoles([
             'customer' => ['number' => 12345],
             'vendor' => ['number' => 54321],
@@ -24,7 +24,7 @@ class ContactAccessorsTest extends TestCase
     /** @test */
     public function it_returns_null_for_non_existent_roles(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
 
         $this->assertNull($contact->getCustomerNumber());
         $this->assertNull($contact->getVendorNumber());
@@ -33,7 +33,7 @@ class ContactAccessorsTest extends TestCase
     /** @test */
     public function it_can_check_if_contact_is_customer_or_vendor(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setRoles([
             'customer' => ['number' => 12345],
         ]);
@@ -45,19 +45,19 @@ class ContactAccessorsTest extends TestCase
     /** @test */
     public function it_can_get_billing_and_shipping_addresses(): void
     {
-        $billingAddress = new Address();
+        $billingAddress = new Address;
         $billingAddress->street = 'Billing Street';
         $billingAddress->zip = '12345';
         $billingAddress->city = 'Billing City';
         $billingAddress->countryCode = 'DE';
 
-        $shippingAddress = new Address();
+        $shippingAddress = new Address;
         $shippingAddress->street = 'Shipping Street';
         $shippingAddress->zip = '54321';
         $shippingAddress->city = 'Shipping City';
         $shippingAddress->countryCode = 'DE';
 
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setAddresses([
             'billing' => [$billingAddress],
             'shipping' => [$shippingAddress],
@@ -70,7 +70,7 @@ class ContactAccessorsTest extends TestCase
     /** @test */
     public function it_returns_null_for_non_existent_addresses(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
 
         $this->assertNull($contact->getBillingAddress());
         $this->assertNull($contact->getShippingAddress());

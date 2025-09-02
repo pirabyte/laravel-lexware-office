@@ -99,7 +99,7 @@ class OptimisticLockingTest extends TestCase
             $this->assertEquals(1, $e->getAttemptedVersion());
             $this->assertEquals(3, $e->getCurrentVersion());
             $this->assertTrue($e->isOptimisticLockingConflict());
-            
+
             throw $e;
         }
     }
@@ -129,7 +129,7 @@ class OptimisticLockingTest extends TestCase
         $reflectionProperty->setValue($instance, $client);
 
         // Create voucher with version 2 (but server has version 5)
-        $voucher = new Voucher();
+        $voucher = new Voucher;
         $voucher->setVersion(2);
 
         $this->expectException(OptimisticLockingException::class);
@@ -142,7 +142,7 @@ class OptimisticLockingTest extends TestCase
             $this->assertEquals('456', $e->getEntityId());
             $this->assertEquals(2, $e->getAttemptedVersion());
             $this->assertEquals(5, $e->getCurrentVersion());
-            
+
             throw $e;
         }
     }
@@ -161,7 +161,7 @@ class OptimisticLockingTest extends TestCase
         $this->assertEquals(1, $exception->getAttemptedVersion());
         $this->assertEquals(3, $exception->getCurrentVersion());
         $this->assertEquals(409, $exception->getCode());
-        
+
         $this->assertStringContainsString('refresh', $exception->getUserMessage());
         $this->assertStringContainsString('latest version', $exception->getRetryAction());
     }
@@ -173,10 +173,10 @@ class OptimisticLockingTest extends TestCase
 
         $this->assertTrue($contact->supportsOptimisticLocking());
         $this->assertEquals(5, $contact->getCurrentVersion());
-        
+
         $contact->incrementVersion();
         $this->assertEquals(6, $contact->getCurrentVersion());
-        
+
         $dataForUpdate = $contact->toArrayForUpdate();
         $this->assertEquals(6, $dataForUpdate['version']);
     }
@@ -221,7 +221,7 @@ class OptimisticLockingTest extends TestCase
         $this->assertCount(2, $container); // PUT request + GET request
         $putRequest = $container[0]['request'];
         $requestBody = json_decode($putRequest->getBody()->getContents(), true);
-        
+
         $this->assertEquals(1, $requestBody['version']);
     }
 

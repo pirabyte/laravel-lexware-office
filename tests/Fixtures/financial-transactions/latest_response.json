@@ -1,0 +1,21 @@
+{
+  "financialTransactionId": "016e0873-9a2b-41ca-a749-c1a3cc5945d8",
+  "valueDate": "2023-06-30T00:00:00+02:00",
+  "bookingDate": null,
+  "transactionDate": "2023-06-30T00:00:00+02:00",
+  "purpose": "2023-06-30T08:57:59 Karte2 2026-12",
+  "amount": -22.33,
+  "openAmount": null,
+  "amountAsString": "-22,33",
+  "openAmountAsString": null,
+  "additionalInfo": null,
+  "state": null,
+  "recipientOrSenderName": "",
+  "recipientOrSenderEmail": null,
+  "recipientOrSenderIban": null,
+  "recipientOrSenderBic": null,
+  "financialAccountId": "ebb47780-f417-4652-8d7d-727fd00e3a5f",
+  "externalReference": "ExtRef123",
+  "endToEndId": null,
+  "lockVersion": 1
+}

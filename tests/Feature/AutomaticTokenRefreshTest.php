@@ -21,7 +21,7 @@ class AutomaticTokenRefreshTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         Config::set('lexware-office.oauth2.client_id', 'test_client_id');
         Config::set('lexware-office.oauth2.client_secret', 'test_client_secret');
         Config::set('lexware-office.oauth2.redirect_uri', 'https://example.com/callback');
@@ -48,7 +48,7 @@ class AutomaticTokenRefreshTest extends TestCase
             3600,
             'valid_refresh_token',
             ['profile'],
-            (new \DateTime())->sub(new \DateInterval('PT2H'))
+            (new \DateTime)->sub(new \DateInterval('PT2H'))
         );
 
         $lexware->getOAuth2Service()->getTokenStorage()->storeToken($expiredToken);
@@ -58,7 +58,7 @@ class AutomaticTokenRefreshTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'new_refresh_token',
-            'scope' => 'profile'
+            'scope' => 'profile',
         ];
 
         $profileResponse = [
@@ -68,9 +68,9 @@ class AutomaticTokenRefreshTest extends TestCase
                 'userId' => 'user_123',
                 'userName' => 'Test User',
                 'userEmail' => 'test@example.com',
-                'date' => '2023-01-01T00:00:00+01:00'
+                'date' => '2023-01-01T00:00:00+01:00',
             ],
-            'connectionId' => 'conn_123'
+            'connectionId' => 'conn_123',
         ];
 
         $mock = new MockHandler([
@@ -85,7 +85,7 @@ class AutomaticTokenRefreshTest extends TestCase
         $profile = $lexware->profile()->get();
 
         $this->assertEquals('refresh_org_123', $profile->getOrganizationId());
-        
+
         // Verify token was refreshed
         $newToken = $lexware->getOAuth2Service()->getTokenStorage()->getToken();
         $this->assertEquals('refreshed_access_token', $newToken->getAccessToken());
@@ -103,7 +103,7 @@ class AutomaticTokenRefreshTest extends TestCase
             3600,
             'valid_refresh_token',
             ['contacts'],
-            (new \DateTime())->sub(new \DateInterval('PT90M')) // 90 minutes ago
+            (new \DateTime)->sub(new \DateInterval('PT90M')) // 90 minutes ago
         );
 
         $lexware->getOAuth2Service()->getTokenStorage()->storeToken($expiredToken);
@@ -113,7 +113,7 @@ class AutomaticTokenRefreshTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'new_refresh_for_contacts',
-            'scope' => 'contacts'
+            'scope' => 'contacts',
         ];
 
         $contactsResponse = [
@@ -121,11 +121,11 @@ class AutomaticTokenRefreshTest extends TestCase
                 [
                     'id' => 'contact_123',
                     'roles' => ['customer'],
-                    'company' => ['name' => 'Test Customer']
-                ]
+                    'company' => ['name' => 'Test Customer'],
+                ],
             ],
             'totalPages' => 1,
-            'totalElements' => 1
+            'totalElements' => 1,
         ];
 
         $mock = new MockHandler([
@@ -158,7 +158,7 @@ class AutomaticTokenRefreshTest extends TestCase
             3600,
             'valid_refresh_token',
             ['profile', 'contacts'],
-            new \DateTime() // Token is fresh but will be rejected by server (e.g., revoked)
+            new \DateTime // Token is fresh but will be rejected by server (e.g., revoked)
         );
 
         $lexware->getOAuth2Service()->getTokenStorage()->storeToken($nonExpiredToken);
@@ -168,7 +168,7 @@ class AutomaticTokenRefreshTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'new_single_refresh',
-            'scope' => 'profile contacts'
+            'scope' => 'profile contacts',
         ];
 
         $profileResponse = [
@@ -178,15 +178,15 @@ class AutomaticTokenRefreshTest extends TestCase
                 'userId' => 'user_123',
                 'userName' => 'Test User',
                 'userEmail' => 'test@example.com',
-                'date' => '2023-01-01T00:00:00+01:00'
+                'date' => '2023-01-01T00:00:00+01:00',
             ],
-            'connectionId' => 'conn_123'
+            'connectionId' => 'conn_123',
         ];
 
         $contactsResponse = [
             'content' => [],
             'totalPages' => 0,
-            'totalElements' => 0
+            'totalElements' => 0,
         ];
 
         $mock = new MockHandler([
@@ -225,7 +225,7 @@ class AutomaticTokenRefreshTest extends TestCase
             3600,
             'invalid_refresh_token',
             ['profile'],
-            (new \DateTime())->sub(new \DateInterval('PT2H'))
+            (new \DateTime)->sub(new \DateInterval('PT2H'))
         );
 
         $lexware->getOAuth2Service()->getTokenStorage()->storeToken($expiredToken);
@@ -261,7 +261,7 @@ class AutomaticTokenRefreshTest extends TestCase
             3600,
             null, // No refresh token
             ['profile'],
-            (new \DateTime())->sub(new \DateInterval('PT2H'))
+            (new \DateTime)->sub(new \DateInterval('PT2H'))
         );
 
         $lexware->getOAuth2Service()->getTokenStorage()->storeToken($expiredToken);
@@ -290,7 +290,7 @@ class AutomaticTokenRefreshTest extends TestCase
             3600,
             'valid_refresh_token',
             ['profile'],
-            (new \DateTime())->sub(new \DateInterval('PT3480S')) // 3480 seconds ago, 120 left
+            (new \DateTime)->sub(new \DateInterval('PT3480S')) // 3480 seconds ago, 120 left
         );
 
         $lexware->getOAuth2Service()->getTokenStorage()->storeToken($expiringSoonToken);
@@ -300,7 +300,7 @@ class AutomaticTokenRefreshTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'new_proactive_refresh',
-            'scope' => 'profile'
+            'scope' => 'profile',
         ];
 
         $profileResponse = [
@@ -310,9 +310,9 @@ class AutomaticTokenRefreshTest extends TestCase
                 'userId' => 'user_123',
                 'userName' => 'Test User',
                 'userEmail' => 'test@example.com',
-                'date' => '2023-01-01T00:00:00+01:00'
+                'date' => '2023-01-01T00:00:00+01:00',
             ],
-            'connectionId' => 'conn_123'
+            'connectionId' => 'conn_123',
         ];
 
         $mock = new MockHandler([
@@ -344,7 +344,7 @@ class AutomaticTokenRefreshTest extends TestCase
             3600,
             'original_refresh_token',
             ['profile'],
-            (new \DateTime())->sub(new \DateInterval('PT2H'))
+            (new \DateTime)->sub(new \DateInterval('PT2H'))
         );
 
         $storage = $lexware->getOAuth2Service()->getTokenStorage();
@@ -355,7 +355,7 @@ class AutomaticTokenRefreshTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 7200, // Different expiry
             'refresh_token' => 'updated_refresh_token',
-            'scope' => 'profile contacts' // Additional scope
+            'scope' => 'profile contacts', // Additional scope
         ];
 
         $profileResponse = [
@@ -365,9 +365,9 @@ class AutomaticTokenRefreshTest extends TestCase
                 'userId' => 'user_123',
                 'userName' => 'Test User',
                 'userEmail' => 'test@example.com',
-                'date' => '2023-01-01T00:00:00+01:00'
+                'date' => '2023-01-01T00:00:00+01:00',
             ],
-            'connectionId' => 'conn_123'
+            'connectionId' => 'conn_123',
         ];
 
         $mock = new MockHandler([
@@ -390,7 +390,7 @@ class AutomaticTokenRefreshTest extends TestCase
         $this->assertEquals('updated_refresh_token', $updatedToken->getRefreshToken());
         $this->assertEquals(7200, $updatedToken->getExpiresIn());
         $this->assertEquals(['profile', 'contacts'], $updatedToken->getScopes());
-        
+
         // Verify it's not expired
         $this->assertFalse($updatedToken->isExpired());
         $this->assertFalse($updatedToken->isExpiringSoon());
@@ -408,7 +408,7 @@ class AutomaticTokenRefreshTest extends TestCase
             3600,
             'concurrent_refresh_token',
             ['profile'],
-            (new \DateTime())->sub(new \DateInterval('PT2H'))
+            (new \DateTime)->sub(new \DateInterval('PT2H'))
         );
 
         // Both instances share the same storage
@@ -419,7 +419,7 @@ class AutomaticTokenRefreshTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'concurrent_new_refresh',
-            'scope' => 'profile'
+            'scope' => 'profile',
         ];
 
         $profileResponse = [
@@ -429,9 +429,9 @@ class AutomaticTokenRefreshTest extends TestCase
                 'userId' => 'user_123',
                 'userName' => 'Test User',
                 'userEmail' => 'test@example.com',
-                'date' => '2023-01-01T00:00:00+01:00'
+                'date' => '2023-01-01T00:00:00+01:00',
             ],
-            'connectionId' => 'conn_123'
+            'connectionId' => 'conn_123',
         ];
 
         // First instance refreshes proactively, then makes API call
@@ -450,7 +450,7 @@ class AutomaticTokenRefreshTest extends TestCase
 
         // First call triggers refresh
         $profile1 = $lexware1->profile()->get();
-        
+
         // Second call should use refreshed token
         $profile2 = $lexware2->profile()->get();
 
@@ -460,7 +460,7 @@ class AutomaticTokenRefreshTest extends TestCase
         // Both should see the same refreshed token
         $token1 = $lexware1->getOAuth2Service()->getTokenStorage()->getToken();
         $token2 = $lexware2->getOAuth2Service()->getTokenStorage()->getToken();
-        
+
         $this->assertEquals('concurrent_refreshed_token', $token1->getAccessToken());
         $this->assertEquals('concurrent_refreshed_token', $token2->getAccessToken());
     }
@@ -472,11 +472,11 @@ class AutomaticTokenRefreshTest extends TestCase
 
         // Set HTTP client for main LexwareOffice instance
         $reflection = new \ReflectionClass($lexware);
-        
+
         // Update both client properties
         $clientProperty = $reflection->getProperty('client');
         $clientProperty->setValue($lexware, $client);
-        
+
         $httpClientProperty = $reflection->getProperty('httpClient');
         $httpClientProperty->setValue($lexware, $client);
 

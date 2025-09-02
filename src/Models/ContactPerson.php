@@ -53,7 +53,7 @@ class ContactPerson extends Person implements \JsonSerializable
 
     public static function fromArray(array $data): self
     {
-        $contactPerson = new self();
+        $contactPerson = new self;
 
         if (isset($data['salutation'])) {
             $contactPerson->setSalutation($data['salutation']);

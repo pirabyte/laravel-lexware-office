@@ -29,7 +29,7 @@ class LexwareAccessToken implements \JsonSerializable
         $this->expiresIn = $expiresIn;
         $this->refreshToken = $refreshToken;
         $this->scopes = $scopes;
-        $this->createdAt = $createdAt ?: new \DateTime();
+        $this->createdAt = $createdAt ?: new \DateTime;
     }
 
     /**
@@ -39,11 +39,11 @@ class LexwareAccessToken implements \JsonSerializable
     {
         if (is_array($scopes)) {
             return array_filter($scopes, function ($scope) {
-                return !empty($scope);
+                return ! empty($scope);
             });
         }
 
-        if (is_string($scopes) && !empty($scopes)) {
+        if (is_string($scopes) && ! empty($scopes)) {
             return explode(' ', $scopes);
         }
 
@@ -63,7 +63,7 @@ class LexwareAccessToken implements \JsonSerializable
             $data['expires_in'] ?? 3600,
             $data['refresh_token'] ?? null,
             self::parseScopes($scopes),
-            new \DateTime()
+            new \DateTime
         );
     }
 
@@ -137,7 +137,7 @@ class LexwareAccessToken implements \JsonSerializable
     public function isExpired(int $bufferSeconds = 30): bool
     {
         $expiresAt = $this->getExpiresAt();
-        $now = new \DateTime();
+        $now = new \DateTime;
 
         // Add buffer to account for network delays
         $expiresAt->sub(new \DateInterval("PT{$bufferSeconds}S"));
@@ -151,7 +151,7 @@ class LexwareAccessToken implements \JsonSerializable
     public function isExpiringSoon(int $seconds = 300): bool
     {
         $expiresAt = $this->getExpiresAt();
-        $checkTime = (new \DateTime())->add(new \DateInterval("PT{$seconds}S"));
+        $checkTime = (new \DateTime)->add(new \DateInterval("PT{$seconds}S"));
 
         return $checkTime >= $expiresAt;
     }
@@ -161,7 +161,7 @@ class LexwareAccessToken implements \JsonSerializable
      */
     public function getAuthorizationHeader(): string
     {
-        return $this->tokenType . ' ' . $this->accessToken;
+        return $this->tokenType.' '.$this->accessToken;
     }
 
     /**
@@ -182,7 +182,7 @@ class LexwareAccessToken implements \JsonSerializable
         }
 
         foreach ($scopes as $scope) {
-            if (!$this->hasScope($scope)) {
+            if (! $this->hasScope($scope)) {
                 return false;
             }
         }
@@ -196,7 +196,7 @@ class LexwareAccessToken implements \JsonSerializable
     public function getRemainingTime(): int
     {
         $expiresAt = $this->getExpiresAt();
-        $now = new \DateTime();
+        $now = new \DateTime;
 
         if ($now >= $expiresAt) {
             return 0;
@@ -239,7 +239,7 @@ class LexwareAccessToken implements \JsonSerializable
             $data['expires_in'] ?? 3600,
             $data['refresh_token'] ?? null,
             self::parseScopes($scopes),
-            isset($data['created_at']) ? new \DateTime($data['created_at']) : new \DateTime()
+            isset($data['created_at']) ? new \DateTime($data['created_at']) : new \DateTime
         );
     }
 

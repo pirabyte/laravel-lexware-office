@@ -22,7 +22,7 @@ class OAuth2IntegrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         Config::set('lexware-office.oauth2.client_id', 'test_client_id');
         Config::set('lexware-office.oauth2.client_secret', 'test_client_secret');
         Config::set('lexware-office.oauth2.redirect_uri', 'https://example.com/callback');
@@ -31,7 +31,7 @@ class OAuth2IntegrationTest extends TestCase
         Config::set('lexware-office.oauth2.token_storage', 'cache');
 
         // Create tokens table for database tests using Schema builder
-        if (!DB::getSchemaBuilder()->hasTable('lexware_tokens')) {
+        if (! DB::getSchemaBuilder()->hasTable('lexware_tokens')) {
             DB::getSchemaBuilder()->create('lexware_tokens', function ($table) {
                 $table->id();
                 $table->string('user_id')->unique();
@@ -59,7 +59,7 @@ class OAuth2IntegrationTest extends TestCase
 
         // Step 1: Get authorization URL
         $authUrl = $lexware->getOAuth2AuthorizationUrl('custom_state');
-        
+
         $this->assertStringContainsString('https://api.lexoffice.de/oauth2/authorize', $authUrl->getUrl());
         $this->assertStringContainsString('state=custom_state', $authUrl->getUrl());
         $this->assertNotEmpty($authUrl->getCodeVerifier());
@@ -70,7 +70,7 @@ class OAuth2IntegrationTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'integration_refresh_token',
-            'scope' => 'profile contacts'
+            'scope' => 'profile contacts',
         ];
 
         // Store PKCE data in cache
@@ -107,7 +107,7 @@ class OAuth2IntegrationTest extends TestCase
             3600,
             'valid_refresh_token',
             ['profile'],
-            (new \DateTime())->sub(new \DateInterval('PT2H')) // 2 hours ago
+            (new \DateTime)->sub(new \DateInterval('PT2H')) // 2 hours ago
         );
 
         $oauth2Service = $lexware->getOAuth2Service();
@@ -119,7 +119,7 @@ class OAuth2IntegrationTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'new_refresh_token',
-            'scope' => 'profile'
+            'scope' => 'profile',
         ];
 
         $profileResponse = [
@@ -129,9 +129,9 @@ class OAuth2IntegrationTest extends TestCase
                 'userId' => 'user_123',
                 'userName' => 'Test User',
                 'userEmail' => 'test@example.com',
-                'date' => '2023-01-01T00:00:00+01:00'
+                'date' => '2023-01-01T00:00:00+01:00',
             ],
-            'connectionId' => 'conn_123'
+            'connectionId' => 'conn_123',
         ];
 
         $mock = new MockHandler([
@@ -158,7 +158,7 @@ class OAuth2IntegrationTest extends TestCase
     public function test_oauth2_with_database_token_storage()
     {
         Config::set('lexware-office.oauth2.token_storage', 'database');
-        
+
         $userId = 'db_user_789';
         $lexware = LexwareOfficeFactory::forUser($userId);
 
@@ -250,7 +250,7 @@ class OAuth2IntegrationTest extends TestCase
             3600,
             'expired_refresh_token',
             ['profile'],
-            (new \DateTime())->sub(new \DateInterval('PT2H'))
+            (new \DateTime)->sub(new \DateInterval('PT2H'))
         );
 
         $oauth2Service = $lexware->getOAuth2Service();
@@ -282,7 +282,7 @@ class OAuth2IntegrationTest extends TestCase
     {
         $user1 = 'isolated_user_1';
         $user2 = 'isolated_user_2';
-        
+
         $lexware1 = LexwareOfficeFactory::forUser($user1);
         $lexware2 = LexwareOfficeFactory::forUser($user2);
 
@@ -320,11 +320,11 @@ class OAuth2IntegrationTest extends TestCase
         $oauth2Service->getTokenStorage()->storeToken($token);
 
         $storedToken = $oauth2Service->getTokenStorage()->getToken();
-        
+
         $this->assertTrue($storedToken->hasScope('profile'));
         $this->assertFalse($storedToken->hasScope('contacts'));
         $this->assertFalse($storedToken->hasScope('invoices'));
-        
+
         $this->assertTrue($storedToken->hasScopes(['profile']));
         $this->assertFalse($storedToken->hasScopes(['profile', 'contacts']));
     }
@@ -332,7 +332,7 @@ class OAuth2IntegrationTest extends TestCase
     public function test_oauth2_token_persistence_across_requests()
     {
         $userId = 'persistent_user_505';
-        
+
         // First request - store token
         $lexware1 = LexwareOfficeFactory::forUser($userId);
         $token = new LexwareAccessToken('persistent_token', 'Bearer', 3600, 'refresh_token');
@@ -353,11 +353,11 @@ class OAuth2IntegrationTest extends TestCase
 
         // Set HTTP client for main LexwareOffice instance
         $reflection = new \ReflectionClass($lexware);
-        
+
         // Update both client properties
         $clientProperty = $reflection->getProperty('client');
         $clientProperty->setValue($lexware, $client);
-        
+
         $httpClientProperty = $reflection->getProperty('httpClient');
         $httpClientProperty->setValue($lexware, $client);
 

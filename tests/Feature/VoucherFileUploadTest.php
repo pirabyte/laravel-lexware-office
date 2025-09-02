@@ -20,7 +20,7 @@ class VoucherFileUploadTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->lexware = new LexwareOffice(
             'https://api.lexoffice.de',
             'test_api_key'
@@ -225,7 +225,7 @@ class VoucherFileUploadTest extends TestCase
         $result = $this->lexware->vouchers()->attachFile('voucher_rate_test', $stream);
 
         $this->assertEquals('file_rate_limit', $result['id']);
-        
+
         // Rate limiting is tested in the main rate limit tests
         // This test ensures the file upload goes through the same rate limiting system
     }
@@ -285,7 +285,7 @@ class VoucherFileUploadTest extends TestCase
         );
 
         $this->assertEquals('test_multipart', $result['id']);
-        
+
         // The test passing means the multipart format was correct
         // and the request went through the proper client methods
     }
@@ -297,10 +297,10 @@ class VoucherFileUploadTest extends TestCase
 
         // Set both client properties to ensure compatibility
         $reflection = new \ReflectionClass($this->lexware);
-        
+
         $clientProperty = $reflection->getProperty('client');
         $clientProperty->setValue($this->lexware, $client);
-        
+
         $httpClientProperty = $reflection->getProperty('httpClient');
         $httpClientProperty->setValue($this->lexware, $client);
     }

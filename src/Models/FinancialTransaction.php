@@ -6,69 +6,44 @@ use Pirabyte\LaravelLexwareOffice\Enums\TransactionState;
 
 class FinancialTransaction implements \JsonSerializable
 {
+    // Read-only properties (from API responses)
     private ?string $financialTransactionId = null;
-
     private ?string $transactionDate = null;
-
     private ?float $openAmount = null;
-
     private ?string $amountAsString = null;
-
     private ?string $openAmountAsString = null;
-
     private ?TransactionState $state = null;
-
     private ?int $lockVersion = null;
-
     private ?string $createdDate = null;
-
     private ?string $lastModifiedDate = null;
-
     private ?string $endToEndId = null;
+    private ?string $bookingText = null;
+    private ?string $virtualAccountId = null;
+    private ?bool $ignore = null;
+    private ?string $ignoreReason = null;
 
-    // Immutable properties
-    private string $valueDate;
+    // Required properties for create/update
+    private ?string $valueDate = null;
+    private ?string $bookingDate = null;
+    private ?string $purpose = null;
+    private ?float $amount = null;
+    private ?string $financialAccountId = null;
 
-    private string $bookingDate;
-
+    // Optional properties
     private ?string $externalReference = null;
-
-    // Mutable properties
-    private string $purpose;
-
-    private float $amount;
-
     private ?float $feeAmount = null;
-
     private ?float $feeTaxRatePercentage = null;
-
     private ?string $feePostingCategoryId = null;
-
     private ?string $additionalInfo = null;
-
     private ?string $recipientOrSenderName = null;
-
     private ?string $recipientOrSenderEmail = null;
-
     private ?string $recipientOrSenderIban = null;
-
     private ?string $recipientOrSenderBic = null;
 
-    private string $financialAccountId;
-
     /**
-     * Konstruktor mit den minimal erforderlichen Feldern
-     *
-     * @param  string  $financialTransactionId  Die eindeutige ID der Transaktion
-     * @param  string  $valueDate  Das Wertstellungsdatum
-     * @param  string  $bookingDate  Das Buchungsdatum
-     * @param  string  $purpose  Der Verwendungszweck
-     * @param  float  $amount  Der Betrag (positiv für Einnahmen, negativ für Ausgaben)
-     * @param  string  $financialAccountId  Die ID des verknüpften Finanzkontos
+     * Konstruktor
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * Konvertiert ein Array in eine FinancialTransaction-Instanz
@@ -78,16 +53,16 @@ class FinancialTransaction implements \JsonSerializable
     public static function fromArray(array $data): self
     {
         // Objekt erstellen
-        $transaction = new self();
+        $transaction = new self;
 
         if (isset($data['financialAccountId'])) {
             $transaction->financialAccountId = $data['financialAccountId'];
         }
 
+        // Handle both 'transactiondate' and 'transactionDate' keys
         if (isset($data['transactiondate'])) {
             $transaction->transactionDate = $data['transactiondate'];
-        }
-        if (isset($data['transactionDate'])) {
+        } elseif (isset($data['transactionDate'])) {
             $transaction->transactionDate = $data['transactionDate'];
         }
 
@@ -185,6 +160,23 @@ class FinancialTransaction implements \JsonSerializable
             $transaction->setRecipientOrSenderBic($data['recipientOrSenderBic']);
         }
 
+        // Additional read-only fields from API responses
+        if (isset($data['bookingText'])) {
+            $transaction->bookingText = $data['bookingText'];
+        }
+
+        if (isset($data['virtualAccountId'])) {
+            $transaction->virtualAccountId = $data['virtualAccountId'];
+        }
+
+        if (isset($data['ignore'])) {
+            $transaction->ignore = (bool) $data['ignore'];
+        }
+
+        if (isset($data['ignoreReason'])) {
+            $transaction->ignoreReason = $data['ignoreReason'];
+        }
+
         return $transaction;
     }
 
@@ -193,21 +185,29 @@ class FinancialTransaction implements \JsonSerializable
      */
     public function jsonSerialize(): array
     {
-        $data = [
-            'financialTransactionId' => $this->financialTransactionId,
-            'valueDate' => $this->valueDate,
-            'bookingDate' => $this->bookingDate,
-            'purpose' => $this->purpose,
-            'amount' => $this->amount,
-            'financialAccountId' => $this->financialAccountId,
-        ];
+        $data = [];
 
-        if (isset($this->transactionDate)) {
-            $data['transactionDate'] = $this->transactionDate;
+        // Required fields for create/update
+        if ($this->valueDate !== null) {
+            $data['valueDate'] = $this->valueDate;
+        }
+        if ($this->bookingDate !== null) {
+            $data['bookingDate'] = $this->bookingDate;
+        }
+        if ($this->purpose !== null) {
+            $data['purpose'] = $this->purpose;
+        }
+        if ($this->amount !== null) {
+            $data['amount'] = $this->amount;
+        }
+        if ($this->financialAccountId !== null) {
+            $data['financialAccountId'] = $this->financialAccountId;
         }
 
-        // Optionale Felder hinzufügen
-        if ($this->transactionDate !== null) {
+        // For create requests, use 'transactiondate' (lowercase)
+        if ($this->transactionDate !== null && $this->financialTransactionId === null) {
+            $data['transactiondate'] = $this->transactionDate;
+        } elseif ($this->transactionDate !== null) {
             $data['transactionDate'] = $this->transactionDate;
         }
 
@@ -287,9 +287,21 @@ class FinancialTransaction implements \JsonSerializable
     /**
      * Gibt die eindeutige ID der Transaktion zurück
      */
-    public function getFinancialTransactionId(): string
+    public function getFinancialTransactionId(): ?string
     {
         return $this->financialTransactionId;
+    }
+
+    /**
+     * Setzt die eindeutige ID der Transaktion
+     *
+     * @return $this
+     */
+    public function setFinancialTransactionId(?string $financialTransactionId): self
+    {
+        $this->financialTransactionId = $financialTransactionId;
+
+        return $this;
     }
 
     /**
@@ -367,7 +379,7 @@ class FinancialTransaction implements \JsonSerializable
     /**
      * Gibt das Wertstellungsdatum zurück
      */
-    public function getValueDate(): string
+    public function getValueDate(): ?string
     {
         return $this->valueDate;
     }
@@ -375,7 +387,7 @@ class FinancialTransaction implements \JsonSerializable
     /**
      * Gibt das Buchungsdatum zurück
      */
-    public function getBookingDate(): string
+    public function getBookingDate(): ?string
     {
         return $this->bookingDate;
     }
@@ -391,7 +403,7 @@ class FinancialTransaction implements \JsonSerializable
     /**
      * Gibt den Verwendungszweck zurück
      */
-    public function getPurpose(): string
+    public function getPurpose(): ?string
     {
         return $this->purpose;
     }
@@ -399,7 +411,7 @@ class FinancialTransaction implements \JsonSerializable
     /**
      * Gibt den Betrag zurück
      */
-    public function getAmount(): float
+    public function getAmount(): ?float
     {
         return $this->amount;
     }
@@ -471,7 +483,7 @@ class FinancialTransaction implements \JsonSerializable
     /**
      * Gibt die Finanzkonto-ID zurück
      */
-    public function getFinancialAccountId(): string
+    public function getFinancialAccountId(): ?string
     {
         return $this->financialAccountId;
     }
@@ -625,8 +637,54 @@ class FinancialTransaction implements \JsonSerializable
         $this->transactionDate = $transactionDate;
     }
 
-    public function setExternalReference(?string $externalReference): void
+    public function setExternalReference(?string $externalReference): self
     {
         $this->externalReference = $externalReference;
+
+        return $this;
+    }
+
+    /**
+     * Setzt die Versionsnummer (für optimistic locking)
+     *
+     * @return $this
+     */
+    public function setLockVersion(?int $lockVersion): self
+    {
+        $this->lockVersion = $lockVersion;
+
+        return $this;
+    }
+
+    /**
+     * Gibt den Buchungstext zurück
+     */
+    public function getBookingText(): ?string
+    {
+        return $this->bookingText;
+    }
+
+    /**
+     * Gibt die virtuelle Konto-ID zurück
+     */
+    public function getVirtualAccountId(): ?string
+    {
+        return $this->virtualAccountId;
+    }
+
+    /**
+     * Gibt zurück, ob die Transaktion ignoriert wird
+     */
+    public function getIgnore(): ?bool
+    {
+        return $this->ignore;
+    }
+
+    /**
+     * Gibt den Grund für das Ignorieren zurück
+     */
+    public function getIgnoreReason(): ?string
+    {
+        return $this->ignoreReason;
     }
 }

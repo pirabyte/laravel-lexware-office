@@ -2,7 +2,6 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Tests\Feature;
 
-use Faker\Core\Uuid;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -25,8 +24,8 @@ class VoucherResourceTest extends TestCase
         $personMockResponses = [
             // Response für create
             new Response(201, ['Content-Type' => 'application/json'], json_encode([
-                "voucherId" => "ee143016-f177-4da7-a3b7-513a525a25a4",
-                "externalReference" => "C205CD6E49F319AE9B03CAD01F555E2B9F188407"
+                'voucherId' => 'ee143016-f177-4da7-a3b7-513a525a25a4',
+                'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407',
             ])),
         ];
 
@@ -131,7 +130,7 @@ class VoucherResourceTest extends TestCase
     {
         $hint = TransactionAssignmentHint::fromArray([
             'voucherId' => 'ee143016-f177-4da7-a3b7-513a525a25a4',
-            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407'
+            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407',
 
         ]);
         $created = \Pirabyte\LaravelLexwareOffice\Facades\LexwareOffice::transactionAssignmentHints()->create($hint);
@@ -181,5 +180,4 @@ class VoucherResourceTest extends TestCase
 
         $this->assertEquals(count($voucher->jsonSerialize()), count($fixtureData));
     }
-
 }

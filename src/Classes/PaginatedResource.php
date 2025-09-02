@@ -43,7 +43,7 @@ class PaginatedResource implements \JsonSerializable
      */
     public static function fromArray(array $data): self
     {
-        $resource = new self();
+        $resource = new self;
 
         if (isset($data['first'])) {
             $resource->first = $data['first'];

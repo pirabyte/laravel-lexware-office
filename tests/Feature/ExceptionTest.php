@@ -20,9 +20,9 @@ class ExceptionTest extends TestCase
         $personMockResponses = [
             // Response für create
             new Response(401, [
-                'Content-Type' => 'application/json'
+                'Content-Type' => 'application/json',
             ], json_encode([
-                'message' => 'Unauthorized'
+                'message' => 'Unauthorized',
             ])),
         ];
 
@@ -35,18 +35,20 @@ class ExceptionTest extends TestCase
         $instance->setClient($client);
     }
 
-    public function test_it_can_read_from_exception() {
+    public function test_it_can_read_from_exception()
+    {
         $this->assertThrows(
             function () {
                 LexwareOffice::contacts()->get('something');
             },
             function (LexwareOfficeApiException $exception) {
                 $this->assertInstanceOf(LexwareOfficeApiException::class, $exception);
-                $this->assertEquals("Unauthorized", $exception->getMessage());
+                $this->assertEquals('Unauthorized', $exception->getMessage());
                 $this->assertEquals(401, $exception->getStatusCode());
                 $this->assertEquals([
-                    'message' => 'Unauthorized'
+                    'message' => 'Unauthorized',
                 ], $exception->getResponseData());
+
                 return true;
             }
         );

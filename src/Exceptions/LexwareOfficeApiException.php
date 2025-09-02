@@ -9,18 +9,28 @@ class LexwareOfficeApiException extends Exception
 {
     // Standard error status codes from the API
     public const STATUS_BAD_REQUEST = 400;
+
     public const STATUS_UNAUTHORIZED = 401;
+
     public const STATUS_NOT_FOUND = 404;
+
     public const STATUS_CONFLICT = 409;
+
     public const STATUS_RATE_LIMITED = 429;
+
     public const STATUS_SERVER_ERROR = 500;
 
     // Error types from the API (using actual AWS API Gateway error types)
     public const ERROR_TYPE_AUTHORIZATION = 'UnauthorizedException';
+
     public const ERROR_TYPE_VALIDATION = 'ValidationException';
+
     public const ERROR_TYPE_CONFLICT = 'ConflictException';
+
     public const ERROR_TYPE_RATE_LIMIT = 'ThrottlingException';
+
     public const ERROR_TYPE_RESOURCE_NOT_FOUND = 'ResourceNotFoundException';
+
     public const ERROR_TYPE_SERVER_ERROR = 'InternalServerException';
 
     /**
@@ -51,9 +61,9 @@ class LexwareOfficeApiException extends Exception
     /**
      * Create a new Lexware Office API exception
      *
-     * @param string $message The error message or raw response body
-     * @param int $statusCode The HTTP status code
-     * @param RequestException|null $previous The previous exception
+     * @param  string  $message  The error message or raw response body
+     * @param  int  $statusCode  The HTTP status code
+     * @param  RequestException|null  $previous  The previous exception
      */
     public function __construct($message, $statusCode = 500, $previous = null)
     {
@@ -83,12 +93,12 @@ class LexwareOfficeApiException extends Exception
 
             // Check for Retry-After header for rate limit errors
             if ($statusCode === self::STATUS_RATE_LIMITED && $response->hasHeader('Retry-After')) {
-                $this->retryAfter = (int)$response->getHeaderLine('Retry-After');
+                $this->retryAfter = (int) $response->getHeaderLine('Retry-After');
             }
         }
 
         // Set the error type based on status code if not already set
-        if (!$this->errorType) {
+        if (! $this->errorType) {
             $this->errorType = $this->mapStatusCodeToErrorType($statusCode);
         }
 
@@ -203,11 +213,12 @@ class LexwareOfficeApiException extends Exception
      */
     public function getRetrySuggestion(): string
     {
-        if (!$this->isRateLimitError()) {
+        if (! $this->isRateLimitError()) {
             return 'This error does not support retrying.';
         }
 
         $seconds = $this->retryAfter ?? 60;
+
         return "Rate limit exceeded. Retry after {$seconds} seconds with exponential backoff.";
     }
 }

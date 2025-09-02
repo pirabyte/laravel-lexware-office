@@ -30,7 +30,8 @@ class PartnerIntegrationResource
     /**
      * Updates partner integration data for a lexoffice organization
      *
-     * @param PartnerIntegration $partnerIntegration The partner integration data to update
+     * @param  PartnerIntegration  $partnerIntegration  The partner integration data to update
+     *
      * @throws LexwareOfficeApiException
      */
     public function update(PartnerIntegration $partnerIntegration): PartnerIntegration

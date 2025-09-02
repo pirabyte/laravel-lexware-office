@@ -1,0 +1,28 @@
+[
+  {
+    "valueDate": "2023-05-28T00:00:00+02:00",
+    "bookingDate": "2023-05-20T00:00:00+02:00",
+    "transactiondate": "2023-05-28T00:00:00+02:00",
+    "purpose": "verwendungszweck1",
+    "amount": 120.01,
+    "additionalInfo": "Zusatztext1",
+    "recipientOrSenderName": "Sender1",
+    "recipientOrSenderIban": "DE02700100800030876808",
+    "recipientOrSenderBic": "PBNKDEFF",
+    "financialAccountId": "3a6358ea-4749-41ba-ba9c-155ef42f795c",
+    "externalReference": "ExtRef1"
+  },
+  {
+    "valueDate": "2023-05-27T00:00:00+02:00",
+    "bookingDate": "2023-05-19T00:00:00+02:00",
+    "transactiondate": "2023-05-27T00:00:00+02:00",
+    "purpose": "verwendungszweck2",
+    "amount": 120.02,
+    "additionalInfo": "Zusatztext2",
+    "recipientOrSenderName": "Sender2",
+    "recipientOrSenderIban": "DE02300209000106531065",
+    "recipientOrSenderBic": "CMCIDEDD",
+    "financialAccountId": "3a6358ea-4749-41ba-ba9c-155ef42f795c",
+    "externalReference": "ExtRef2"
+  }
+]

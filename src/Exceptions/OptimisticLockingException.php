@@ -24,11 +24,11 @@ class OptimisticLockingException extends LexwareOfficeApiException
     /**
      * Create a new optimistic locking exception
      *
-     * @param string $message The error message
-     * @param string|null $entityId The ID of the entity that failed to update
-     * @param int|null $attemptedVersion The version that was attempted to be updated
-     * @param int|null $currentVersion The current version on the server
-     * @param Exception|null $previous The previous exception
+     * @param  string  $message  The error message
+     * @param  string|null  $entityId  The ID of the entity that failed to update
+     * @param  int|null  $attemptedVersion  The version that was attempted to be updated
+     * @param  int|null  $currentVersion  The current version on the server
+     * @param  Exception|null  $previous  The previous exception
      */
     public function __construct(
         string $message = 'Optimistic locking conflict: The entity was modified by another process',

@@ -8,7 +8,7 @@ class PartnerIntegration implements \JsonSerializable
 
     public static function fromArray(array $data): self
     {
-        $integration = new self();
+        $integration = new self;
         $integration->data = $data;
 
         return $integration;

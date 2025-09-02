@@ -53,7 +53,7 @@ class DatabaseTokenStorage implements LexwareTokenStorage
             ->where($this->userColumn, $this->userId)
             ->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -69,6 +69,7 @@ class DatabaseTokenStorage implements LexwareTokenStorage
         } catch (\Exception $e) {
             // If token data is corrupted, clear it
             $this->clearToken();
+
             return null;
         }
     }
@@ -82,5 +83,4 @@ class DatabaseTokenStorage implements LexwareTokenStorage
             ->where($this->userColumn, $this->userId)
             ->delete();
     }
-
 }

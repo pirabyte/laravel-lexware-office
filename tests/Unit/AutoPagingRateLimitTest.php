@@ -39,7 +39,7 @@ class AutoPagingRateLimitTest extends TestCase
         $firstPageResponse = [
             'content' => [
                 ['id' => '1', 'person' => ['firstName' => 'John', 'lastName' => 'Doe']],
-                ['id' => '2', 'person' => ['firstName' => 'Jane', 'lastName' => 'Smith']]
+                ['id' => '2', 'person' => ['firstName' => 'Jane', 'lastName' => 'Smith']],
             ],
             'first' => true,
             'last' => false,
@@ -47,7 +47,7 @@ class AutoPagingRateLimitTest extends TestCase
             'totalElements' => 3,
             'numberOfElements' => 2,
             'size' => 2,
-            'number' => 0
+            'number' => 0,
         ];
 
         $mock = new MockHandler([
@@ -96,7 +96,7 @@ class AutoPagingRateLimitTest extends TestCase
         $singlePageResponse = [
             'content' => [
                 ['id' => '1', 'person' => ['firstName' => 'John', 'lastName' => 'Doe']],
-                ['id' => '2', 'person' => ['firstName' => 'Jane', 'lastName' => 'Smith']]
+                ['id' => '2', 'person' => ['firstName' => 'Jane', 'lastName' => 'Smith']],
             ],
             'first' => true,
             'last' => true,
@@ -104,7 +104,7 @@ class AutoPagingRateLimitTest extends TestCase
             'totalElements' => 2,
             'numberOfElements' => 2,
             'size' => 2,
-            'number' => 0
+            'number' => 0,
         ];
 
         $mock = new MockHandler([
@@ -158,7 +158,7 @@ class AutoPagingRateLimitTest extends TestCase
             'totalElements' => 0,
             'numberOfElements' => 0,
             'size' => 25,
-            'number' => 0
+            'number' => 0,
         ];
 
         $mock = new MockHandler([
@@ -204,7 +204,7 @@ class AutoPagingRateLimitTest extends TestCase
         // Single page response
         $singlePageResponse = [
             'content' => [
-                ['id' => '1', 'person' => ['firstName' => 'Test', 'lastName' => 'User']]
+                ['id' => '1', 'person' => ['firstName' => 'Test', 'lastName' => 'User']],
             ],
             'first' => true,
             'last' => true,
@@ -212,7 +212,7 @@ class AutoPagingRateLimitTest extends TestCase
             'totalElements' => 1,
             'numberOfElements' => 1,
             'size' => 1,
-            'number' => 0
+            'number' => 0,
         ];
 
         $mock = new MockHandler([
@@ -268,9 +268,9 @@ class AutoPagingRateLimitTest extends TestCase
             'totalElements' => 3,
             'numberOfElements' => 1,
             'size' => 1,
-            'number' => 0
+            'number' => 0,
         ];
-        
+
         $page1Response = [
             'content' => [['id' => '2', 'person' => ['firstName' => 'Page', 'lastName' => 'One']]],
             'first' => false,
@@ -279,9 +279,9 @@ class AutoPagingRateLimitTest extends TestCase
             'totalElements' => 3,
             'numberOfElements' => 1,
             'size' => 1,
-            'number' => 1
+            'number' => 1,
         ];
-        
+
         $page2Response = [
             'content' => [['id' => '3', 'person' => ['firstName' => 'Page', 'lastName' => 'Two']]],
             'first' => false,
@@ -290,7 +290,7 @@ class AutoPagingRateLimitTest extends TestCase
             'totalElements' => 3,
             'numberOfElements' => 1,
             'size' => 1,
-            'number' => 2
+            'number' => 2,
         ];
 
         $mock = new MockHandler([

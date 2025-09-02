@@ -8,9 +8,7 @@ class VoucherAssignment
 
     private string $type;
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * Konvertiert ein Array in eine VoucherAssignment-Instanz
@@ -19,7 +17,7 @@ class VoucherAssignment
      */
     public static function fromArray(array $data): self
     {
-        $assignment = new self();
+        $assignment = new self;
 
         if (isset($data['id'])) {
             $assignment->id = $data['id'];

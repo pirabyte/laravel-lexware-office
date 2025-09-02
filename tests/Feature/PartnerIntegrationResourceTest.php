@@ -14,13 +14,13 @@ class PartnerIntegrationResourceTest extends TestCase
     /**
      * Loads fixture data from a JSON file.
      *
-     * @param string $filename The filename of the fixture (without path/extension)
+     * @param  string  $filename  The filename of the fixture (without path/extension)
      * @return array The decoded JSON data
      */
     private function loadFixture(string $filename): array
     {
         $path = __DIR__.'/../Fixtures/partner-integrations/'.$filename.'.json';
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             $this->fail('Fixture file not found: '.$path);
         }
         $content = file_get_contents($path);
@@ -34,14 +34,15 @@ class PartnerIntegrationResourceTest extends TestCase
 
         return $data;
     }
+
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Load fixture data for responses
         $getFixture = $this->loadFixture('1_partner_integration_response');
         $updateFixture = $this->loadFixture('2_updated_partner_integration_response');
-        
+
         // Mock responses for the API calls
         $mockResponses = [
             // Response for GET
@@ -62,7 +63,7 @@ class PartnerIntegrationResourceTest extends TestCase
     public function test_it_can_get_partner_integration_data(): void
     {
         $partnerIntegration = app('lexware-office')->partnerIntegrations()->get();
-        
+
         $this->assertInstanceOf(PartnerIntegration::class, $partnerIntegration);
         $this->assertEquals('partner123', $partnerIntegration->get('partnerId'));
         $this->assertEquals('customer456', $partnerIntegration->get('customerNumber'));
@@ -75,16 +76,16 @@ class PartnerIntegrationResourceTest extends TestCase
     {
         // First get the data
         $partnerIntegration = app('lexware-office')->partnerIntegrations()->get();
-        
+
         // Update the data
         $partnerIntegration->set('data', [
             'additionalData1' => 'updatedValue1',
-            'additionalData2' => 'updatedValue2'
+            'additionalData2' => 'updatedValue2',
         ]);
-        
+
         // Submit the update
         $updatedPartnerIntegration = app('lexware-office')->partnerIntegrations()->update($partnerIntegration);
-        
+
         // Verify the updated data
         $this->assertInstanceOf(PartnerIntegration::class, $updatedPartnerIntegration);
         $this->assertEquals('partner123', $updatedPartnerIntegration->get('partnerId'));

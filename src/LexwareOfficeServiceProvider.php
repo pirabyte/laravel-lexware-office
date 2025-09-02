@@ -4,7 +4,6 @@ namespace Pirabyte\LaravelLexwareOffice;
 
 use Illuminate\Support\ServiceProvider;
 use Pirabyte\LaravelLexwareOffice\OAuth2\CacheTokenStorage;
-use Pirabyte\LaravelLexwareOffice\OAuth2\DatabaseTokenStorage;
 use Pirabyte\LaravelLexwareOffice\OAuth2\LexwareOAuth2Service;
 
 class LexwareOfficeServiceProvider extends ServiceProvider
@@ -36,7 +35,7 @@ class LexwareOfficeServiceProvider extends ServiceProvider
         $this->app->singleton('lexware-oauth2', function ($app) {
             $config = $app['config']['lexware-office.oauth2'];
 
-            if (!$config['enabled']) {
+            if (! $config['enabled']) {
                 return null;
             }
 

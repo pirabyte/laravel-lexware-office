@@ -171,7 +171,7 @@ class FinancialAccountTest extends TestCase
 
         // Filter mit leeren Werten erstellen
         $instance->financialAccounts()->filter([
-           'externalReference' => 'some_account_id'
+            'externalReference' => 'some_account_id',
         ]);
 
         // Assertions - Prüfen des tatsächlich gesendeten Requests

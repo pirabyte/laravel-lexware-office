@@ -37,7 +37,7 @@ class VoucherItem implements \JsonSerializable
      */
     public static function fromArray(array $data): self
     {
-        $item = new self();
+        $item = new self;
 
         if (isset($data['id'])) {
             $item->setId($data['id']);

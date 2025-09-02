@@ -20,7 +20,7 @@ class PostMultipartTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->lexware = new LexwareOffice(
             'https://api.lexoffice.de',
             'test_api_key'
@@ -33,12 +33,12 @@ class PostMultipartTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_postMultipart_sends_multipart_request_successfully()
+    public function test_post_multipart_sends_multipart_request_successfully()
     {
         $responseData = [
             'id' => 'upload_123',
             'status' => 'uploaded',
-            'size' => 1024
+            'size' => 1024,
         ];
 
         $mock = new MockHandler([
@@ -51,12 +51,12 @@ class PostMultipartTest extends TestCase
             [
                 'name' => 'file',
                 'contents' => 'file content here',
-                'filename' => 'test.pdf'
+                'filename' => 'test.pdf',
             ],
             [
                 'name' => 'type',
-                'contents' => 'document'
-            ]
+                'contents' => 'document',
+            ],
         ];
 
         $result = $this->lexware->postMultipart('upload/files', $multipartData);
@@ -66,7 +66,7 @@ class PostMultipartTest extends TestCase
         $this->assertEquals(1024, $result['size']);
     }
 
-    public function test_postMultipart_handles_http_errors()
+    public function test_post_multipart_handles_http_errors()
     {
         $request = new Request('POST', 'upload/files');
         $exception = new RequestException(
@@ -79,7 +79,7 @@ class PostMultipartTest extends TestCase
         $this->setMockHttpClient($mock);
 
         $multipartData = [
-            ['name' => 'invalid', 'contents' => 'data']
+            ['name' => 'invalid', 'contents' => 'data'],
         ];
 
         $this->expectException(LexwareOfficeApiException::class);
@@ -88,7 +88,7 @@ class PostMultipartTest extends TestCase
         $this->lexware->postMultipart('upload/files', $multipartData);
     }
 
-    public function test_postMultipart_respects_rate_limiting()
+    public function test_post_multipart_respects_rate_limiting()
     {
         // Set a very low rate limit for testing
         $this->lexware->setRateLimit(1);
@@ -114,7 +114,7 @@ class PostMultipartTest extends TestCase
         $this->lexware->postMultipart('test/endpoint', $multipartData);
     }
 
-    public function test_postMultipart_handles_malformed_json_response()
+    public function test_post_multipart_handles_malformed_json_response()
     {
         $mock = new MockHandler([
             new Response(200, ['Content-Type' => 'application/json'], 'invalid json'),
@@ -131,7 +131,7 @@ class PostMultipartTest extends TestCase
         $this->assertEquals('invalid json', $result['raw']);
     }
 
-    public function test_postMultipart_handles_network_errors()
+    public function test_post_multipart_handles_network_errors()
     {
         $request = new Request('POST', 'test/endpoint');
         $exception = new RequestException('Network error: Connection timeout', $request);
@@ -147,7 +147,7 @@ class PostMultipartTest extends TestCase
         $this->lexware->postMultipart('test/endpoint', $multipartData);
     }
 
-    public function test_postMultipart_handles_server_errors()
+    public function test_post_multipart_handles_server_errors()
     {
         $request = new Request('POST', 'test/endpoint');
         $exception = new RequestException(
@@ -167,7 +167,7 @@ class PostMultipartTest extends TestCase
         $this->lexware->postMultipart('test/endpoint', $multipartData);
     }
 
-    public function test_postMultipart_handles_authentication_errors()
+    public function test_post_multipart_handles_authentication_errors()
     {
         $request = new Request('POST', 'test/endpoint');
         $exception = new RequestException(
@@ -187,7 +187,7 @@ class PostMultipartTest extends TestCase
         $this->lexware->postMultipart('test/endpoint', $multipartData);
     }
 
-    public function test_postMultipart_with_empty_multipart_data()
+    public function test_post_multipart_with_empty_multipart_data()
     {
         $responseData = ['message' => 'empty_upload_processed'];
 
@@ -202,11 +202,11 @@ class PostMultipartTest extends TestCase
         $this->assertEquals('empty_upload_processed', $result['message']);
     }
 
-    public function test_postMultipart_with_complex_multipart_data()
+    public function test_post_multipart_with_complex_multipart_data()
     {
         $responseData = [
             'files_processed' => 2,
-            'metadata_received' => true
+            'metadata_received' => true,
         ];
 
         $mock = new MockHandler([
@@ -220,21 +220,21 @@ class PostMultipartTest extends TestCase
                 'name' => 'file1',
                 'contents' => 'First file content',
                 'filename' => 'document1.pdf',
-                'headers' => ['Content-Type' => 'application/pdf']
+                'headers' => ['Content-Type' => 'application/pdf'],
             ],
             [
-                'name' => 'file2', 
+                'name' => 'file2',
                 'contents' => 'Second file content',
-                'filename' => 'document2.jpg'
+                'filename' => 'document2.jpg',
             ],
             [
                 'name' => 'metadata',
-                'contents' => '{"category": "invoices", "priority": "high"}'
+                'contents' => '{"category": "invoices", "priority": "high"}',
             ],
             [
                 'name' => 'tags',
-                'contents' => 'important,urgent'
-            ]
+                'contents' => 'important,urgent',
+            ],
         ];
 
         $result = $this->lexware->postMultipart('complex/upload', $multipartData);
@@ -249,10 +249,10 @@ class PostMultipartTest extends TestCase
         $client = new Client(['handler' => $handlerStack]);
 
         $reflection = new \ReflectionClass($this->lexware);
-        
+
         $clientProperty = $reflection->getProperty('client');
         $clientProperty->setValue($this->lexware, $client);
-        
+
         $httpClientProperty = $reflection->getProperty('httpClient');
         $httpClientProperty->setValue($this->lexware, $client);
     }

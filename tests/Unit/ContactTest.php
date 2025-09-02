@@ -8,11 +8,11 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Pirabyte\LaravelLexwareOffice\Classes\PaginatedResource;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\Contact;
-use Pirabyte\LaravelLexwareOffice\Models\Person;
 use Pirabyte\LaravelLexwareOffice\Models\Address;
 use Pirabyte\LaravelLexwareOffice\Models\Company;
+use Pirabyte\LaravelLexwareOffice\Models\Contact;
 use Pirabyte\LaravelLexwareOffice\Models\ContactPerson;
+use Pirabyte\LaravelLexwareOffice\Models\Person;
 use Pirabyte\LaravelLexwareOffice\Models\XRechnung;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
@@ -729,11 +729,11 @@ class ContactTest extends TestCase
     /** @test */
     public function test_it_can_serialize_contacts_correctly(): void
     {
-        $fixtureFile = __DIR__ . '/../Fixtures/contacts/contact_serialization.json';
+        $fixtureFile = __DIR__.'/../Fixtures/contacts/contact_serialization.json';
         $fixtureContents = file_get_contents($fixtureFile);
         $expectedJson = json_decode($fixtureContents, true);
 
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setId('be9475f4-ef80-442b-8ab9-3ab8b1a2aeb9');
         $contact->setOrganizationId('aa93e8a8-2aa3-470b-b914-caad8a255dd8');
         $contact->setVersion(1);
@@ -742,13 +742,13 @@ class ContactTest extends TestCase
             'vendor' => ['number' => 70303],
         ]);
 
-        $company = new Company();
+        $company = new Company;
         $company->setName('Testfirma');
         $company->setTaxNumber('12345/12345');
         $company->setVatRegistrationId('DE123456789');
         $company->setAllowTaxFreeInvoices(true);
 
-        $contactPerson = new ContactPerson();
+        $contactPerson = new ContactPerson;
         $contactPerson->setSalutation('Herr');
         $contactPerson->setFirstName('Max');
         $contactPerson->setLastName('Mustermann');
@@ -758,14 +758,14 @@ class ContactTest extends TestCase
         $company->setContactPersons([$contactPerson]);
         $contact->setCompany($company);
 
-        $billingAddress = new Address();
+        $billingAddress = new Address;
         $billingAddress->supplement = 'Rechnungsadressenzusatz';
         $billingAddress->street = 'Hauptstr. 5';
         $billingAddress->zip = '12345';
         $billingAddress->city = 'Musterort';
         $billingAddress->countryCode = 'DE';
 
-        $shippingAddress = new Address();
+        $shippingAddress = new Address;
         $shippingAddress->supplement = 'Lieferadressenzusatz';
         $shippingAddress->street = 'Schulstr. 13';
         $shippingAddress->zip = '76543';
@@ -773,7 +773,7 @@ class ContactTest extends TestCase
         $shippingAddress->countryCode = 'DE';
         $contact->setAddresses(['billing' => [$billingAddress], 'shipping' => [$shippingAddress]]);
 
-        $xRechnung = new XRechnung();
+        $xRechnung = new XRechnung;
         $xRechnung->setBuyerReference('04011000-1234512345-35');
         $xRechnung->setVendorNumberAtCustomer('70123456');
         $contact->setXRechnung($xRechnung);
@@ -800,7 +800,7 @@ class ContactTest extends TestCase
         $this->assertEquals($expectedJson, $contact->jsonSerialize());
     }
 
-    public function test_setting_role_creates_an_empty_json_class() : void
+    public function test_setting_role_creates_an_empty_json_class(): void
     {
         $contact = Contact::createCompany('Musterfirma');
         $contact->setAsCustomer();

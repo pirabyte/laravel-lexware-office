@@ -7,6 +7,7 @@ use Pirabyte\LaravelLexwareOffice\Traits\SupportsOptimisticLocking;
 class Contact implements \JsonSerializable
 {
     use SupportsOptimisticLocking;
+
     private ?string $id = null;
 
     private ?string $organizationId = null;
@@ -42,7 +43,7 @@ class Contact implements \JsonSerializable
      */
     public static function createPerson(?string $firstName, string $lastName, ?string $salutation = null): self
     {
-        $person = new Person();
+        $person = new Person;
         $person->setLastName($lastName);
 
         if ($firstName !== null) {
@@ -53,7 +54,7 @@ class Contact implements \JsonSerializable
             $person->setSalutation($salutation);
         }
 
-        $contact = new self();
+        $contact = new self;
         $contact->setPerson($person);
         $contact->setVersion(0);
 
@@ -68,10 +69,10 @@ class Contact implements \JsonSerializable
      */
     public static function createCompany(string $name): self
     {
-        $company = new Company();
+        $company = new Company;
         $company->setName($name);
 
-        $contact = new self();
+        $contact = new self;
         $contact->setCompany($company);
         $contact->setVersion(0);
 
@@ -178,7 +179,7 @@ class Contact implements \JsonSerializable
     // Factory-Methode aktualisieren
     public static function fromArray(array $data): self
     {
-        $contact = new self();
+        $contact = new self;
 
         if (isset($data['id'])) {
             $contact->setId($data['id']);
@@ -315,7 +316,7 @@ class Contact implements \JsonSerializable
      */
     public function addRole(string $roleType): self
     {
-        $this->roles[$roleType] = new \stdClass();
+        $this->roles[$roleType] = new \stdClass;
 
         return $this;
     }

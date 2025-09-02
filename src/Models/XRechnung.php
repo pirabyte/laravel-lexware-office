@@ -12,7 +12,7 @@ class XRechnung implements \JsonSerializable
 
     public static function fromArray(array $data): self
     {
-        $xRechnung = new self();
+        $xRechnung = new self;
 
         if (isset($data['buyerReference'])) {
             $xRechnung->setBuyerReference($data['buyerReference']);

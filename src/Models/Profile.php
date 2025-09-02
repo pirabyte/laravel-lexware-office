@@ -24,7 +24,7 @@ class Profile
 
     public static function fromArray(array $data): self
     {
-        $profile = new self();
+        $profile = new self;
 
         if (isset($data['organizationId'])) {
             $profile->organizationId = $data['organizationId'];

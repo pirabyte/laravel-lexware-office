@@ -86,10 +86,10 @@ class FinancialAccountResourceTest extends TestCase
         // Test der ursprünglichen fehlerhaften Implementierung
         // Die ursprüngliche Methode hatte leere try-catch Blöcke und erwartete 'content' in der Antwort
         // Da die API direkt ein Array zurückgibt, sollte das Ergebnis leer sein
-        
+
         // Simuliere die ursprüngliche fehlerhafte Verarbeitung
         $response = json_decode(file_get_contents(__DIR__.'/../Fixtures/finance-accounts/3_filter_financial_account_response.json'), true);
-        
+
         // Ursprüngliche fehlerhafte Logik: Suche nach 'content' in der Antwort
         $accounts = [];
         if (isset($response['content']) && is_array($response['content'])) {
@@ -97,7 +97,7 @@ class FinancialAccountResourceTest extends TestCase
                 $accounts[] = \Pirabyte\LaravelLexwareOffice\Models\FinancialAccount::fromArray($accountData);
             }
         }
-        
+
         // Das Ergebnis sollte leer sein, da 'content' nicht in der Antwort vorhanden ist
         $this->assertEmpty($accounts, 'Ursprüngliche Implementierung sollte fehlschlagen, da sie "content" in der Antwort erwartet');
     }
@@ -123,7 +123,7 @@ class FinancialAccountResourceTest extends TestCase
         // Jetzt sollte das Ergebnis nicht leer sein
         $this->assertNotEmpty($result, 'Filter sollte jetzt funktionieren und Ergebnisse zurückgeben');
         $this->assertCount(1, $result, 'Filter sollte genau ein Konto zurückgeben');
-        
+
         $account = $result[0];
         $this->assertInstanceOf(FinancialAccount::class, $account);
         $this->assertEquals('acct_1PveDdFOGdyMR8V0', $account->getExternalReference());

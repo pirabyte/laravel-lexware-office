@@ -31,7 +31,7 @@ class CacheTokenStorage implements LexwareTokenStorage
     {
         $tokenData = Cache::get($this->cacheKey);
 
-        if (!$tokenData) {
+        if (! $tokenData) {
             return null;
         }
 
@@ -40,6 +40,7 @@ class CacheTokenStorage implements LexwareTokenStorage
         } catch (\Exception $e) {
             // If token data is corrupted, clear it
             $this->clearToken();
+
             return null;
         }
     }

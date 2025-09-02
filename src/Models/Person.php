@@ -48,7 +48,7 @@ class Person implements \JsonSerializable
 
     public static function fromArray(array $data): self
     {
-        $person = new self();
+        $person = new self;
 
         if (isset($data['salutation'])) {
             $person->setSalutation($data['salutation']);

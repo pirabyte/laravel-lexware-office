@@ -46,6 +46,7 @@ trait SupportsOptimisticLocking
         // Check if model uses 'version' field (like Contact)
         if (method_exists($this, 'setVersion')) {
             $this->setVersion($version ?? 0);
+
             return $this;
         }
 

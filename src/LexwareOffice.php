@@ -212,6 +212,7 @@ class LexwareOffice
     public function setOAuth2Service(LexwareOAuth2Service $oauth2Service): self
     {
         $this->oauth2Service = $oauth2Service;
+
         return $this;
     }
 
@@ -244,7 +245,7 @@ class LexwareOffice
      */
     public function getOAuth2AuthorizationUrl(?string $state = null)
     {
-        if (!$this->oauth2Service) {
+        if (! $this->oauth2Service) {
             throw new LexwareOfficeApiException('OAuth2 service not configured');
         }
 
@@ -256,7 +257,7 @@ class LexwareOffice
      */
     public function exchangeOAuth2CodeForToken(string $code, string $state)
     {
-        if (!$this->oauth2Service) {
+        if (! $this->oauth2Service) {
             throw new LexwareOfficeApiException('OAuth2 service not configured');
         }
 
@@ -268,7 +269,7 @@ class LexwareOffice
      */
     public function getValidOAuth2Token()
     {
-        if (!$this->oauth2Service) {
+        if (! $this->oauth2Service) {
             throw new LexwareOfficeApiException('OAuth2 service not configured');
         }
 
@@ -280,7 +281,7 @@ class LexwareOffice
      */
     public function revokeOAuth2Token(?string $token = null): bool
     {
-        if (!$this->oauth2Service) {
+        if (! $this->oauth2Service) {
             throw new LexwareOfficeApiException('OAuth2 service not configured');
         }
 
@@ -413,17 +414,17 @@ class LexwareOffice
      * converts them into a standardized LexwareOfficeApiException format
      * with proper error information and type.
      *
-     * @param RequestException $e The original request exception
+     * @param  RequestException  $e  The original request exception
      * @return LexwareOfficeApiException The standardized API exception
      */
     protected function handleRequestException(RequestException $e): LexwareOfficeApiException
     {
         $response = $e->getResponse();
 
-        if (!$response) {
+        if (! $response) {
             // No response from the server - likely a connection error
             return new LexwareOfficeApiException(
-                'Could not connect to the Lexware Office API: ' . $e->getMessage(),
+                'Could not connect to the Lexware Office API: '.$e->getMessage(),
                 500,
                 $e
             );
@@ -435,7 +436,7 @@ class LexwareOffice
         // Special handling for rate limit errors
         if ($statusCode === 429) {
             $retryAfter = $response->hasHeader('Retry-After')
-                ? (int)$response->getHeaderLine('Retry-After')
+                ? (int) $response->getHeaderLine('Retry-After')
                 : 60;
 
             // Add retry information to the message if it's a JSON response
@@ -475,8 +476,9 @@ class LexwareOffice
      * This method manages the application-side rate limiting and
      * executes API requests with proper error handling.
      *
-     * @param callable $callback The request callback to execute
+     * @param  callable  $callback  The request callback to execute
      * @return array The decoded JSON response data
+     *
      * @throws LexwareOfficeApiException
      */
     protected function makeRequest(callable $callback)
@@ -489,7 +491,7 @@ class LexwareOffice
             $errorData = [
                 'message' => 'Rate limit exceeded',
                 'details' => "Too many requests. Please wait {$seconds} seconds before retrying.",
-                'retryAfter' => $seconds
+                'retryAfter' => $seconds,
             ];
 
             throw new LexwareOfficeApiException(
@@ -562,7 +564,7 @@ class LexwareOffice
      */
     protected function ensureValidToken(): void
     {
-        if (!$this->oauth2Service) {
+        if (! $this->oauth2Service) {
             return; // No OAuth2 configured, use static API key
         }
 
@@ -590,7 +592,7 @@ class LexwareOffice
      */
     protected function refreshTokenAndRetry(): bool
     {
-        if (!$this->oauth2Service) {
+        if (! $this->oauth2Service) {
             return false;
         }
 
@@ -600,6 +602,7 @@ class LexwareOffice
             if ($token) {
                 // Update client with new token
                 $this->ensureValidToken();
+
                 return true;
             }
         } catch (LexwareOfficeApiException $e) {

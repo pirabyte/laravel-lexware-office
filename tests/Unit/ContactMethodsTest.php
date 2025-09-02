@@ -2,9 +2,9 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Tests\Unit;
 
+use Pirabyte\LaravelLexwareOffice\Models\Address;
 use Pirabyte\LaravelLexwareOffice\Models\Contact;
 use Pirabyte\LaravelLexwareOffice\Models\Person;
-use Pirabyte\LaravelLexwareOffice\Models\Address;
 use Pirabyte\LaravelLexwareOffice\Models\XRechnung;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
@@ -12,17 +12,16 @@ class ContactMethodsTest extends TestCase
 {
     public function test_it_can_set_a_contact_as_customer(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setAsCustomer();
         $this->assertTrue($contact->isCustomer());
         $this->assertFalse($contact->isVendor());
         $this->assertArrayHasKey('customer', $contact->getRoles());
     }
 
-
     public function test_it_can_set_a_contact_as_vendor(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setAsVendor();
 
         $this->assertTrue($contact->isVendor());
@@ -33,7 +32,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_add_a_billing_address(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->addBillingAddress('Main St 1', '12345', 'Anytown', 'US');
 
         $this->assertNotNull($contact->getBillingAddress());
@@ -47,7 +46,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_add_a_shipping_address(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->addShippingAddress('Side St 2', '54321', 'Othertown', 'CA', 'Suite 100');
 
         $this->assertNotNull($contact->getShippingAddress());
@@ -62,7 +61,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_add_an_email_address(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->addEmailAddress('test@example.com', 'business');
 
         $this->assertEquals('test@example.com', $contact->getEmailAddress('business'));
@@ -72,7 +71,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_add_a_phone_number(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->addPhoneNumber('+123456789', 'mobile');
 
         $this->assertEquals('+123456789', $contact->getPhoneNumber('mobile'));
@@ -105,7 +104,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_set_and_get_note(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setNote('This is a test note.');
 
         $this->assertEquals('This is a test note.', $contact->getNote());
@@ -114,7 +113,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_set_and_get_archived_status(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $this->assertFalse($contact->isArchived());
 
         $contact->setArchived(true);
@@ -129,7 +128,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_set_and_get_id(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setId('some-uuid-123');
 
         $this->assertEquals('some-uuid-123', $contact->getId());
@@ -138,7 +137,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_set_and_get_version(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setVersion(5);
 
         $this->assertEquals(5, $contact->getVersion());
@@ -147,8 +146,8 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_set_and_get_xrechnung(): void
     {
-        $contact = new Contact();
-        $xRechnung = new XRechnung();
+        $contact = new Contact;
+        $xRechnung = new XRechnung;
         $xRechnung->setBuyerReference('12345');
         $contact->setXRechnung($xRechnung);
 
@@ -159,7 +158,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_set_email_addresses_from_array(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setEmailAddresses([
             'business' => ['business@example.com'],
             'private' => ['private@example.com'],
@@ -172,7 +171,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_set_phone_numbers_from_array(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setPhoneNumbers([
             'business' => ['+111111111'],
             'mobile' => ['+222222222'],
@@ -185,7 +184,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_get_customer_number(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setRoles(['customer' => ['number' => 123]]);
 
         $this->assertEquals(123, $contact->getCustomerNumber());
@@ -194,7 +193,7 @@ class ContactMethodsTest extends TestCase
     /** @test */
     public function it_can_get_vendor_number(): void
     {
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->setRoles(['vendor' => ['number' => 456]]);
 
         $this->assertEquals(456, $contact->getVendorNumber());
@@ -206,7 +205,7 @@ class ContactMethodsTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid address type: invalid. Must be one of: billing, shipping');
 
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->addAddress(['street' => 'Test', 'zip' => '123', 'city' => 'Test', 'countryCode' => 'DE'], 'invalid');
     }
 
@@ -216,7 +215,7 @@ class ContactMethodsTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid email type: invalid. Must be one of: business, office, private, other');
 
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->addEmailAddress('test@test.com', 'invalid');
     }
 
@@ -226,7 +225,7 @@ class ContactMethodsTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid phone type: invalid. Must be one of: business, office, mobile, private, fax, other');
 
-        $contact = new Contact();
+        $contact = new Contact;
         $contact->addPhoneNumber('123', 'invalid');
     }
 }

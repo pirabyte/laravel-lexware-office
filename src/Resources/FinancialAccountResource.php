@@ -55,8 +55,7 @@ class FinancialAccountResource
      * @param  array  $filters  Filtermöglichkeiten:
      *                          - iban: string
      *                          - externalReference: string
-     *
-     * @return array Liste der gefilterten Finanzkonten
+     * @return array<FinancialAccount> Liste der gefilterten Finanzkonten
      *
      * @throws LexwareOfficeApiException
      */
@@ -90,8 +89,6 @@ class FinancialAccountResource
                 $query[$key] = $value;
             }
         }
-
-
 
         // API-Anfrage senden
         $response = $this->client->get('finance/accounts', $query);

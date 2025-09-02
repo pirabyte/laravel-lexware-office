@@ -27,7 +27,7 @@ class LexwareAccessTokenTest extends TestCase
     public function test_creates_token_with_custom_created_at()
     {
         $createdAt = new \DateTime('2023-01-01 12:00:00');
-        
+
         $token = new LexwareAccessToken(
             'access_token_123',
             'Bearer',
@@ -42,15 +42,15 @@ class LexwareAccessTokenTest extends TestCase
 
     public function test_uses_current_time_when_created_at_not_provided()
     {
-        $beforeCreation = new \DateTime();
-        
+        $beforeCreation = new \DateTime;
+
         $token = new LexwareAccessToken(
             'access_token_123',
             'Bearer',
             3600
         );
-        
-        $afterCreation = new \DateTime();
+
+        $afterCreation = new \DateTime;
 
         $this->assertGreaterThanOrEqual($beforeCreation, $token->getCreatedAt());
         $this->assertLessThanOrEqual($afterCreation, $token->getCreatedAt());
@@ -59,7 +59,7 @@ class LexwareAccessTokenTest extends TestCase
     public function test_calculates_expiry_time_correctly()
     {
         $createdAt = new \DateTime('2023-01-01 12:00:00');
-        
+
         $token = new LexwareAccessToken(
             'access_token_123',
             'Bearer',
@@ -75,8 +75,8 @@ class LexwareAccessTokenTest extends TestCase
 
     public function test_detects_expired_token()
     {
-        $pastTime = (new \DateTime())->sub(new \DateInterval('PT2H')); // 2 hours ago
-        
+        $pastTime = (new \DateTime)->sub(new \DateInterval('PT2H')); // 2 hours ago
+
         $token = new LexwareAccessToken(
             'access_token_123',
             'Bearer',
@@ -102,8 +102,8 @@ class LexwareAccessTokenTest extends TestCase
 
     public function test_detects_token_expiring_soon()
     {
-        $recentTime = (new \DateTime())->sub(new \DateInterval('PT3500S')); // 3500 seconds ago
-        
+        $recentTime = (new \DateTime)->sub(new \DateInterval('PT3500S')); // 3500 seconds ago
+
         $token = new LexwareAccessToken(
             'access_token_123',
             'Bearer',
@@ -202,7 +202,7 @@ class LexwareAccessTokenTest extends TestCase
     public function test_serializes_to_json()
     {
         $createdAt = new \DateTime('2023-01-01 12:00:00');
-        
+
         $token = new LexwareAccessToken(
             'access_token_123',
             'Bearer',
@@ -231,7 +231,7 @@ class LexwareAccessTokenTest extends TestCase
             'expires_in' => 3600,
             'refresh_token' => 'refresh_token_456',
             'scopes' => ['profile', 'contacts'],
-            'created_at' => '2023-01-01T12:00:00+00:00'
+            'created_at' => '2023-01-01T12:00:00+00:00',
         ];
 
         $token = LexwareAccessToken::fromJson(json_encode($jsonData));
@@ -249,7 +249,7 @@ class LexwareAccessTokenTest extends TestCase
         $jsonData = [
             'access_token' => 'access_token_123',
             'token_type' => 'Bearer',
-            'expires_in' => 3600
+            'expires_in' => 3600,
         ];
 
         $token = LexwareAccessToken::fromJson(json_encode($jsonData));
@@ -268,7 +268,7 @@ class LexwareAccessTokenTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'refresh_token_456',
-            'scope' => 'profile contacts' // Space-separated string
+            'scope' => 'profile contacts', // Space-separated string
         ];
 
         $token = LexwareAccessToken::fromArray($data);
@@ -286,7 +286,7 @@ class LexwareAccessTokenTest extends TestCase
             'access_token' => 'access_token_123',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-            'scope' => ['profile', 'contacts'] // Array format
+            'scope' => ['profile', 'contacts'], // Array format
         ];
 
         $token = LexwareAccessToken::fromArray($data);
@@ -299,7 +299,7 @@ class LexwareAccessTokenTest extends TestCase
         $data = [
             'access_token' => 'access_token_123',
             'token_type' => 'Bearer',
-            'expires_in' => 3600
+            'expires_in' => 3600,
         ];
 
         $token = LexwareAccessToken::fromArray($data);

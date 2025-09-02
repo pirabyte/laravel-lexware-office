@@ -18,11 +18,11 @@ use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 class OAuth2ServiceTest extends TestCase
 {
     protected LexwareOAuth2Service $oauth2Service;
-    
+
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->oauth2Service = new LexwareOAuth2Service(
             'test_client_id',
             'test_client_secret',
@@ -35,7 +35,7 @@ class OAuth2ServiceTest extends TestCase
     public function test_generates_authorization_url_with_pkce()
     {
         $authUrl = $this->oauth2Service->getAuthorizationUrl('test_state');
-        
+
         $this->assertStringContainsString('https://api.lexoffice.de/oauth2/authorize', $authUrl->getUrl());
         $this->assertStringContainsString('client_id=test_client_id', $authUrl->getUrl());
         $this->assertStringContainsString('redirect_uri=https%3A%2F%2Fexample.com%2Fcallback', $authUrl->getUrl());
@@ -44,7 +44,7 @@ class OAuth2ServiceTest extends TestCase
         $this->assertStringContainsString('code_challenge=', $authUrl->getUrl());
         $this->assertStringContainsString('code_challenge_method=S256', $authUrl->getUrl());
         $this->assertStringContainsString('response_type=code', $authUrl->getUrl());
-        
+
         $this->assertEquals('test_state', $authUrl->getState());
         $this->assertNotEmpty($authUrl->getCodeVerifier());
     }
@@ -53,7 +53,7 @@ class OAuth2ServiceTest extends TestCase
     {
         $authUrl1 = $this->oauth2Service->getAuthorizationUrl();
         $authUrl2 = $this->oauth2Service->getAuthorizationUrl();
-        
+
         $this->assertNotEquals($authUrl1->getState(), $authUrl2->getState());
         $this->assertEquals(32, strlen($authUrl1->getState()));
         $this->assertEquals(32, strlen($authUrl2->getState()));
@@ -63,13 +63,13 @@ class OAuth2ServiceTest extends TestCase
     {
         // Store PKCE data in cache first
         Cache::put('lexware_pkce_test_state', 'test_code_verifier', now()->addMinutes(10));
-        
+
         $tokenResponse = [
             'access_token' => 'access_token_123',
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'refresh_token_456',
-            'scope' => 'profile contacts'
+            'scope' => 'profile contacts',
         ];
 
         $mock = new MockHandler([
@@ -98,7 +98,7 @@ class OAuth2ServiceTest extends TestCase
         // No PKCE data stored for this state
         $this->expectException(LexwareOfficeApiException::class);
         $this->expectExceptionMessage('Invalid or expired state parameter');
-        
+
         $this->oauth2Service->exchangeCodeForToken('auth_code_123', 'invalid_state');
     }
 
@@ -109,7 +109,7 @@ class OAuth2ServiceTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'new_refresh_token_456',
-            'scope' => 'profile contacts'
+            'scope' => 'profile contacts',
         ];
 
         $mock = new MockHandler([
@@ -140,7 +140,7 @@ class OAuth2ServiceTest extends TestCase
             'stored_refresh_token',
             ['profile']
         );
-        
+
         $tokenStorage = new CacheTokenStorage('test_key');
         $tokenStorage->storeToken($existingToken);
         $this->oauth2Service->setTokenStorage($tokenStorage);
@@ -150,7 +150,7 @@ class OAuth2ServiceTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'refreshed_refresh_token',
-            'scope' => 'profile'
+            'scope' => 'profile',
         ];
 
         $mock = new MockHandler([
@@ -174,7 +174,7 @@ class OAuth2ServiceTest extends TestCase
     {
         $this->expectException(LexwareOfficeApiException::class);
         $this->expectExceptionMessage('No refresh token available');
-        
+
         $this->oauth2Service->refreshToken();
     }
 
@@ -186,9 +186,9 @@ class OAuth2ServiceTest extends TestCase
             3600,
             'refresh_token',
             ['profile'],
-            new \DateTime() // Created now, so not expired
+            new \DateTime // Created now, so not expired
         );
-        
+
         $tokenStorage = new CacheTokenStorage('test_key');
         $tokenStorage->storeToken($validToken);
         $this->oauth2Service->setTokenStorage($tokenStorage);
@@ -207,9 +207,9 @@ class OAuth2ServiceTest extends TestCase
             3600,
             'refresh_token',
             ['profile'],
-            (new \DateTime())->sub(new \DateInterval('PT2H')) // Created 2 hours ago, so expired
+            (new \DateTime)->sub(new \DateInterval('PT2H')) // Created 2 hours ago, so expired
         );
-        
+
         $tokenStorage = new CacheTokenStorage('test_key');
         $tokenStorage->storeToken($expiredToken);
         $this->oauth2Service->setTokenStorage($tokenStorage);
@@ -219,7 +219,7 @@ class OAuth2ServiceTest extends TestCase
             'token_type' => 'Bearer',
             'expires_in' => 3600,
             'refresh_token' => 'new_refresh_token',
-            'scope' => 'profile'
+            'scope' => 'profile',
         ];
 
         $mock = new MockHandler([
@@ -247,9 +247,9 @@ class OAuth2ServiceTest extends TestCase
             3600,
             null, // No refresh token
             ['profile'],
-            (new \DateTime())->sub(new \DateInterval('PT2H'))
+            (new \DateTime)->sub(new \DateInterval('PT2H'))
         );
-        
+
         $tokenStorage = new CacheTokenStorage('test_key');
         $tokenStorage->storeToken($expiredToken);
         $this->oauth2Service->setTokenStorage($tokenStorage);
@@ -285,7 +285,7 @@ class OAuth2ServiceTest extends TestCase
             3600,
             'refresh_token'
         );
-        
+
         $tokenStorage = new CacheTokenStorage('test_key');
         $tokenStorage->storeToken($existingToken);
         $this->oauth2Service->setTokenStorage($tokenStorage);
@@ -304,7 +304,7 @@ class OAuth2ServiceTest extends TestCase
         $result = $this->oauth2Service->revokeToken();
 
         $this->assertTrue($result);
-        
+
         // Token should be cleared from storage
         $this->assertNull($tokenStorage->getToken());
     }
@@ -317,7 +317,7 @@ class OAuth2ServiceTest extends TestCase
             3600,
             'refresh_token'
         );
-        
+
         $tokenStorage = new CacheTokenStorage('test_key');
         $tokenStorage->storeToken($existingToken);
         $this->oauth2Service->setTokenStorage($tokenStorage);
@@ -336,7 +336,7 @@ class OAuth2ServiceTest extends TestCase
         $result = $this->oauth2Service->revokeToken();
 
         $this->assertFalse($result);
-        
+
         // Token should still be cleared from storage
         $this->assertNull($tokenStorage->getToken());
     }
@@ -358,7 +358,7 @@ class OAuth2ServiceTest extends TestCase
 
         $this->expectException(LexwareOfficeApiException::class);
         $this->expectExceptionMessage('Failed to exchange authorization code');
-        
+
         $this->oauth2Service->exchangeCodeForToken('invalid_code', 'test_state');
     }
 
@@ -377,7 +377,7 @@ class OAuth2ServiceTest extends TestCase
 
         $this->expectException(LexwareOfficeApiException::class);
         $this->expectExceptionMessage('Failed to refresh token');
-        
+
         $this->oauth2Service->refreshToken('invalid_refresh_token');
     }
 

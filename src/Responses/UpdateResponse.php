@@ -24,6 +24,7 @@ class UpdateResponse implements \JsonSerializable
         $response->createdDate = $data['createdDate'];
         $response->updatedDate = $data['updatedDate'];
         $response->version = $data['version'];
+
         return $response;
     }
 
