@@ -189,10 +189,10 @@ class FinancialTransaction implements \JsonSerializable
 
         // Required fields for create/update
         if ($this->valueDate !== null) {
-            $data['valueDate'] = $this->valueDate;
+            $data['valueDate'] = $this->formatDateTime($this->valueDate);
         }
         if ($this->bookingDate !== null) {
-            $data['bookingDate'] = $this->bookingDate;
+            $data['bookingDate'] = $this->formatDateTime($this->bookingDate);
         }
         if ($this->purpose !== null) {
             $data['purpose'] = $this->purpose;
@@ -206,9 +206,9 @@ class FinancialTransaction implements \JsonSerializable
 
         // For create requests, use 'transactiondate' (lowercase)
         if ($this->transactionDate !== null && $this->financialTransactionId === null) {
-            $data['transactiondate'] = $this->transactionDate;
+            $data['transactiondate'] = $this->formatDateTime($this->transactionDate);
         } elseif ($this->transactionDate !== null) {
-            $data['transactionDate'] = $this->transactionDate;
+            $data['transactionDate'] = $this->formatDateTime($this->transactionDate);
         }
 
         if ($this->openAmount !== null) {
@@ -232,11 +232,11 @@ class FinancialTransaction implements \JsonSerializable
         }
 
         if ($this->createdDate !== null) {
-            $data['createdDate'] = $this->createdDate;
+            $data['createdDate'] = $this->formatDateTime($this->createdDate);
         }
 
         if ($this->lastModifiedDate !== null) {
-            $data['lastModifiedDate'] = $this->lastModifiedDate;
+            $data['lastModifiedDate'] = $this->formatDateTime($this->lastModifiedDate);
         }
 
         if ($this->endToEndId !== null) {
@@ -280,6 +280,26 @@ class FinancialTransaction implements \JsonSerializable
         }
 
         return $data;
+    }
+
+    /**
+     * Formatiert einen Datetime-String in das ISO 8601 Format mit Zeitzonen-Offset
+     * Format: "2023-05-28T00:00:00+02:00"
+     */
+    private function formatDateTime(?string $dateTime): ?string
+    {
+        if ($dateTime === null) {
+            return null;
+        }
+
+        try {
+            // Try to parse the date string and format it
+            $date = new \DateTime($dateTime);
+            return $date->format('Y-m-d\TH:i:sP');
+        } catch (\Exception $e) {
+            // If parsing fails, return the original string
+            return $dateTime;
+        }
     }
 
     // Getter-Methoden für alle Properties
