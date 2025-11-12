@@ -2,25 +2,29 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Models;
 
+use Pirabyte\LaravelLexwareOffice\Enums\DistanceSalesPrinciple;
+
 class Profile
 {
-    private string $organizationId;
+    private ?string $organizationId = null;
 
-    private string $companyName;
+    private ?string $companyName = null;
 
-    private array $created;
+    private ?array $created = null;
 
-    private string $connectionId;
+    private ?string $connectionId = null;
 
     private ?array $features = null;
 
-    private array $businessFeatures;
+    private ?array $businessFeatures = null;
 
     private ?string $subscriptionStatus = null;
 
     private string $taxType = 'net';
 
     private bool $smallBusiness = false;
+
+    private ?DistanceSalesPrinciple $distanceSalesPrinciple = null;
 
     public static function fromArray(array $data): self
     {
@@ -62,40 +66,46 @@ class Profile
             $profile->smallBusiness = $data['smallBusiness'];
         }
 
+        if (isset($data['distanceSalesPrinciple'])) {
+            $profile->distanceSalesPrinciple = is_string($data['distanceSalesPrinciple'])
+                ? DistanceSalesPrinciple::from($data['distanceSalesPrinciple'])
+                : $data['distanceSalesPrinciple'];
+        }
+
         return $profile;
     }
 
-    public function getOrganizationId(): string
+    public function getOrganizationId(): ?string
     {
         return $this->organizationId;
     }
 
-    public function getCompanyName(): string
+    public function getCompanyName(): ?string
     {
         return $this->companyName;
     }
 
-    public function getCreated(): array
+    public function getCreated(): ?array
     {
         return $this->created;
     }
 
-    public function getConnectionId(): string
+    public function getConnectionId(): ?string
     {
         return $this->connectionId;
     }
 
-    public function getFeatures(): array
+    public function getFeatures(): ?array
     {
         return $this->features;
     }
 
-    public function getBusinessFeatures(): array
+    public function getBusinessFeatures(): ?array
     {
         return $this->businessFeatures;
     }
 
-    public function getSubscriptionStatus(): string
+    public function getSubscriptionStatus(): ?string
     {
         return $this->subscriptionStatus;
     }
@@ -108,5 +118,10 @@ class Profile
     public function isSmallBusiness(): bool
     {
         return $this->smallBusiness;
+    }
+
+    public function getDistanceSalesPrinciple(): ?DistanceSalesPrinciple
+    {
+        return $this->distanceSalesPrinciple;
     }
 }
