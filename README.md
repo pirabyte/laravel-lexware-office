@@ -11,6 +11,11 @@
 
 <p align="center">Laravel package für die Lexware Office API.</p>
 
+## Activity
+
+![Activity](https://repobeats.axiom.co/api/embed/16887d0c9893217d57bf64ff3fc706ad01a3c91f.svg "Repobeats analytics image")
+
+
 ## Installation
 
 ```bash
