@@ -38,6 +38,9 @@ return [
             'cache_key' => 'lexware_office_token',
             'database_table' => 'lexware_tokens',
             'user_column' => 'user_id',
+            // Used only when binding a single global oauth2 service via the ServiceProvider.
+            // For per-user OAuth2, use LexwareOfficeFactory::forUser() which supplies the real user ID.
+            'database_user_id' => 0,
         ],
     ],
 ];

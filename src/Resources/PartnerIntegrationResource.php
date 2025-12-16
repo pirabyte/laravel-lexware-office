@@ -1,43 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
-use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
-use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\PartnerIntegration;
+use Pirabyte\LaravelLexwareOffice\Dto\PartnerIntegrations\PartnerIntegration;
+use Pirabyte\LaravelLexwareOffice\Http\LexwareHttpClient;
+use Pirabyte\LaravelLexwareOffice\Mappers\PartnerIntegrations\PartnerIntegrationMapper;
+use Pirabyte\LaravelLexwareOffice\Mappers\PartnerIntegrations\PartnerIntegrationWriteMapper;
 
 class PartnerIntegrationResource
 {
-    protected LexwareOffice $client;
+    public function __construct(private readonly LexwareHttpClient $http) {}
 
-    public function __construct(LexwareOffice $client)
-    {
-        $this->client = $client;
-    }
-
-    /**
-     * Retrieves partner integration data for a lexoffice organization
-     *
-     * @throws LexwareOfficeApiException
-     */
     public function get(): PartnerIntegration
     {
-        $response = $this->client->get('partner-integrations');
+        $response = $this->http->get('partner-integrations');
 
-        return PartnerIntegration::fromArray($response);
+        return PartnerIntegrationMapper::fromJson($response->body);
     }
 
-    /**
-     * Updates partner integration data for a lexoffice organization
-     *
-     * @param  PartnerIntegration  $partnerIntegration  The partner integration data to update
-     *
-     * @throws LexwareOfficeApiException
-     */
     public function update(PartnerIntegration $partnerIntegration): PartnerIntegration
     {
-        $response = $this->client->put('partner-integrations', $partnerIntegration->toArray());
+        $body = PartnerIntegrationWriteMapper::toJsonBody($partnerIntegration);
+        $response = $this->http->putJson('partner-integrations', $body);
 
-        return PartnerIntegration::fromArray($response);
+        return PartnerIntegrationMapper::fromJson($response->body);
     }
 }

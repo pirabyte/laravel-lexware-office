@@ -6,7 +6,9 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
-use Pirabyte\LaravelLexwareOffice\Models\PartnerIntegration;
+use Pirabyte\LaravelLexwareOffice\Collections\KeyValueCollection;
+use Pirabyte\LaravelLexwareOffice\Dto\Common\KeyValue;
+use Pirabyte\LaravelLexwareOffice\Dto\PartnerIntegrations\PartnerIntegration;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class PartnerIntegrationResourceTest extends TestCase
@@ -65,11 +67,11 @@ class PartnerIntegrationResourceTest extends TestCase
         $partnerIntegration = app('lexware-office')->partnerIntegrations()->get();
 
         $this->assertInstanceOf(PartnerIntegration::class, $partnerIntegration);
-        $this->assertEquals('partner123', $partnerIntegration->get('partnerId'));
-        $this->assertEquals('customer456', $partnerIntegration->get('customerNumber'));
-        $this->assertEquals('ext789', $partnerIntegration->get('externalId'));
-        $this->assertEquals('value1', $partnerIntegration->get('data')['additionalData1']);
-        $this->assertEquals('value2', $partnerIntegration->get('data')['additionalData2']);
+        $this->assertEquals('partner123', $partnerIntegration->partnerId);
+        $this->assertEquals('customer456', $partnerIntegration->customerNumber);
+        $this->assertEquals('ext789', $partnerIntegration->externalId);
+        $this->assertEquals('value1', $partnerIntegration->data->getValue('additionalData1'));
+        $this->assertEquals('value2', $partnerIntegration->data->getValue('additionalData2'));
     }
 
     public function test_it_can_update_partner_integration_data(): void
@@ -77,21 +79,24 @@ class PartnerIntegrationResourceTest extends TestCase
         // First get the data
         $partnerIntegration = app('lexware-office')->partnerIntegrations()->get();
 
-        // Update the data
-        $partnerIntegration->set('data', [
-            'additionalData1' => 'updatedValue1',
-            'additionalData2' => 'updatedValue2',
-        ]);
+        $updatedIntegration = new PartnerIntegration(
+            partnerId: $partnerIntegration->partnerId,
+            customerNumber: $partnerIntegration->customerNumber,
+            externalId: $partnerIntegration->externalId,
+            data: KeyValueCollection::empty()
+                ->with(new KeyValue('additionalData1', 'updatedValue1'))
+                ->with(new KeyValue('additionalData2', 'updatedValue2')),
+        );
 
         // Submit the update
-        $updatedPartnerIntegration = app('lexware-office')->partnerIntegrations()->update($partnerIntegration);
+        $updatedPartnerIntegration = app('lexware-office')->partnerIntegrations()->update($updatedIntegration);
 
         // Verify the updated data
         $this->assertInstanceOf(PartnerIntegration::class, $updatedPartnerIntegration);
-        $this->assertEquals('partner123', $updatedPartnerIntegration->get('partnerId'));
-        $this->assertEquals('customer456', $updatedPartnerIntegration->get('customerNumber'));
-        $this->assertEquals('ext789', $updatedPartnerIntegration->get('externalId'));
-        $this->assertEquals('updatedValue1', $updatedPartnerIntegration->get('data')['additionalData1']);
-        $this->assertEquals('updatedValue2', $updatedPartnerIntegration->get('data')['additionalData2']);
+        $this->assertEquals('partner123', $updatedPartnerIntegration->partnerId);
+        $this->assertEquals('customer456', $updatedPartnerIntegration->customerNumber);
+        $this->assertEquals('ext789', $updatedPartnerIntegration->externalId);
+        $this->assertEquals('updatedValue1', $updatedPartnerIntegration->data->getValue('additionalData1'));
+        $this->assertEquals('updatedValue2', $updatedPartnerIntegration->data->getValue('additionalData2'));
     }
 }

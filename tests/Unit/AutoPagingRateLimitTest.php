@@ -60,17 +60,14 @@ class AutoPagingRateLimitTest extends TestCase
         /** @var LexwareOffice $instance */
         $instance = $this->app->make('lexware-office');
 
-        // Set mock client using reflection
-        $reflectionClass = new \ReflectionClass($instance);
-        $reflectionProperty = $reflectionClass->getProperty('client');
-        $reflectionProperty->setValue($instance, $client);
+        $instance->setClient($client);
 
         // Expect exception on second page due to rate limit
         $this->expectException(LexwareOfficeApiException::class);
         $this->expectExceptionCode(429);
 
         $contacts = [];
-        foreach ($instance->contacts()->getAutoPagingIterator([], 2) as $contact) {
+        foreach ($instance->contacts()->getAutoPagingIterator(new \Pirabyte\LaravelLexwareOffice\Dto\Contacts\ContactQuery(size: 2)) as $contact) {
             $contacts[] = $contact;
         }
     }
@@ -117,19 +114,16 @@ class AutoPagingRateLimitTest extends TestCase
         /** @var LexwareOffice $instance */
         $instance = $this->app->make('lexware-office');
 
-        // Set mock client using reflection
-        $reflectionClass = new \ReflectionClass($instance);
-        $reflectionProperty = $reflectionClass->getProperty('client');
-        $reflectionProperty->setValue($instance, $client);
+        $instance->setClient($client);
 
         $contacts = [];
-        foreach ($instance->contacts()->getAutoPagingIterator([], 2) as $contact) {
+        foreach ($instance->contacts()->getAutoPagingIterator(new \Pirabyte\LaravelLexwareOffice\Dto\Contacts\ContactQuery(size: 2)) as $contact) {
             $contacts[] = $contact;
         }
 
         $this->assertCount(2, $contacts);
-        $this->assertEquals('John', $contacts[0]->getPerson()->getFirstName());
-        $this->assertEquals('Jane', $contacts[1]->getPerson()->getFirstName());
+        $this->assertEquals('John', $contacts[0]->person?->firstName);
+        $this->assertEquals('Jane', $contacts[1]->person?->firstName);
     }
 
     public function test_auto_paging_iterator_handles_empty_pages()
@@ -171,10 +165,7 @@ class AutoPagingRateLimitTest extends TestCase
         /** @var LexwareOffice $instance */
         $instance = $this->app->make('lexware-office');
 
-        // Set mock client using reflection
-        $reflectionClass = new \ReflectionClass($instance);
-        $reflectionProperty = $reflectionClass->getProperty('client');
-        $reflectionProperty->setValue($instance, $client);
+        $instance->setClient($client);
 
         $contacts = [];
         foreach ($instance->contacts()->getAutoPagingIterator() as $contact) {
@@ -230,12 +221,10 @@ class AutoPagingRateLimitTest extends TestCase
         $instance->setRateLimit(10);
 
         // Set mock client using reflection
-        $reflectionClass = new \ReflectionClass($instance);
-        $reflectionProperty = $reflectionClass->getProperty('client');
-        $reflectionProperty->setValue($instance, $client);
+        $instance->setClient($client);
 
         $contacts = [];
-        foreach ($instance->contacts()->getAutoPagingIterator([], 1) as $contact) {
+        foreach ($instance->contacts()->getAutoPagingIterator(new \Pirabyte\LaravelLexwareOffice\Dto\Contacts\ContactQuery(size: 1)) as $contact) {
             $contacts[] = $contact;
         }
 
@@ -305,20 +294,17 @@ class AutoPagingRateLimitTest extends TestCase
         /** @var LexwareOffice $instance */
         $instance = $this->app->make('lexware-office');
 
-        // Set mock client using reflection
-        $reflectionClass = new \ReflectionClass($instance);
-        $reflectionProperty = $reflectionClass->getProperty('client');
-        $reflectionProperty->setValue($instance, $client);
+        $instance->setClient($client);
 
         $contacts = [];
-        foreach ($instance->contacts()->getAutoPagingIterator([], 1) as $contact) {
+        foreach ($instance->contacts()->getAutoPagingIterator(new \Pirabyte\LaravelLexwareOffice\Dto\Contacts\ContactQuery(size: 1)) as $contact) {
             $contacts[] = $contact;
         }
 
         $this->assertCount(3, $contacts);
-        $this->assertEquals('Zero', $contacts[0]->getPerson()->getLastName());
-        $this->assertEquals('One', $contacts[1]->getPerson()->getLastName());
-        $this->assertEquals('Two', $contacts[2]->getPerson()->getLastName());
+        $this->assertEquals('Zero', $contacts[0]->person?->lastName);
+        $this->assertEquals('One', $contacts[1]->person?->lastName);
+        $this->assertEquals('Two', $contacts[2]->person?->lastName);
     }
 
     public function test_paginated_resource_filter_method_respects_rate_limit()
@@ -342,7 +328,7 @@ class AutoPagingRateLimitTest extends TestCase
         $this->expectExceptionCode(429);
 
         // This should throw rate limit exception before making HTTP request
-        $instance->contacts()->filter(['customer' => true]);
+        $instance->contacts()->filter(new \Pirabyte\LaravelLexwareOffice\Dto\Contacts\ContactQuery(customer: true));
     }
 
     protected function tearDown(): void

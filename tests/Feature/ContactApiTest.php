@@ -8,8 +8,22 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use Pirabyte\LaravelLexwareOffice\Collections\Contacts\ContactPersonCollection;
+use Pirabyte\LaravelLexwareOffice\Collections\Contacts\EmailAddressCollection;
+use Pirabyte\LaravelLexwareOffice\Collections\Contacts\PhoneNumberCollection;
+use Pirabyte\LaravelLexwareOffice\Dto\Common\Address;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\Company;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\ContactAddresses;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\ContactRoles;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\ContactWrite;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\CustomerRole;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\EmailAddress;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\EmailAddressType;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\Person;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\PhoneNumber;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\PhoneNumberType;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\VendorRole;
 use Pirabyte\LaravelLexwareOffice\Facades\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\Contact;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 /**
@@ -40,18 +54,25 @@ class ContactApiTest extends TestCase
     public function it_can_create_and_retrieve_a_person_contact(): void
     {
         // Kontakt erstellen
-        $contact = Contact::createPerson('Max', 'Mustermann', 'Herr');
-        $contact->setAsCustomer(['number' => 'K-12345']);
+        $contact = new ContactWrite(
+            roles: new ContactRoles(customer: new CustomerRole('K-12345'), vendor: null),
+            person: new Person(salutation: 'Herr', firstName: 'Max', lastName: 'Mustermann'),
+            company: null,
+            note: null,
+            addresses: new ContactAddresses(billing: null, shipping: null),
+            emailAddresses: EmailAddressCollection::empty(),
+            phoneNumbers: PhoneNumberCollection::empty(),
+        );
 
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
 
-        $this->assertEquals('123e4567-e89b-12d3-a456-426614174000', $savedContact->getId());
-        $this->assertEquals(1, $savedContact->getVersion());
-        $this->assertEquals('Herr', $savedContact->getPerson()->getSalutation());
-        $this->assertEquals('Max', $savedContact->getPerson()->getFirstName());
-        $this->assertEquals('Mustermann', $savedContact->getPerson()->getLastName());
-        $this->assertEquals('K-12345', $savedContact->getRoles()['customer']['number']);
+        $this->assertEquals('123e4567-e89b-12d3-a456-426614174000', $savedContact->id);
+        $this->assertEquals(1, $savedContact->version);
+        $this->assertEquals('Herr', $savedContact->person?->salutation);
+        $this->assertEquals('Max', $savedContact->person?->firstName);
+        $this->assertEquals('Mustermann', $savedContact->person?->lastName);
+        $this->assertEquals('K-12345', $savedContact->roles->customer?->number);
     }
 
     /** @test */
@@ -71,27 +92,28 @@ class ContactApiTest extends TestCase
         $instance = app('lexware-office');
         $instance->setClient($client);
 
-        // Kontakt mit allen Daten erstellen
-        $contact = Contact::createPerson('Inge', 'Musterfrau', 'Frau');
-        $contact->setAsCustomer()
-            ->setNote('Notizen')
-            ->addBillingAddress(
-                'Musterstraße 1',
-                '12345',
-                'Musterstadt',
-                'DE'
-            )
-            ->addEmailAddress('inge@example.com', 'business')
-            ->addPhoneNumber('+49123456789', 'business');
+        $contact = new ContactWrite(
+            roles: new ContactRoles(customer: new CustomerRole(null), vendor: null),
+            person: new Person(salutation: 'Frau', firstName: 'Inge', lastName: 'Musterfrau'),
+            company: null,
+            note: 'Notizen',
+            addresses: new ContactAddresses(
+                billing: new Address(street: 'Musterstraße 1', zip: '12345', city: 'Musterstadt', countryCode: 'DE'),
+                shipping: null
+            ),
+            emailAddresses: EmailAddressCollection::empty()->with(new EmailAddress(EmailAddressType::BUSINESS, 'inge@example.com')),
+            phoneNumbers: PhoneNumberCollection::empty()->with(new PhoneNumber(PhoneNumberType::BUSINESS, '+49123456789')),
+        );
 
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
 
-        $this->assertEquals('66196c43-baf3-4335-bfee-d610367059db', $savedContact->getId());
-        $this->assertEquals('Frau', $savedContact->getPerson()->getSalutation());
-        $this->assertEquals('Inge', $savedContact->getPerson()->getFirstName());
-        $this->assertEquals('Musterfrau', $savedContact->getPerson()->getLastName());
-        $this->assertEquals('Notizen', $savedContact->getNote());
+        $this->assertEquals('66196c43-baf3-4335-bfee-d610367059db', $savedContact->id);
+        $this->assertEquals('Frau', $savedContact->person?->salutation);
+        $this->assertEquals('Inge', $savedContact->person?->firstName);
+        $this->assertEquals('Musterfrau', $savedContact->person?->lastName);
+        $this->assertEquals('Notizen', $savedContact->note);
+        $this->assertEquals('Musterstraße 1', $savedContact->addresses->billing?->street);
     }
 
     /** @test */
@@ -111,40 +133,38 @@ class ContactApiTest extends TestCase
         $instance = app('lexware-office');
         $instance->setClient($client);
 
-        // Kontakt mit verschiedenen E-Mail und Telefonnummern erstellen
-        $contact = Contact::createPerson('Hans', 'Schmidt', 'Herr');
-        $contact->setAsCustomer()
-            ->addEmailAddress('hans.business@example.com', 'business')
-            ->addEmailAddress('hans.private@example.com', 'private')
-            ->addEmailAddress('hans.office@example.com', 'office')
-            ->addPhoneNumber('+4912345678901', 'business')
-            ->addPhoneNumber('+4915123456789', 'mobile')
-            ->addPhoneNumber('+49123456789999', 'fax');
+        $contact = new ContactWrite(
+            roles: new ContactRoles(customer: new CustomerRole(null), vendor: null),
+            person: new Person(salutation: 'Herr', firstName: 'Hans', lastName: 'Schmidt'),
+            company: null,
+            note: null,
+            addresses: new ContactAddresses(billing: null, shipping: null),
+            emailAddresses: EmailAddressCollection::empty()
+                ->with(new EmailAddress(EmailAddressType::BUSINESS, 'hans.business@example.com'))
+                ->with(new EmailAddress(EmailAddressType::PRIVATE, 'hans.private@example.com'))
+                ->with(new EmailAddress(EmailAddressType::OFFICE, 'hans.office@example.com')),
+            phoneNumbers: PhoneNumberCollection::empty()
+                ->with(new PhoneNumber(PhoneNumberType::BUSINESS, '+4912345678901'))
+                ->with(new PhoneNumber(PhoneNumberType::MOBILE, '+4915123456789'))
+                ->with(new PhoneNumber(PhoneNumberType::FAX, '+49123456789999')),
+        );
 
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
 
-        $this->assertEquals('12345678-abcd-1234-efgh-123456789012', $savedContact->getId());
+        $this->assertEquals('12345678-abcd-1234-efgh-123456789012', $savedContact->id);
 
-        // Test email addresses using the collection
-        $emailAddresses = $savedContact->getEmailAddresses();
-        $this->assertCount(3, $emailAddresses);
+        $this->assertCount(3, $savedContact->emailAddresses);
+        $this->assertEquals('hans.business@example.com', $savedContact->emailAddresses->getByType(EmailAddressType::BUSINESS)?->email);
+        $this->assertEquals('hans.private@example.com', $savedContact->emailAddresses->getByType(EmailAddressType::PRIVATE)?->email);
+        $this->assertEquals('hans.office@example.com', $savedContact->emailAddresses->getByType(EmailAddressType::OFFICE)?->email);
+        $this->assertNull($savedContact->emailAddresses->getByType(EmailAddressType::OTHER));
 
-        // Test individual email getters
-        $this->assertEquals('hans.business@example.com', $savedContact->getEmailAddress('business'));
-        $this->assertEquals('hans.private@example.com', $savedContact->getEmailAddress('private'));
-        $this->assertEquals('hans.office@example.com', $savedContact->getEmailAddress('office'));
-        $this->assertNull($savedContact->getEmailAddress('other'));
-
-        // Test phone numbers using the collection
-        $phoneNumbers = $savedContact->getPhoneNumbers();
-        $this->assertCount(3, $phoneNumbers);
-
-        // Test individual phone getters
-        $this->assertEquals('+4912345678901', $savedContact->getPhoneNumber('business'));
-        $this->assertEquals('+4915123456789', $savedContact->getPhoneNumber('mobile'));
-        $this->assertEquals('+49123456789999', $savedContact->getPhoneNumber('fax'));
-        $this->assertNull($savedContact->getPhoneNumber('private'));
+        $this->assertCount(3, $savedContact->phoneNumbers);
+        $this->assertEquals('+4912345678901', $savedContact->phoneNumbers->getByType(PhoneNumberType::BUSINESS)?->number);
+        $this->assertEquals('+4915123456789', $savedContact->phoneNumbers->getByType(PhoneNumberType::MOBILE)?->number);
+        $this->assertEquals('+49123456789999', $savedContact->phoneNumbers->getByType(PhoneNumberType::FAX)?->number);
+        $this->assertNull($savedContact->phoneNumbers->getByType(PhoneNumberType::PRIVATE));
     }
 
     /** @test */
@@ -164,32 +184,25 @@ class ContactApiTest extends TestCase
         $instance = app('lexware-office');
         $instance->setClient($client);
 
-        // Kontakt mit verschiedenen Adresstypen erstellen
-        $contact = Contact::createPerson('Peter', 'Beispiel', 'Herr');
-        $contact->setAsCustomer()
-            ->addBillingAddress(
-                'Hauptstr. 5',
-                '12345',
-                'Musterort',
-                'DE',
-                'Rechnungsadressenzusatz'
-            )
-            ->addShippingAddress(
-                'Schulstr. 13',
-                '76543',
-                'Musterstadt',
-                'DE',
-                'Lieferadressenzusatz'
-            );
+        $contact = new ContactWrite(
+            roles: new ContactRoles(customer: new CustomerRole(null), vendor: null),
+            person: new Person(salutation: 'Herr', firstName: 'Peter', lastName: 'Beispiel'),
+            company: null,
+            note: null,
+            addresses: new ContactAddresses(
+                billing: new Address(street: 'Hauptstr. 5', zip: '12345', city: 'Musterort', countryCode: 'DE', supplement: 'Rechnungsadressenzusatz'),
+                shipping: new Address(street: 'Schulstr. 13', zip: '76543', city: 'Musterstadt', countryCode: 'DE', supplement: 'Lieferadressenzusatz'),
+            ),
+            emailAddresses: EmailAddressCollection::empty(),
+            phoneNumbers: PhoneNumberCollection::empty(),
+        );
 
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
 
-        // Prüfen der Ergebnisse
-        $this->assertEquals('44444444-bbbb-4444-cccc-444444444444', $savedContact->getId());
+        $this->assertEquals('44444444-bbbb-4444-cccc-444444444444', $savedContact->id);
 
-        // Billing address test
-        $billingAddress = $savedContact->getAddress('billing');
+        $billingAddress = $savedContact->addresses->billing;
         $this->assertNotNull($billingAddress);
         $this->assertEquals('Hauptstr. 5', $billingAddress->street);
         $this->assertEquals('12345', $billingAddress->zip);
@@ -197,8 +210,7 @@ class ContactApiTest extends TestCase
         $this->assertEquals('DE', $billingAddress->countryCode);
         $this->assertEquals('Rechnungsadressenzusatz', $billingAddress->supplement);
 
-        // Shipping address test
-        $shippingAddress = $savedContact->getAddress('shipping');
+        $shippingAddress = $savedContact->addresses->shipping;
         $this->assertNotNull($shippingAddress);
         $this->assertEquals('Schulstr. 13', $shippingAddress->street);
         $this->assertEquals('76543', $shippingAddress->zip);
@@ -224,23 +236,31 @@ class ContactApiTest extends TestCase
         $instance = app('lexware-office');
         $instance->setClient($client);
 
-        // Firmenkontakt erstellen
-        $contact = Contact::createCompany('Musterfirma GmbH');
-        $contact->setAsVendor(['number' => 'L-789'])
-            ->addBillingAddress(
-                'Industriestraße 42',
-                '54321',
-                'Musterstadt',
-                'DE'
-            );
+        $contact = new ContactWrite(
+            roles: new ContactRoles(customer: null, vendor: new VendorRole('L-789')),
+            person: null,
+            company: new Company(
+                name: 'Musterfirma GmbH',
+                taxNumber: null,
+                vatRegistrationId: null,
+                allowTaxFreeInvoices: false,
+                contactPersons: ContactPersonCollection::empty(),
+            ),
+            note: null,
+            addresses: new ContactAddresses(
+                billing: new Address(street: 'Industriestraße 42', zip: '54321', city: 'Musterstadt', countryCode: 'DE'),
+                shipping: null,
+            ),
+            emailAddresses: EmailAddressCollection::empty(),
+            phoneNumbers: PhoneNumberCollection::empty(),
+        );
 
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
 
-        $this->assertEquals('87654321-abcd-1234-efgh-987654321987', $savedContact->getId());
-        $this->assertEquals('Musterfirma GmbH', $savedContact->getCompany()->getName());
-        $this->assertEquals('L-789', $savedContact->getRoles()['vendor']['number']);
-        $billingAddress = $savedContact->getAddress('billing');
-        $this->assertEquals('DE', $billingAddress->countryCode);
+        $this->assertEquals('87654321-abcd-1234-efgh-987654321987', $savedContact->id);
+        $this->assertEquals('Musterfirma GmbH', $savedContact->company?->name);
+        $this->assertEquals('L-789', $savedContact->roles->vendor?->number);
+        $this->assertEquals('DE', $savedContact->addresses->billing?->countryCode);
     }
 }

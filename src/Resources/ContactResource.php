@@ -1,178 +1,141 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
 use Generator;
-use GuzzleHttp\Exception\GuzzleException;
-use Pirabyte\LaravelLexwareOffice\Classes\PaginatedResource;
+use Pirabyte\LaravelLexwareOffice\Collections\Page;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\Contact;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\ContactQuery;
+use Pirabyte\LaravelLexwareOffice\Dto\Contacts\ContactWrite;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\Exceptions\OptimisticLockingException;
-use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\Contact;
+use Pirabyte\LaravelLexwareOffice\Http\JsonCodec;
+use Pirabyte\LaravelLexwareOffice\Http\LexwareHttpClient;
+use Pirabyte\LaravelLexwareOffice\Http\QueryParams;
+use Pirabyte\LaravelLexwareOffice\Mappers\Contacts\ContactMapper;
+use Pirabyte\LaravelLexwareOffice\Mappers\Contacts\ContactPageMapper;
+use Pirabyte\LaravelLexwareOffice\Mappers\Contacts\ContactWriteMapper;
 
 class ContactResource
 {
-    protected LexwareOffice $client;
+    public function __construct(private readonly LexwareHttpClient $http) {}
 
-    public function __construct(LexwareOffice $client)
+    public function create(ContactWrite $contact): Contact
     {
-        $this->client = $client;
-    }
+        $body = ContactWriteMapper::toJsonBody($contact);
+        $response = $this->http->postJson('contacts', $body);
 
-    /**
-     * Erstellt einen neuen Kontakt
-     *
-     * @throws LexwareOfficeApiException
-     * @throws GuzzleException
-     */
-    public function create(Contact $contact): Contact
-    {
-        $data = $contact->jsonSerialize();
-        $response = $this->client->post('contacts', $data);
-
-        // Holen des kompletten Kontakts wenn ID vorhanden
-        if (isset($response['id'])) {
-            try {
-                return $this->get($response['id']);
-            } catch (\Exception $e) {
-                // Fallback zur Datenzusammenführung wenn Get fehlschlägt
+        $decoded = JsonCodec::decode($response->body);
+        if (! array_is_list($decoded)) {
+            /** @var array<string, mixed> $decoded */
+            $id = $decoded['id'] ?? null;
+            if (is_string($id) && $id !== '') {
+                return $this->get($id);
             }
         }
 
-        return Contact::fromArray($response);
+        return ContactMapper::fromJson($response->body);
     }
 
-    /**
-     * Ruft einen Kontakt anhand der ID ab
-     *
-     * @throws LexwareOfficeApiException
-     */
     public function get(string $id): Contact
     {
-        $response = $this->client->get("contacts/{$id}");
+        $response = $this->http->get("contacts/{$id}");
 
-        return Contact::fromArray($response);
+        return ContactMapper::fromJson($response->body);
     }
 
-    /**
-     * Aktualisiert einen bestehenden Kontakt mit optimistic locking
-     *
-     * @throws LexwareOfficeApiException
-     * @throws OptimisticLockingException
-     * @throws GuzzleException
-     */
-    public function update(string $id, Contact $contact): Contact
+    public function update(string $id, ContactWrite $contact): Contact
     {
-        $data = $contact->jsonSerialize();
-
-        // Include version for optimistic locking
-        $version = $contact->getVersion();
-        if ($version !== null) {
-            $data['version'] = $version;
+        if ($contact->version === null) {
+            throw new \InvalidArgumentException('ContactWrite.version is required for updates (optimistic locking)');
         }
 
+        $body = ContactWriteMapper::toJsonBody($contact);
         try {
-            $response = $this->client->put("contacts/{$id}", $data);
+            $response = $this->http->putJson("contacts/{$id}", $body);
         } catch (LexwareOfficeApiException $e) {
-            // Check if this is a conflict error (409) indicating optimistic locking failure
             if ($e->isConflictError()) {
-                // Try to extract current version from error response
-                $currentVersion = $this->extractVersionFromErrorResponse($e);
-
                 throw new OptimisticLockingException(
                     'Contact update failed due to version conflict',
                     $id,
-                    $version,
-                    $currentVersion,
+                    $contact->version,
+                    self::extractVersionFromErrorResponse($e),
                     $e
                 );
             }
 
-            // Re-throw other API exceptions
             throw $e;
         }
 
-        // Holen des kompletten Kontakts wenn erfolgreich
-        if (isset($response['id'])) {
-            try {
-                return $this->get($response['id']);
-            } catch (\Exception $e) {
-                // Fallback zur Datenzusammenführung wenn Get fehlschlägt
+        $decoded = JsonCodec::decode($response->body);
+        if (! array_is_list($decoded)) {
+            /** @var array<string, mixed> $decoded */
+            $returnedId = $decoded['id'] ?? null;
+            if (is_string($returnedId) && $returnedId !== '') {
+                return $this->get($returnedId);
             }
         }
 
-        return Contact::fromArray($response);
+        return ContactMapper::fromJson($response->body);
     }
 
-    /**
-     * Kontakte nach verschiedenen Kriterien filtern
-     *
-     * @param  array  $filters  Filtermöglichkeiten:
-     *                          - customer: bool - Filtert nach Kunden
-     *                          - vendor: bool - Filtert nach Lieferanten
-     *                          - name: string - Filtert nach Namen (Firmen oder Personen)
-     *                          - email: string - Filtert nach E-Mail-Adresse
-     *                          - number: string - Filtert nach Kunden-/Lieferantennummer
-     *                          - page: int - Seitennummer (beginnend bei 0)
-     *                          - size: int - Anzahl der Ergebnisse pro Seite (max. 100)
-     * @return PaginatedResource Liste der gefilterten Kontakte als PaginatedResource
-     *
-     * @throws LexwareOfficeApiException
-     */
-    public function filter(array $filters = []): PaginatedResource
+    private static function extractVersionFromErrorResponse(LexwareOfficeApiException $e): ?int
     {
-        $validFilters = [
-            'customer', 'vendor', 'name', 'email', 'number', 'page', 'size',
-        ];
-
-        // HTTP-Query vorbereiten
-        $query = [];
-
-        // Wir müssen doppelte Filter korrekt handhaben (API kombiniert diese mit AND)
-        foreach ($filters as $key => $value) {
-            // Leere oder ungültige Filter überspringen
-            if (! in_array($key, $validFilters) || $value === null || $value === '') {
-                continue;
-            }
-
-            // Wenn der Filter bereits existiert, konvertieren wir ihn zu einem Array
-            if (isset($query[$key])) {
-                // Wenn es bereits ein Array ist, fügen wir den neuen Wert hinzu
-                if (is_array($query[$key])) {
-                    $query[$key][] = $value;
-                } else {
-                    // Andernfalls konvertieren wir es zu einem Array mit beiden Werten
-                    $query[$key] = [$query[$key], $value];
-                }
-            } else {
-                // Bei einem neuen Filter-Key setzen wir den Wert einfach
-                $query[$key] = $value;
-            }
+        $responseData = json_decode($e->getError()->rawBody, true);
+        if (! is_array($responseData)) {
+            return null;
         }
 
-        // API-Anfrage senden
-        $response = $this->client->get('contacts', $query);
-
-        return $this->processContactsResponse($response);
+        return $responseData['currentVersion']
+            ?? $responseData['version']
+            ?? $responseData['lockVersion']
+            ?? null;
     }
 
     /**
-     * Alle Kontakte abrufen mit Paginierung
-     *
-     * @param  int  $page  Seitennummer (beginnend bei 0)
-     * @param  int  $size  Anzahl der Ergebnisse pro Seite (max. 250)
-     * @return PaginatedResource Liste aller Kontakte als PaginatedResource und Paginierungsinformationen
-     *
-     * @throws LexwareOfficeApiException
+     * @return Page<Contact>
      */
-    public function all(int $page = 0, int $size = 25): PaginatedResource
+    public function filter(ContactQuery $filters = new ContactQuery()): Page
     {
-        $response = $this->client->get('contacts', [
-            'page' => $page,
-            'size' => min($size, 250), // Maximal 250 Einträge pro Seite
-        ]);
+        $query = QueryParams::empty()
+            ->with('page', $filters->page)
+            ->with('size', $filters->size);
 
-        return $this->processContactsResponse($response);
+        if ($filters->customer !== null) {
+            $query = $query->with('customer', $filters->customer);
+        }
+        if ($filters->vendor !== null) {
+            $query = $query->with('vendor', $filters->vendor);
+        }
+        if ($filters->name !== null && $filters->name !== '') {
+            $query = $query->with('name', $filters->name);
+        }
+        if ($filters->email !== null && $filters->email !== '') {
+            $query = $query->with('email', $filters->email);
+        }
+        if ($filters->number !== null && $filters->number !== '') {
+            $query = $query->with('number', $filters->number);
+        }
+
+        $response = $this->http->get('contacts', $query);
+
+        return ContactPageMapper::fromJson($response->body);
+    }
+
+    /**
+     * @return Page<Contact>
+     */
+    public function all(int $page = 0, int $size = 25): Page
+    {
+        $query = QueryParams::empty()
+            ->with('page', $page)
+            ->with('size', min($size, 250));
+
+        $response = $this->http->get('contacts', $query);
+
+        return ContactPageMapper::fromJson($response->body);
     }
 
     /**
@@ -182,92 +145,39 @@ class ContactResource
      */
     public function count(): int
     {
-        $paginator = $this->all(1, 1);
+        $page = $this->all(0, 1);
 
-        return $paginator->getTotal();
+        return $page->pageInfo->totalElements;
     }
 
     /**
-     * Verarbeitet die Antwort der Kontakt-API und erstellt daraus ein strukturiertes Array
-     *
-     * @param  array  $response  API-Antwort
-     * @return PaginatedResource Strukturiertes Array mit Kontakten und Paginierungsinformationen
-     */
-    protected function processContactsResponse(array $response): PaginatedResource
-    {
-        $resource = PaginatedResource::fromArray($response);
-
-        if (isset($response['content']) && is_array($response['content'])) {
-            foreach ($response['content'] as $contactData) {
-                try {
-                    $resource->appendContent(Contact::fromArray($contactData));
-                } catch (\Exception $e) {
-                    // Skip contacts with parsing failures (e.g., missing required fields like 'zip')
-                    // This prevents the entire operation from failing due to malformed data
-                    continue;
-                }
-            }
-        }
-
-        return $resource;
-    }
-
-    /**
-     * Liefert einen Generator, der alle Kontakte automatisch paginiert durchläuft
-     *
-     * @param  array  $filters  Filtermöglichkeiten wie in der filter()-Methode:
-     *                          - customer: bool - Filtert nach Kunden
-     *                          - vendor: bool - Filtert nach Lieferanten
-     *                          - name: string - Filtert nach Namen (Firmen oder Personen)
-     *                          - email: string - Filtert nach E-Mail-Adresse
-     *                          - number: string - Filtert nach Kunden-/Lieferantennummer
-     * @param  int  $size  Anzahl der Ergebnisse pro Seite (max. 250)
      * @return Generator<Contact>
-     *
-     * @throws LexwareOfficeApiException
      */
-    public function getAutoPagingIterator(array $filters = [], int $size = 25): Generator
+    public function getAutoPagingIterator(ContactQuery $filters = new ContactQuery(size: 25)): Generator
     {
-        $page = 0;
-        $hasMore = true;
+        $page = $filters->page;
+        while (true) {
+            $current = new ContactQuery(
+                customer: $filters->customer,
+                vendor: $filters->vendor,
+                name: $filters->name,
+                email: $filters->email,
+                number: $filters->number,
+                page: $page,
+                size: $filters->size,
+            );
 
-        // Filter-Array mit size Parameter vorbereiten
-        $queryFilters = $filters;
-        $queryFilters['size'] = min($size, 250);
+            $result = $this->filter($current);
 
-        while ($hasMore) {
-            $queryFilters['page'] = $page;
-
-            // Aktuelle Seite laden
-            $paginatedResource = $this->filter($queryFilters);
-
-            // Keine Ergebnisse mehr, Schleife beenden
-            if (empty($paginatedResource->jsonSerialize()['content'])) {
-                break;
-            }
-
-            // Alle Kontakte der aktuellen Seite zurückgeben
-            foreach ($paginatedResource->jsonSerialize()['content'] as $contact) {
+            foreach ($result->items as $contact) {
                 yield $contact;
             }
 
-            // Prüfen ob es weitere Seiten gibt
-            $hasMore = ! $paginatedResource->jsonSerialize()['last'];
+            if ($result->pageInfo->last) {
+                break;
+            }
+
             $page++;
         }
-    }
-
-    /**
-     * Extract current version from API error response
-     */
-    protected function extractVersionFromErrorResponse(LexwareOfficeApiException $e): ?int
-    {
-        $responseData = $e->getResponseData();
-
-        // Try different possible fields where the current version might be returned
-        return $responseData['currentVersion']
-            ?? $responseData['version']
-            ?? $responseData['lockVersion']
-            ?? null;
     }
 }

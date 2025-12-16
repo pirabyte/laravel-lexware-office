@@ -1,18 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
-use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\TransactionAssignmentHint;
+use Pirabyte\LaravelLexwareOffice\Dto\TransactionAssignmentHints\TransactionAssignmentHint;
+use Pirabyte\LaravelLexwareOffice\Http\LexwareHttpClient;
+use Pirabyte\LaravelLexwareOffice\Mappers\TransactionAssignmentHints\TransactionAssignmentHintMapper;
+use Pirabyte\LaravelLexwareOffice\Mappers\TransactionAssignmentHints\TransactionAssignmentHintWriteMapper;
 
 class TransactionAssignmentHintResource
 {
-    protected LexwareOffice $client;
-
-    public function __construct(LexwareOffice $client)
-    {
-        $this->client = $client;
-    }
+    public function __construct(private readonly LexwareHttpClient $http) {}
 
     /**
      * Erstellt einen Transaction Assignment Hint
@@ -26,8 +25,9 @@ class TransactionAssignmentHintResource
      */
     public function create(TransactionAssignmentHint $hint): TransactionAssignmentHint
     {
-        $response = $this->client->post('transaction-assignment-hint', $hint->jsonSerialize());
+        $body = TransactionAssignmentHintWriteMapper::toJsonBody($hint);
+        $response = $this->http->postJson('transaction-assignment-hint', $body);
 
-        return TransactionAssignmentHint::fromArray($response);
+        return TransactionAssignmentHintMapper::fromJson($response->body);
     }
 }
