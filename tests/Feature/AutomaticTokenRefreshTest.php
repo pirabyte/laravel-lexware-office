@@ -27,7 +27,7 @@ class AutomaticTokenRefreshTest extends TestCase
         Config::set('lexware-office.oauth2.redirect_uri', 'https://example.com/callback');
         Config::set('lexware-office.oauth2.scopes', ['profile', 'contacts']);
         Config::set('lexware-office.base_url', 'https://api.lexoffice.de');
-        Config::set('lexware-office.oauth2.token_storage', 'cache');
+        Config::set('lexware-office.oauth2.token_storage.driver', 'cache');
     }
 
     protected function tearDown(): void
@@ -71,6 +71,11 @@ class AutomaticTokenRefreshTest extends TestCase
                 'date' => '2023-01-01T00:00:00+01:00',
             ],
             'connectionId' => 'conn_123',
+            'features' => [],
+            'businessFeatures' => [],
+            'subscriptionStatus' => 'active',
+            'taxType' => 'net',
+            'smallBusiness' => false,
         ];
 
         $mock = new MockHandler([
@@ -84,7 +89,7 @@ class AutomaticTokenRefreshTest extends TestCase
 
         $profile = $lexware->profile()->get();
 
-        $this->assertEquals('refresh_org_123', $profile->getOrganizationId());
+        $this->assertEquals('refresh_org_123', $profile->organizationId);
 
         // Verify token was refreshed
         $newToken = $lexware->getOAuth2Service()->getTokenStorage()->getToken();
@@ -120,12 +125,21 @@ class AutomaticTokenRefreshTest extends TestCase
             'content' => [
                 [
                     'id' => 'contact_123',
-                    'roles' => ['customer'],
-                    'company' => ['name' => 'Test Customer'],
+                    'roles' => ['customer' => []],
+                    'company' => [
+                        'name' => 'Test Customer',
+                        'allowTaxFreeInvoices' => false,
+                        'contactPersons' => [],
+                    ],
                 ],
             ],
+            'first' => true,
+            'last' => true,
             'totalPages' => 1,
             'totalElements' => 1,
+            'numberOfElements' => 1,
+            'size' => 25,
+            'number' => 0,
         ];
 
         $mock = new MockHandler([
@@ -139,8 +153,10 @@ class AutomaticTokenRefreshTest extends TestCase
 
         $contacts = $lexware->contacts()->filter();
 
-        $this->assertCount(1, $contacts->getContent());
-        $this->assertEquals('contact_123', $contacts->getContent()[0]->getId());
+        $this->assertCount(1, $contacts->items);
+        $first = $contacts->items->get(0);
+        $this->assertNotNull($first);
+        $this->assertEquals('contact_123', $first->id);
 
         // Verify token was refreshed
         $newToken = $lexware->getOAuth2Service()->getTokenStorage()->getToken();
@@ -181,12 +197,22 @@ class AutomaticTokenRefreshTest extends TestCase
                 'date' => '2023-01-01T00:00:00+01:00',
             ],
             'connectionId' => 'conn_123',
+            'features' => [],
+            'businessFeatures' => [],
+            'subscriptionStatus' => 'active',
+            'taxType' => 'net',
+            'smallBusiness' => false,
         ];
 
         $contactsResponse = [
             'content' => [],
+            'first' => true,
+            'last' => true,
             'totalPages' => 0,
             'totalElements' => 0,
+            'numberOfElements' => 0,
+            'size' => 25,
+            'number' => 0,
         ];
 
         $mock = new MockHandler([
@@ -206,8 +232,8 @@ class AutomaticTokenRefreshTest extends TestCase
         $profile = $lexware->profile()->get();
         $contacts = $lexware->contacts()->filter();
 
-        $this->assertEquals('multi_org_123', $profile->getOrganizationId());
-        $this->assertEquals(0, $contacts->getTotalElements());
+        $this->assertEquals('multi_org_123', $profile->organizationId);
+        $this->assertEquals(0, $contacts->pageInfo->totalElements);
 
         // Verify token was refreshed only once
         $newToken = $lexware->getOAuth2Service()->getTokenStorage()->getToken();
@@ -313,6 +339,11 @@ class AutomaticTokenRefreshTest extends TestCase
                 'date' => '2023-01-01T00:00:00+01:00',
             ],
             'connectionId' => 'conn_123',
+            'features' => [],
+            'businessFeatures' => [],
+            'subscriptionStatus' => 'active',
+            'taxType' => 'net',
+            'smallBusiness' => false,
         ];
 
         $mock = new MockHandler([
@@ -330,7 +361,7 @@ class AutomaticTokenRefreshTest extends TestCase
 
         // Subsequent API call should use the fresh token
         $profile = $lexware->profile()->get();
-        $this->assertEquals('proactive_org_123', $profile->getOrganizationId());
+        $this->assertEquals('proactive_org_123', $profile->organizationId);
     }
 
     public function test_refresh_updates_token_storage_correctly()
@@ -368,6 +399,11 @@ class AutomaticTokenRefreshTest extends TestCase
                 'date' => '2023-01-01T00:00:00+01:00',
             ],
             'connectionId' => 'conn_123',
+            'features' => [],
+            'businessFeatures' => [],
+            'subscriptionStatus' => 'active',
+            'taxType' => 'net',
+            'smallBusiness' => false,
         ];
 
         $mock = new MockHandler([
@@ -382,7 +418,7 @@ class AutomaticTokenRefreshTest extends TestCase
         $profile = $lexware->profile()->get();
 
         // Verify API call succeeded
-        $this->assertEquals('updated_org_123', $profile->getOrganizationId());
+        $this->assertEquals('updated_org_123', $profile->organizationId);
 
         // Verify token was completely updated in storage
         $updatedToken = $storage->getToken();
@@ -432,6 +468,11 @@ class AutomaticTokenRefreshTest extends TestCase
                 'date' => '2023-01-01T00:00:00+01:00',
             ],
             'connectionId' => 'conn_123',
+            'features' => [],
+            'businessFeatures' => [],
+            'subscriptionStatus' => 'active',
+            'taxType' => 'net',
+            'smallBusiness' => false,
         ];
 
         // First instance refreshes proactively, then makes API call
@@ -454,8 +495,8 @@ class AutomaticTokenRefreshTest extends TestCase
         // Second call should use refreshed token
         $profile2 = $lexware2->profile()->get();
 
-        $this->assertEquals('concurrent_org_123', $profile1->getOrganizationId());
-        $this->assertEquals('concurrent_org_123', $profile2->getOrganizationId());
+        $this->assertEquals('concurrent_org_123', $profile1->organizationId);
+        $this->assertEquals('concurrent_org_123', $profile2->organizationId);
 
         // Both should see the same refreshed token
         $token1 = $lexware1->getOAuth2Service()->getTokenStorage()->getToken();
@@ -470,15 +511,7 @@ class AutomaticTokenRefreshTest extends TestCase
         $handlerStack = HandlerStack::create($mock);
         $client = new Client(['handler' => $handlerStack]);
 
-        // Set HTTP client for main LexwareOffice instance
-        $reflection = new \ReflectionClass($lexware);
-
-        // Update both client properties
-        $clientProperty = $reflection->getProperty('client');
-        $clientProperty->setValue($lexware, $client);
-
-        $httpClientProperty = $reflection->getProperty('httpClient');
-        $httpClientProperty->setValue($lexware, $client);
+        $lexware->setClient($client);
 
         // Set HTTP client for OAuth2 service
         $oauth2Service = $lexware->getOAuth2Service();

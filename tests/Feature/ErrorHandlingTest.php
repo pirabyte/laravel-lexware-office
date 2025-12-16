@@ -51,10 +51,10 @@ class ErrorHandlingTest extends TestCase
                 $this->assertEquals('Unauthorized', $exception->getMessage());
                 $this->assertEquals(401, $exception->getStatusCode());
                 $this->assertEquals(LexwareOfficeApiException::ERROR_TYPE_AUTHORIZATION, $exception->getErrorType());
-                $this->assertEquals([
+                $this->assertEquals(json_encode([
                     'message' => 'Unauthorized',
                     'details' => 'API key is invalid or expired',
-                ], $exception->getResponseData());
+                ]), $exception->getError()->rawBody);
                 $this->assertTrue($exception->isAuthError());
 
                 return true;
@@ -149,7 +149,8 @@ class ErrorHandlingTest extends TestCase
                 $this->assertTrue($exception->isValidationError());
 
                 // Check validation error details
-                $responseData = $exception->getResponseData();
+                $responseData = json_decode($exception->getError()->rawBody, true);
+                $this->assertIsArray($responseData);
                 $this->assertArrayHasKey('validationErrors', $responseData);
                 $this->assertCount(2, $responseData['validationErrors']);
 

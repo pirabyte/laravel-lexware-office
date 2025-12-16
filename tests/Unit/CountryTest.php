@@ -47,11 +47,7 @@ class CountryTest extends TestCase
         // LexwareOffice-Client erstellen
         /* @var LexwareOffice $instance */
         $instance = $this->app->make('lexware-office');
-
-        // Methode setClient ist geschützt, also nutzen wir Reflection
-        $reflectionClass = new \ReflectionClass($instance);
-        $reflectionProperty = $reflectionClass->getProperty('client');
-        $reflectionProperty->setValue($instance, $client);
+        $instance->setClient($client);
 
         // Länder abrufen
         $countries = $instance->countries()->all();
@@ -60,21 +56,27 @@ class CountryTest extends TestCase
         $this->assertCount(3, $countries);
 
         // Deutschland prüfen
-        $this->assertEquals('DE', $countries[0]->getCountryCode());
-        $this->assertEquals('Deutschland', $countries[0]->getCountryNameDE());
-        $this->assertEquals('Germany', $countries[0]->getCountryNameEN());
-        $this->assertEquals(TaxClassification::GERMANY, $countries[0]->getTaxClassification());
+        $de = $countries->get(0);
+        $this->assertNotNull($de);
+        $this->assertEquals('DE', $de->countryCode);
+        $this->assertEquals('Deutschland', $de->countryNameDE);
+        $this->assertEquals('Germany', $de->countryNameEN);
+        $this->assertEquals(TaxClassification::GERMANY, $de->taxClassification);
 
         // Frankreich prüfen
-        $this->assertEquals('FR', $countries[1]->getCountryCode());
-        $this->assertEquals('Frankreich', $countries[1]->getCountryNameDE());
-        $this->assertEquals('France', $countries[1]->getCountryNameEN());
-        $this->assertEquals(TaxClassification::INTRA_COMMUNITY, $countries[1]->getTaxClassification());
+        $fr = $countries->get(1);
+        $this->assertNotNull($fr);
+        $this->assertEquals('FR', $fr->countryCode);
+        $this->assertEquals('Frankreich', $fr->countryNameDE);
+        $this->assertEquals('France', $fr->countryNameEN);
+        $this->assertEquals(TaxClassification::INTRA_COMMUNITY, $fr->taxClassification);
 
         // USA prüfen
-        $this->assertEquals('US', $countries[2]->getCountryCode());
-        $this->assertEquals('Vereinigte Staaten von Amerika', $countries[2]->getCountryNameDE());
-        $this->assertEquals('United States', $countries[2]->getCountryNameEN());
-        $this->assertEquals(TaxClassification::THIRD_PARTY_COUNTRY, $countries[2]->getTaxClassification());
+        $us = $countries->get(2);
+        $this->assertNotNull($us);
+        $this->assertEquals('US', $us->countryCode);
+        $this->assertEquals('Vereinigte Staaten von Amerika', $us->countryNameDE);
+        $this->assertEquals('United States', $us->countryNameEN);
+        $this->assertEquals(TaxClassification::THIRD_PARTY_COUNTRY, $us->taxClassification);
     }
 }

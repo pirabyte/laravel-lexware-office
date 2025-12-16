@@ -9,7 +9,9 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
+use Pirabyte\LaravelLexwareOffice\Exceptions\DecodeException;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
+use Pirabyte\LaravelLexwareOffice\Exceptions\TransportException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
@@ -53,10 +55,9 @@ class VoucherFileUploadTest extends TestCase
             'voucher'
         );
 
-        $this->assertEquals('file_123', $result['id']);
-        $this->assertEquals('invoice.pdf', $result['fileName']);
-        $this->assertEquals('application/pdf', $result['mimeType']);
-        $this->assertEquals(12345, $result['size']);
+        $this->assertEquals('file_123', $result->fileId);
+        $this->assertEquals('invoice.pdf', $result->fileName);
+        $this->assertEquals('application/pdf', $result->mimeType);
     }
 
     public function test_attaches_file_with_default_parameters()
@@ -81,8 +82,8 @@ class VoucherFileUploadTest extends TestCase
         // Test with default filename and type
         $result = $this->lexware->vouchers()->attachFile('voucher_456', $stream);
 
-        $this->assertEquals('file_456', $result['id']);
-        $this->assertEquals('voucher.pdf', $result['fileName']);
+        $this->assertEquals('file_456', $result->fileId);
+        $this->assertEquals('voucher.pdf', $result->fileName);
     }
 
     public function test_attaches_file_with_different_types()
@@ -117,8 +118,8 @@ class VoucherFileUploadTest extends TestCase
                 $testCase['type']
             );
 
-            $this->assertEquals("file_$index", $result['id']);
-            $this->assertEquals($testCase['filename'], $result['fileName']);
+            $this->assertEquals("file_$index", $result->fileId);
+            $this->assertEquals($testCase['filename'], $result->fileName);
         }
     }
 
@@ -224,7 +225,7 @@ class VoucherFileUploadTest extends TestCase
 
         $result = $this->lexware->vouchers()->attachFile('voucher_rate_test', $stream);
 
-        $this->assertEquals('file_rate_limit', $result['id']);
+        $this->assertEquals('file_rate_limit', $result->fileId);
 
         // Rate limiting is tested in the main rate limit tests
         // This test ensures the file upload goes through the same rate limiting system
@@ -240,7 +241,7 @@ class VoucherFileUploadTest extends TestCase
 
         $stream = Utils::streamFor('Test content');
 
-        $this->expectException(LexwareOfficeApiException::class);
+        $this->expectException(TransportException::class);
         $this->expectExceptionMessage('Connection timeout');
 
         $this->lexware->vouchers()->attachFile('voucher_123', $stream);
@@ -257,11 +258,8 @@ class VoucherFileUploadTest extends TestCase
 
         $stream = Utils::streamFor('Test content');
 
-        $result = $this->lexware->vouchers()->attachFile('voucher_123', $stream);
-
-        // Should return raw content when JSON parsing fails
-        $this->assertArrayHasKey('raw', $result);
-        $this->assertEquals('invalid json response', $result['raw']);
+        $this->expectException(DecodeException::class);
+        $this->lexware->vouchers()->attachFile('voucher_123', $stream);
     }
 
     public function test_file_upload_uses_proper_multipart_format()
@@ -284,7 +282,7 @@ class VoucherFileUploadTest extends TestCase
             'attachment'
         );
 
-        $this->assertEquals('test_multipart', $result['id']);
+        $this->assertEquals('test_multipart', $result->fileId);
 
         // The test passing means the multipart format was correct
         // and the request went through the proper client methods
@@ -295,13 +293,6 @@ class VoucherFileUploadTest extends TestCase
         $handlerStack = HandlerStack::create($mock);
         $client = new Client(['handler' => $handlerStack]);
 
-        // Set both client properties to ensure compatibility
-        $reflection = new \ReflectionClass($this->lexware);
-
-        $clientProperty = $reflection->getProperty('client');
-        $clientProperty->setValue($this->lexware, $client);
-
-        $httpClientProperty = $reflection->getProperty('httpClient');
-        $httpClientProperty->setValue($this->lexware, $client);
+        $this->lexware->setClient($client);
     }
 }

@@ -8,8 +8,8 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\RateLimiter;
 use Mockery;
-use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\TransactionAssignmentHint;
+use Pirabyte\LaravelLexwareOffice\Dto\TransactionAssignmentHints\TransactionAssignmentHint;
+use Pirabyte\LaravelLexwareOffice\Mappers\TransactionAssignmentHints\TransactionAssignmentHintWriteMapper;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class TransactionAssignmentHintTest extends TestCase
@@ -37,39 +37,36 @@ class TransactionAssignmentHintTest extends TestCase
         // LexwareOffice Client
         $instance = $this->app->make('lexware-office');
 
-        // Set Client
-        $reflectionClass = new \ReflectionClass($instance);
-        $reflectionProperty = $reflectionClass->getProperty('client');
-        $reflectionProperty->setValue($instance, $client);
+        $instance->setClient($client);
 
         // Create Hint
-        $hint = TransactionAssignmentHint::fromArray([
-            'voucherId' => 'ee143016-f177-4da7-a3b7-513a525a25a4',
-            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407',
-        ]);
+        $hint = new TransactionAssignmentHint(
+            voucherId: 'ee143016-f177-4da7-a3b7-513a525a25a4',
+            externalReference: 'C205CD6E49F319AE9B03CAD01F555E2B9F188407'
+        );
 
         // Test Create
         $result = $instance->transactionAssignmentHints()->create($hint);
 
         // Assertions
         $this->assertInstanceOf(TransactionAssignmentHint::class, $result);
-        $this->assertEquals('ee143016-f177-4da7-a3b7-513a525a25a4', $result->getVoucherId());
-        $this->assertEquals('C205CD6E49F319AE9B03CAD01F555E2B9F188407', $result->getExternalReference());
+        $this->assertEquals('ee143016-f177-4da7-a3b7-513a525a25a4', $result->voucherId);
+        $this->assertEquals('C205CD6E49F319AE9B03CAD01F555E2B9F188407', $result->externalReference);
     }
 
     /** @test */
     public function it_serializes_to_json_correctly()
     {
-        $data = [
-            'voucherId' => 'ee143016-f177-4da7-a3b7-513a525a25a4',
-            'externalReference' => 'C205CD6E49F319AE9B03CAD01F555E2B9F188407',
-        ];
+        $hint = new TransactionAssignmentHint(
+            voucherId: 'ee143016-f177-4da7-a3b7-513a525a25a4',
+            externalReference: 'C205CD6E49F319AE9B03CAD01F555E2B9F188407'
+        );
 
-        $hint = TransactionAssignmentHint::fromArray($data);
-        $serialized = $hint->jsonSerialize();
+        $jsonBody = TransactionAssignmentHintWriteMapper::toJsonBody($hint);
+        $payload = json_decode($jsonBody->json, true);
 
-        $this->assertEquals($data['voucherId'], $serialized['voucherId']);
-        $this->assertEquals($data['externalReference'], $serialized['externalReference']);
+        $this->assertEquals($hint->voucherId, $payload['voucherId']);
+        $this->assertEquals($hint->externalReference, $payload['externalReference']);
     }
 
     protected function tearDown(): void
