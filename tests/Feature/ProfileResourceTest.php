@@ -2,7 +2,8 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Tests\Feature;
 
-use Pirabyte\LaravelLexwareOffice\Models\Profile;
+use Pirabyte\LaravelLexwareOffice\Dto\Profile\Profile;
+use Pirabyte\LaravelLexwareOffice\Mappers\Profile\ProfileMapper;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class ProfileResourceTest extends TestCase
@@ -12,17 +13,20 @@ class ProfileResourceTest extends TestCase
         $fixtureFile = __DIR__.'/../Fixtures/profile/1_profile_endpoint_response.json';
         $fixtureContents = file_get_contents($fixtureFile);
         $fixtureData = json_decode($fixtureContents, true);
-        $profile = Profile::fromArray($fixtureData);
+        $profile = ProfileMapper::fromJson($fixtureContents);
 
         $this->assertInstanceOf(Profile::class, $profile);
-        $this->assertEquals($profile->getOrganizationId(), $fixtureData['organizationId']);
-        $this->assertEquals($profile->getCompanyName(), $fixtureData['companyName']);
-        $this->assertEquals($profile->getCreated(), $fixtureData['created']);
-        $this->assertEquals($profile->getConnectionId(), $fixtureData['connectionId']);
-        $this->assertEquals($profile->getFeatures(), $fixtureData['features']);
-        $this->assertEquals($profile->getBusinessFeatures(), $fixtureData['businessFeatures']);
-        $this->assertEquals($profile->getSubscriptionStatus(), $fixtureData['subscriptionStatus']);
-        $this->assertEquals($profile->getTaxType(), $fixtureData['taxType']);
-        $this->assertEquals($profile->isSmallBusiness(), $fixtureData['smallBusiness']);
+        $this->assertEquals($fixtureData['organizationId'], $profile->organizationId);
+        $this->assertEquals($fixtureData['companyName'], $profile->companyName);
+        $this->assertEquals($fixtureData['created']['userId'], $profile->created->userId);
+        $this->assertEquals($fixtureData['created']['userName'], $profile->created->userName);
+        $this->assertEquals($fixtureData['created']['userEmail'], $profile->created->userEmail);
+        $this->assertEquals((new \DateTimeImmutable($fixtureData['created']['date']))->format('c'), $profile->created->date->format('c'));
+        $this->assertEquals($fixtureData['connectionId'], $profile->connectionId);
+        $this->assertEquals($fixtureData['features'], iterator_to_array($profile->features));
+        $this->assertEquals($fixtureData['businessFeatures'], iterator_to_array($profile->businessFeatures));
+        $this->assertEquals($fixtureData['subscriptionStatus'], $profile->subscriptionStatus);
+        $this->assertEquals($fixtureData['taxType'], $profile->taxType);
+        $this->assertEquals($fixtureData['smallBusiness'], $profile->smallBusiness);
     }
 }
