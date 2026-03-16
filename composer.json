@@ -16,7 +16,7 @@
         "phpstan/phpstan": "^1.10",
         "friendsofphp/php-cs-fixer": "^3.92",
         "mockery/mockery": "^1.6",
-        "laravel/pint": "^1.27"
+        "laravel/pint": "^1.29"
     },
     "autoload": {
         "psr-4": {
