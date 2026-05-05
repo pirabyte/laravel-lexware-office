@@ -160,7 +160,7 @@ class FinancialTransactionResourceTest extends TestCase
         $this->assertInstanceOf(UpdateResponse::class, $result);
         $this->assertEquals('016e0873-9a2b-41ca-a749-c1a3cc5945d8', $result->getId());
         $this->assertEquals(2, $result->getVersion());
-        $this->assertEquals('https://api.lexware-sandbox.io/v1/finance/accounts/016e0873-9a2b-41ca-a749-c1a3cc5945d8', $result->getResourceUri());
+        $this->assertEquals('https://api.sandbox.example.invalid/v1/finance/accounts/016e0873-9a2b-41ca-a749-c1a3cc5945d8', $result->getResourceUri());
         $this->assertEquals(Carbon::parse('2023-04-05T12:30:00.000+02:00'), $result->getCreatedDate());
         $this->assertEquals(Carbon::parse('2023-04-07T13:00:00.000+02:00'), $result->getUpdatedDate());
     }
