@@ -348,6 +348,50 @@ class LexwareOffice
     }
 
     /**
+     * Wait until the local Laravel rate limiter has enough capacity.
+     *
+     * This only coordinates the package's local limiter. It does not reserve
+     * capacity and does not guarantee that Lexware's remote token bucket will
+     * accept the following request.
+     *
+     * @param  int  $requiredAttempts  Number of upcoming HTTP attempts to wait for.
+     * @param  int|null  $maxWaitSeconds  Maximum seconds to wait before throwing a local rate-limit exception.
+     * @param  int|null  $maxAttempts  Maximum limiter checks to perform before throwing a local rate-limit exception.
+     *
+     * @throws LexwareOfficeApiException
+     */
+    public function waitForRateLimitCapacity(int $requiredAttempts, ?int $maxWaitSeconds = 120, ?int $maxAttempts = null): void
+    {
+        if ($this->maxRequestsPerMinute <= 0 || $requiredAttempts <= 0) {
+            return;
+        }
+
+        $requiredAttempts = min($requiredAttempts, $this->maxRequestsPerMinute);
+        $startedAt = microtime(true);
+        $attempts = 0;
+
+        while (true) {
+            $attempts++;
+
+            if (RateLimiter::tooManyAttempts($this->rateLimitKey, $this->maxRequestsPerMinute)) {
+                $this->throwIfRateLimitWaitExceeded($startedAt, $attempts, $maxWaitSeconds, $maxAttempts);
+                $this->sleepUntilRateLimitAvailable($startedAt, $maxWaitSeconds);
+                $this->throwIfRateLimitWaitExceeded($startedAt, $attempts, $maxWaitSeconds, $maxAttempts);
+
+                continue;
+            }
+
+            if (RateLimiter::remaining($this->rateLimitKey, $this->maxRequestsPerMinute) >= $requiredAttempts) {
+                return;
+            }
+
+            $this->throwIfRateLimitWaitExceeded($startedAt, $attempts, $maxWaitSeconds, $maxAttempts);
+            $this->sleepUntilRateLimitAvailable($startedAt, $maxWaitSeconds);
+            $this->throwIfRateLimitWaitExceeded($startedAt, $attempts, $maxWaitSeconds, $maxAttempts);
+        }
+    }
+
+    /**
      * PUT-Anfrage
      *
      * @throws LexwareOfficeApiException|GuzzleException
@@ -483,6 +527,10 @@ class LexwareOffice
      */
     protected function makeRequest(callable $callback)
     {
+        if ($this->maxRequestsPerMinute <= 0) {
+            return $this->executeRequest($callback);
+        }
+
         // Check if we've exceeded our self-imposed rate limit
         if (RateLimiter::tooManyAttempts($this->rateLimitKey, $this->maxRequestsPerMinute)) {
             $seconds = RateLimiter::availableIn($this->rateLimitKey);
@@ -500,6 +548,18 @@ class LexwareOffice
             );
         }
 
+        return $this->executeRequest($callback);
+    }
+
+    /**
+     * Execute the HTTP callback and decode its response.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws LexwareOfficeApiException
+     */
+    protected function executeRequest(callable $callback): array
+    {
         // Ensure valid OAuth2 token if OAuth2 is configured
         $this->ensureValidToken();
 
@@ -508,7 +568,9 @@ class LexwareOffice
             $response = $callback();
 
             // Track the request for our rate limiter
-            RateLimiter::hit($this->rateLimitKey, 60);
+            if ($this->maxRequestsPerMinute > 0) {
+                RateLimiter::hit($this->rateLimitKey, 60);
+            }
 
             // Parse and return the response data
             $content = $response->getBody()->getContents();
@@ -527,7 +589,9 @@ class LexwareOffice
                 if ($this->refreshTokenAndRetry()) {
                     try {
                         $response = $callback();
-                        RateLimiter::hit($this->rateLimitKey, 60);
+                        if ($this->maxRequestsPerMinute > 0) {
+                            RateLimiter::hit($this->rateLimitKey, 60);
+                        }
 
                         $content = $response->getBody()->getContents();
                         $data = json_decode($content, true);
@@ -547,6 +611,56 @@ class LexwareOffice
             // Handle request exceptions (HTTP errors, etc.)
             throw $this->handleRequestException($e);
         }
+    }
+
+    /**
+     * Sleep until the local rate limiter is expected to have capacity.
+     *
+     * @throws LexwareOfficeApiException
+     */
+    protected function sleepUntilRateLimitAvailable(float $startedAt, ?int $maxWaitSeconds): void
+    {
+        $seconds = (float) max(1, RateLimiter::availableIn($this->rateLimitKey));
+
+        if ($maxWaitSeconds !== null) {
+            $remainingSeconds = $maxWaitSeconds - (microtime(true) - $startedAt);
+            if ($remainingSeconds <= 0) {
+                throw $this->localRateLimitWaitExceededException();
+            }
+
+            $seconds = min($seconds, $remainingSeconds);
+        }
+
+        usleep((int) ceil($seconds * 1_000_000));
+    }
+
+    /**
+     * @throws LexwareOfficeApiException
+     */
+    protected function throwIfRateLimitWaitExceeded(
+        float $startedAt,
+        int $attempts,
+        ?int $maxWaitSeconds,
+        ?int $maxAttempts,
+    ): void {
+        if ($maxAttempts !== null && $attempts >= $maxAttempts) {
+            throw $this->localRateLimitWaitExceededException();
+        }
+
+        if ($maxWaitSeconds !== null && microtime(true) - $startedAt >= $maxWaitSeconds) {
+            throw $this->localRateLimitWaitExceededException();
+        }
+    }
+
+    protected function localRateLimitWaitExceededException(): LexwareOfficeApiException
+    {
+        $seconds = RateLimiter::availableIn($this->rateLimitKey);
+
+        return new LexwareOfficeApiException(json_encode([
+            'message' => 'Rate limit wait exceeded',
+            'details' => 'Timed out while waiting for local rate limit capacity.',
+            'retryAfter' => $seconds,
+        ]), LexwareOfficeApiException::STATUS_RATE_LIMITED);
     }
 
     /**

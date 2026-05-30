@@ -6,11 +6,17 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
+use Illuminate\Support\Facades\RateLimiter;
+use Mockery;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
+use Pirabyte\LaravelLexwareOffice\Exceptions\VoucherFileAttachmentFailedException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
+use Pirabyte\LaravelLexwareOffice\Models\Voucher;
+use Pirabyte\LaravelLexwareOffice\Models\VoucherCreateWithFileResult;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class VoucherFileUploadTest extends TestCase
@@ -290,18 +296,192 @@ class VoucherFileUploadTest extends TestCase
         // and the request went through the proper client methods
     }
 
+    public function test_it_can_create_voucher_and_attach_file_in_one_call()
+    {
+        $history = [];
+        $mock = new MockHandler([
+            new Response(201, ['Content-Type' => 'application/json'], json_encode($this->voucherCreateResponse())),
+            new Response(201, ['Content-Type' => 'application/json'], json_encode([
+                'id' => 'file_123',
+                'fileName' => 'invoice.pdf',
+                'mimeType' => 'application/pdf',
+            ])),
+        ]);
+        $handlerStack = HandlerStack::create($mock);
+        $handlerStack->push(Middleware::history($history));
+        $client = new Client(['handler' => $handlerStack]);
+
+        $this->lexware->setRateLimitKey('voucher_create_attach_'.uniqid());
+        $this->setHttpClient($client);
+
+        $result = $this->lexware->vouchers()->createAndAttachFile(
+            $this->makeVoucher(),
+            Utils::streamFor('%PDF-1.4 test content'),
+            'invoice.pdf',
+            'voucher',
+        );
+
+        $this->assertInstanceOf(VoucherCreateWithFileResult::class, $result);
+        $this->assertEquals('voucher_123', $result->voucher['id']);
+        $this->assertEquals('file_123', $result->file['id']);
+        $this->assertEquals('invoice.pdf', $result->file['fileName']);
+
+        $this->assertCount(2, $history);
+        $this->assertEquals('POST', $history[0]['request']->getMethod());
+        $this->assertEquals('vouchers', (string) $history[0]['request']->getUri());
+        $this->assertEquals('POST', $history[1]['request']->getMethod());
+        $this->assertEquals('vouchers/voucher_123/files', (string) $history[1]['request']->getUri());
+    }
+
+    public function test_create_and_attach_file_wraps_upload_failure_with_created_voucher_context()
+    {
+        $request = new Request('POST', 'vouchers/voucher_123/files');
+        $mock = new MockHandler([
+            new Response(201, ['Content-Type' => 'application/json'], json_encode($this->voucherCreateResponse())),
+            new RequestException(
+                'Rate limit exceeded',
+                $request,
+                new Response(429, ['Retry-After' => '30'], '{"message":"Rate limit exceeded"}'),
+            ),
+        ]);
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        $this->lexware->setRateLimitKey('voucher_create_attach_failure_'.uniqid());
+        $this->setHttpClient($client);
+
+        try {
+            $this->lexware->vouchers()->createAndAttachFile(
+                $this->makeVoucher(),
+                Utils::streamFor('%PDF-1.4 test content'),
+            );
+
+            $this->fail('Expected voucher attachment failure exception.');
+        } catch (VoucherFileAttachmentFailedException $e) {
+            $this->assertEquals('voucher_123', $e->getVoucher()['id']);
+            $this->assertInstanceOf(LexwareOfficeApiException::class, $e->getPrevious());
+        }
+    }
+
+    public function test_wait_for_rate_limit_capacity_throws_when_attempt_limit_is_exceeded()
+    {
+        RateLimiter::shouldReceive('tooManyAttempts')
+            ->once()
+            ->with('wait_timeout_key', 5)
+            ->andReturn(false);
+        RateLimiter::shouldReceive('remaining')
+            ->once()
+            ->with('wait_timeout_key', 5)
+            ->andReturn(0);
+        RateLimiter::shouldReceive('availableIn')
+            ->once()
+            ->with('wait_timeout_key')
+            ->andReturn(12);
+
+        $this->lexware->setRateLimitKey('wait_timeout_key');
+        $this->lexware->setRateLimit(5);
+
+        $this->expectException(LexwareOfficeApiException::class);
+        $this->expectExceptionCode(429);
+
+        $this->lexware->waitForRateLimitCapacity(2, maxAttempts: 1);
+    }
+
+    public function test_zero_rate_limit_disables_local_limiter_for_create_and_attach_file()
+    {
+        RateLimiter::shouldReceive('tooManyAttempts')->never();
+        RateLimiter::shouldReceive('remaining')->never();
+        RateLimiter::shouldReceive('availableIn')->never();
+        RateLimiter::shouldReceive('hit')->never();
+
+        $mock = new MockHandler([
+            new Response(201, ['Content-Type' => 'application/json'], json_encode($this->voucherCreateResponse())),
+            new Response(201, ['Content-Type' => 'application/json'], json_encode([
+                'id' => 'file_without_limit',
+                'fileName' => 'voucher.pdf',
+                'mimeType' => 'application/pdf',
+            ])),
+        ]);
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        $lexware = new LexwareOffice(
+            'https://api.lexoffice.de',
+            'test_api_key',
+            'disabled_limit_'.uniqid(),
+            0,
+        );
+        $this->setHttpClient($client, $lexware);
+
+        $result = $lexware->vouchers()->createAndAttachFile(
+            $this->makeVoucher(),
+            Utils::streamFor('%PDF-1.4 test content'),
+        );
+
+        $this->assertEquals('voucher_123', $result->voucher['id']);
+        $this->assertEquals('file_without_limit', $result->file['id']);
+    }
+
     private function setMockHttpClient(MockHandler $mock): void
     {
         $handlerStack = HandlerStack::create($mock);
         $client = new Client(['handler' => $handlerStack]);
 
+        $this->setHttpClient($client);
+    }
+
+    private function setHttpClient(Client $client, ?LexwareOffice $lexware = null): void
+    {
+        $lexware ??= $this->lexware;
+
         // Set both client properties to ensure compatibility
-        $reflection = new \ReflectionClass($this->lexware);
+        $reflection = new \ReflectionClass($lexware);
 
         $clientProperty = $reflection->getProperty('client');
-        $clientProperty->setValue($this->lexware, $client);
+        $clientProperty->setValue($lexware, $client);
 
         $httpClientProperty = $reflection->getProperty('httpClient');
-        $httpClientProperty->setValue($this->lexware, $client);
+        $httpClientProperty->setValue($lexware, $client);
+    }
+
+    private function makeVoucher(): Voucher
+    {
+        return Voucher::fromArray([
+            'type' => 'salesinvoice',
+            'voucherDate' => '2023-06-28T00:00:00.000+02:00',
+            'totalGrossAmount' => 119.0,
+            'totalTaxAmount' => 19.0,
+            'taxType' => 'gross',
+            'useCollectiveContact' => true,
+            'voucherItems' => [
+                [
+                    'amount' => 119.0,
+                    'taxAmount' => 19.0,
+                    'taxRatePercent' => 19.0,
+                    'categoryId' => '8f8664a8-fd86-11e1-a21f-0800200c9a66',
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function voucherCreateResponse(): array
+    {
+        return [
+            'id' => 'voucher_123',
+            'resourceUri' => 'https://api.lexoffice.de/v1/vouchers/voucher_123',
+            'createdDate' => '2023-06-29T15:15:09.447+02:00',
+            'updatedDate' => '2023-06-29T15:15:09.447+02:00',
+            'version' => 1,
+        ];
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+
+        parent::tearDown();
     }
 }
