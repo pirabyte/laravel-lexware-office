@@ -8,4 +8,6 @@ enum AccountSystem: string
     // Laut Dokumentation: "Please contact us to get a value for usage."
     case UNKNOWN = 'UNKNOWN';
     case PAYMENT_PROVIDER = 'PaymentProvider';
+    case HOLVI = 'Holvi';
+    case INTERNAL = 'Internal';
 }
