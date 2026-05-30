@@ -59,6 +59,42 @@ class FinancialAccountResourceTest extends TestCase
     }
 
     /** @test */
+    public function it_can_parse_holvi_account_system(): void
+    {
+        $fixtureData = json_decode(file_get_contents(__DIR__.'/../Fixtures/finance-accounts/1_create_financial_account_response.json'), true);
+        $fixtureData['type'] = 'GIRO';
+        $fixtureData['accountSystem'] = 'Holvi';
+        $fixtureData['bankName'] = 'Holvi';
+
+        $financialAccount = FinancialAccount::fromArray($fixtureData);
+
+        $this->assertEquals(AccountSystem::HOLVI, $financialAccount->getAccountSystem());
+        $this->assertEquals('Holvi', $financialAccount->getBankName());
+    }
+
+    /** @test */
+    public function it_can_parse_internal_account_system(): void
+    {
+        $fixtureData = json_decode(file_get_contents(__DIR__.'/../Fixtures/finance-accounts/1_create_financial_account_response.json'), true);
+        $fixtureData['accountSystem'] = 'Internal';
+
+        $financialAccount = FinancialAccount::fromArray($fixtureData);
+
+        $this->assertEquals(AccountSystem::INTERNAL, $financialAccount->getAccountSystem());
+    }
+
+    /** @test */
+    public function it_maps_unknown_account_systems_to_unknown(): void
+    {
+        $fixtureData = json_decode(file_get_contents(__DIR__.'/../Fixtures/finance-accounts/1_create_financial_account_response.json'), true);
+        $fixtureData['accountSystem'] = 'SomeFutureProvider';
+
+        $financialAccount = FinancialAccount::fromArray($fixtureData);
+
+        $this->assertEquals(AccountSystem::UNKNOWN, $financialAccount->getAccountSystem());
+    }
+
+    /** @test */
     public function it_can_parse_financial_accounts_from_filter_request(): void
     {
         $fixtureData = json_decode(file_get_contents(__DIR__.'/../Fixtures/finance-accounts/2_get_financial_account_response.json'), true);
