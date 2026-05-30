@@ -85,7 +85,7 @@ class FinancialAccount implements \JsonSerializable
             : $data['type'];
 
         $accountSystem = is_string($data['accountSystem'])
-            ? AccountSystem::from($data['accountSystem'])
+            ? AccountSystem::tryFrom($data['accountSystem']) ?? AccountSystem::UNKNOWN
             : $data['accountSystem'];
 
         // Objekt erstellen
