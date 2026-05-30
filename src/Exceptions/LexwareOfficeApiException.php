@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice\Exceptions;
 
-use Exception;
 use GuzzleHttp\Exception\RequestException;
+use RuntimeException;
 
-class LexwareOfficeApiException extends Exception
+class LexwareOfficeApiException extends RuntimeException
 {
     // Standard error status codes from the API
     public const STATUS_BAD_REQUEST = 400;
@@ -33,76 +35,35 @@ class LexwareOfficeApiException extends Exception
 
     public const ERROR_TYPE_SERVER_ERROR = 'InternalServerException';
 
-    /**
-     * HTTP status code from the API response
-     */
-    protected int $statusCode;
+    private ApiError $error;
 
-    /**
-     * Raw decoded response data from the API
-     */
-    protected array $responseData;
-
-    /**
-     * Error type from the API response
-     */
-    protected ?string $errorType = null;
-
-    /**
-     * Retry-After value for rate limit errors
-     */
-    protected ?int $retryAfter = null;
-
-    /**
-     * Original request exception if available
-     */
-    protected ?RequestException $requestException = null;
+    private ?RequestException $requestException = null;
 
     /**
      * Create a new Lexware Office API exception
      *
-     * @param  string  $message  The error message or raw response body
+     * @param  string  $rawBody  The raw response body (JSON or plain text)
      * @param  int  $statusCode  The HTTP status code
-     * @param  RequestException|null  $previous  The previous exception
+     * @param  \Throwable|null  $previous  The previous exception
      */
-    public function __construct($message, $statusCode = 500, $previous = null)
+    public function __construct(string $rawBody, int $statusCode = 500, ?\Throwable $previous = null)
     {
-        $this->statusCode = $statusCode;
-
         if ($previous instanceof RequestException) {
             $this->requestException = $previous;
         }
 
-        // Parse the response body
-        $responseData = json_decode($message, true);
-        $this->responseData = $responseData ?: ['message' => $message];
+        $decodedMessage = $this->extractMessageFromBody($rawBody);
+        $errorType = $this->extractErrorType($statusCode, $previous);
+        $retryAfter = $this->extractRetryAfterSeconds($statusCode, $previous);
 
-        // Extract the error message
-        $errorMessage = is_array($responseData) && isset($responseData['message'])
-            ? $responseData['message']
-            : $message;
+        $this->error = new ApiError(
+            message: $decodedMessage,
+            type: $errorType,
+            rawBody: $rawBody,
+            retryAfterSeconds: $retryAfter
+        );
 
-        // Extract error type from response headers if available
-        if ($previous instanceof RequestException && $previous->getResponse()) {
-            $response = $previous->getResponse();
-
-            // Check for x-amzn-ErrorType header
-            if ($response->hasHeader('x-amzn-ErrorType')) {
-                $this->errorType = $response->getHeaderLine('x-amzn-ErrorType');
-            }
-
-            // Check for Retry-After header for rate limit errors
-            if ($statusCode === self::STATUS_RATE_LIMITED && $response->hasHeader('Retry-After')) {
-                $this->retryAfter = (int) $response->getHeaderLine('Retry-After');
-            }
-        }
-
-        // Set the error type based on status code if not already set
-        if (! $this->errorType) {
-            $this->errorType = $this->mapStatusCodeToErrorType($statusCode);
-        }
-
-        parent::__construct($errorMessage, $statusCode, $previous);
+        parent::__construct($decodedMessage, $statusCode, $previous);
     }
 
     /**
@@ -121,19 +82,16 @@ class LexwareOfficeApiException extends Exception
     }
 
     /**
-     * Get the HTTP status code
+     * Get structured API error details.
      */
-    public function getStatusCode(): int
+    public function getError(): ApiError
     {
-        return $this->statusCode;
+        return $this->error;
     }
 
-    /**
-     * Get the raw response data
-     */
-    public function getResponseData(): array
+    public function getStatusCode(): int
     {
-        return $this->responseData;
+        return (int) $this->getCode();
     }
 
     /**
@@ -141,7 +99,7 @@ class LexwareOfficeApiException extends Exception
      */
     public function getErrorType(): string
     {
-        return $this->errorType;
+        return $this->error->type;
     }
 
     /**
@@ -149,7 +107,7 @@ class LexwareOfficeApiException extends Exception
      */
     public function getRetryAfter(): ?int
     {
-        return $this->retryAfter;
+        return $this->error->retryAfterSeconds;
     }
 
     /**
@@ -165,7 +123,7 @@ class LexwareOfficeApiException extends Exception
      */
     public function isAuthError(): bool
     {
-        return $this->statusCode === self::STATUS_UNAUTHORIZED;
+        return $this->getCode() === self::STATUS_UNAUTHORIZED;
     }
 
     /**
@@ -173,7 +131,7 @@ class LexwareOfficeApiException extends Exception
      */
     public function isRateLimitError(): bool
     {
-        return $this->statusCode === self::STATUS_RATE_LIMITED;
+        return $this->getCode() === self::STATUS_RATE_LIMITED;
     }
 
     /**
@@ -181,7 +139,7 @@ class LexwareOfficeApiException extends Exception
      */
     public function isValidationError(): bool
     {
-        return $this->statusCode === self::STATUS_BAD_REQUEST;
+        return $this->getCode() === self::STATUS_BAD_REQUEST;
     }
 
     /**
@@ -189,7 +147,7 @@ class LexwareOfficeApiException extends Exception
      */
     public function isNotFoundError(): bool
     {
-        return $this->statusCode === self::STATUS_NOT_FOUND;
+        return $this->getCode() === self::STATUS_NOT_FOUND;
     }
 
     /**
@@ -197,7 +155,7 @@ class LexwareOfficeApiException extends Exception
      */
     public function isConflictError(): bool
     {
-        return $this->statusCode === self::STATUS_CONFLICT;
+        return $this->getCode() === self::STATUS_CONFLICT;
     }
 
     /**
@@ -205,7 +163,7 @@ class LexwareOfficeApiException extends Exception
      */
     public function isServerError(): bool
     {
-        return $this->statusCode >= self::STATUS_SERVER_ERROR;
+        return $this->getCode() >= self::STATUS_SERVER_ERROR;
     }
 
     /**
@@ -217,8 +175,50 @@ class LexwareOfficeApiException extends Exception
             return 'This error does not support retrying.';
         }
 
-        $seconds = $this->retryAfter ?? 60;
+        $seconds = $this->getRetryAfter() ?? 60;
 
         return "Rate limit exceeded. Retry after {$seconds} seconds with exponential backoff.";
+    }
+
+    private function extractMessageFromBody(string $rawBody): string
+    {
+        $decoded = json_decode($rawBody, true);
+        if (! is_array($decoded)) {
+            return $rawBody;
+        }
+
+        $message = $decoded['message'] ?? null;
+        if (! is_string($message) || $message === '') {
+            return $rawBody;
+        }
+
+        return $message;
+    }
+
+    private function extractErrorType(int $statusCode, ?\Throwable $previous): string
+    {
+        if ($previous instanceof RequestException && $previous->getResponse() && $previous->getResponse()->hasHeader('x-amzn-ErrorType')) {
+            $header = $previous->getResponse()->getHeaderLine('x-amzn-ErrorType');
+            if ($header !== '') {
+                return $header;
+            }
+        }
+
+        return $this->mapStatusCodeToErrorType($statusCode);
+    }
+
+    private function extractRetryAfterSeconds(int $statusCode, ?\Throwable $previous): ?int
+    {
+        if ($statusCode !== self::STATUS_RATE_LIMITED) {
+            return null;
+        }
+
+        if (! ($previous instanceof RequestException) || ! $previous->getResponse() || ! $previous->getResponse()->hasHeader('Retry-After')) {
+            return null;
+        }
+
+        $value = (int) $previous->getResponse()->getHeaderLine('Retry-After');
+
+        return $value > 0 ? $value : null;
     }
 }

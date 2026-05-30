@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice;
 
+use Pirabyte\LaravelLexwareOffice\Collections\StringList;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\OAuth2\CacheTokenStorage;
 use Pirabyte\LaravelLexwareOffice\OAuth2\DatabaseTokenStorage;
@@ -25,22 +28,23 @@ class LexwareOfficeFactory
         ?string $clientId = null,
         ?string $clientSecret = null,
         ?string $redirectUri = null,
-        ?array $scopes = null,
+        ?StringList $scopes = null,
         ?string $tokenStorage = null
     ): LexwareOffice {
         // Use config values as defaults
         $clientId = $clientId ?: config('lexware-office.oauth2.client_id');
         $clientSecret = $clientSecret ?: config('lexware-office.oauth2.client_secret');
         $redirectUri = $redirectUri ?: config('lexware-office.oauth2.redirect_uri');
-        $scopes = $scopes ?: config('lexware-office.oauth2.scopes', []);
-        $tokenStorage = $tokenStorage ?: config('lexware-office.oauth2.token_storage', 'cache');
+        $scopes = $scopes ?: StringList::fromIterable(config('lexware-office.oauth2.scopes') ?? []);
+        $tokenStorage = $tokenStorage ?: config('lexware-office.oauth2.token_storage.driver', 'cache');
 
         // Create LexwareOffice instance
         $lexwareOffice = new LexwareOffice(
             config('lexware-office.base_url'),
             config('lexware-office.api_key'), // Fallback API key
             config('lexware-office.rate_limit_key', 'lexware_office_api').'_user_'.$userId,
-            config('lexware-office.max_requests_per_minute', 50)
+            config('lexware-office.max_requests_per_minute', 50),
+            (float) config('lexware-office.timeout', 30)
         );
 
         // Create OAuth2 service if credentials are available
@@ -49,8 +53,8 @@ class LexwareOfficeFactory
                 $clientId,
                 $clientSecret,
                 $redirectUri,
-                rtrim(config('lexware-office.base_url'), '/v1'), // Remove /v1 for OAuth endpoints
-                $scopes
+                self::removeV1Suffix(config('lexware-office.base_url')),
+                self::stringListToArray($scopes)
             );
 
             // Set up user-specific token storage
@@ -80,7 +84,8 @@ class LexwareOfficeFactory
             $baseUrl ?: config('lexware-office.base_url'),
             $apiKey,
             $rateLimitKey,
-            config('lexware-office.max_requests_per_minute', 50)
+            config('lexware-office.max_requests_per_minute', 50),
+            (float) config('lexware-office.timeout', 30)
         );
     }
 
@@ -100,21 +105,21 @@ class LexwareOfficeFactory
         ?string $clientId = null,
         ?string $clientSecret = null,
         ?string $redirectUri = null,
-        ?array $scopes = null,
+        ?StringList $scopes = null,
         ?string $tokenStorage = null
     ): LexwareOAuth2Service {
         $clientId = $clientId ?: config('lexware-office.oauth2.client_id');
         $clientSecret = $clientSecret ?: config('lexware-office.oauth2.client_secret');
         $redirectUri = $redirectUri ?: config('lexware-office.oauth2.redirect_uri');
-        $scopes = $scopes ?: config('lexware-office.oauth2.scopes', []);
-        $tokenStorage = $tokenStorage ?: config('lexware-office.oauth2.token_storage', 'cache');
+        $scopes = $scopes ?: StringList::fromIterable(config('lexware-office.oauth2.scopes') ?? []);
+        $tokenStorage = $tokenStorage ?: config('lexware-office.oauth2.token_storage.driver', 'cache');
 
         $oauth2Service = new LexwareOAuth2Service(
             $clientId,
             $clientSecret,
             $redirectUri,
-            rtrim(config('lexware-office.base_url'), '/v1'),
-            $scopes
+            self::removeV1Suffix(config('lexware-office.base_url')),
+            self::stringListToArray($scopes)
         );
 
         $tokenStorageInstance = self::createTokenStorage($userId, $tokenStorage);
@@ -140,7 +145,27 @@ class LexwareOfficeFactory
             'cache' => new CacheTokenStorage(
                 config('lexware-office.oauth2.token_storage.cache_key', 'lexware_office_token').'_user_'.$userId
             ),
-            default => throw new LexwareOfficeApiException("Invalid token storage type: {$driver}")
+            default => throw new LexwareOfficeApiException("Invalid token storage type: {$driver}", 500)
         };
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function stringListToArray(StringList $list): array
+    {
+        $values = [];
+        foreach ($list as $value) {
+            $values[] = $value;
+        }
+
+        return $values;
+    }
+
+    private static function removeV1Suffix(string $baseUrl): string
+    {
+        $baseUrl = rtrim($baseUrl, '/');
+
+        return preg_replace('~/v1$~', '', $baseUrl) ?: $baseUrl;
     }
 }

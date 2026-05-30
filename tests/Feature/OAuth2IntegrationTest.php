@@ -28,7 +28,7 @@ class OAuth2IntegrationTest extends TestCase
         Config::set('lexware-office.oauth2.redirect_uri', 'https://example.com/callback');
         Config::set('lexware-office.oauth2.scopes', ['profile', 'contacts']);
         Config::set('lexware-office.base_url', 'https://api.lexoffice.de');
-        Config::set('lexware-office.oauth2.token_storage', 'cache');
+        Config::set('lexware-office.oauth2.token_storage.driver', 'cache');
 
         // Create tokens table for database tests using Schema builder
         if (! DB::getSchemaBuilder()->hasTable('lexware_tokens')) {
@@ -132,6 +132,11 @@ class OAuth2IntegrationTest extends TestCase
                 'date' => '2023-01-01T00:00:00+01:00',
             ],
             'connectionId' => 'conn_123',
+            'features' => [],
+            'businessFeatures' => [],
+            'subscriptionStatus' => 'active',
+            'taxType' => 'net',
+            'smallBusiness' => false,
         ];
 
         $mock = new MockHandler([
@@ -146,8 +151,8 @@ class OAuth2IntegrationTest extends TestCase
         // Make API call that should trigger automatic token refresh
         $profile = $lexware->profile()->get();
 
-        $this->assertEquals('org_123', $profile->getOrganizationId());
-        $this->assertEquals('Test Company', $profile->getCompanyName());
+        $this->assertEquals('org_123', $profile->organizationId);
+        $this->assertEquals('Test Company', $profile->companyName);
 
         // Verify token was refreshed and stored
         $newToken = $oauth2Service->getTokenStorage()->getToken();
@@ -157,7 +162,7 @@ class OAuth2IntegrationTest extends TestCase
 
     public function test_oauth2_with_database_token_storage()
     {
-        Config::set('lexware-office.oauth2.token_storage', 'database');
+        Config::set('lexware-office.oauth2.token_storage.driver', 'database');
 
         $userId = 'db_user_789';
         $lexware = LexwareOfficeFactory::forUser($userId);
@@ -351,15 +356,7 @@ class OAuth2IntegrationTest extends TestCase
         $handlerStack = HandlerStack::create($mock);
         $client = new Client(['handler' => $handlerStack]);
 
-        // Set HTTP client for main LexwareOffice instance
-        $reflection = new \ReflectionClass($lexware);
-
-        // Update both client properties
-        $clientProperty = $reflection->getProperty('client');
-        $clientProperty->setValue($lexware, $client);
-
-        $httpClientProperty = $reflection->getProperty('httpClient');
-        $httpClientProperty->setValue($lexware, $client);
+        $lexware->setClient($client);
 
         // Set HTTP client for OAuth2 service
         $oauth2Service = $lexware->getOAuth2Service();

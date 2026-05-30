@@ -25,42 +25,38 @@ class LexwareOfficeFactoryTest extends TestCase
         Config::set('lexware-office.oauth2.client_secret', 'test_client_secret');
         Config::set('lexware-office.oauth2.redirect_uri', 'https://example.com/callback');
         Config::set('lexware-office.oauth2.scopes', ['profile', 'contacts']);
-        Config::set('lexware-office.oauth2.token_storage', 'cache');
+        Config::set('lexware-office.oauth2.token_storage.driver', 'cache');
     }
 
     public function test_creates_instance_for_user_with_cache_storage()
     {
-        Config::set('lexware-office.oauth2.token_storage', 'cache');
+        Config::set('lexware-office.oauth2.token_storage.driver', 'cache');
 
         $lexware = LexwareOfficeFactory::forUser(123);
 
         $this->assertInstanceOf(LexwareOffice::class, $lexware);
 
         // Verify rate limiting key is set correctly
-        $reflection = new \ReflectionClass($lexware);
-        $rateLimitKeyProperty = $reflection->getProperty('rateLimitKey');
-        $this->assertEquals('lexware_office_api_user_123', $rateLimitKeyProperty->getValue($lexware));
+        $this->assertEquals('lexware_office_api_user_123', $lexware->getRateLimitKey());
     }
 
     public function test_creates_instance_for_user_with_database_storage()
     {
-        Config::set('lexware-office.oauth2.token_storage', 'database');
+        Config::set('lexware-office.oauth2.token_storage.driver', 'database');
 
         $lexware = LexwareOfficeFactory::forUser(456);
 
         $this->assertInstanceOf(LexwareOffice::class, $lexware);
 
         // Check that OAuth2 service is configured with database storage
-        $reflection = new \ReflectionClass($lexware);
-        $oauth2Property = $reflection->getProperty('oauth2Service');
-        $oauth2Service = $oauth2Property->getValue($lexware);
+        $oauth2Service = $lexware->getOAuth2Service();
 
         $this->assertInstanceOf(LexwareOAuth2Service::class, $oauth2Service);
     }
 
     public function test_creates_oauth2_service_for_user_with_cache_storage()
     {
-        Config::set('lexware-office.oauth2.token_storage', 'cache');
+        Config::set('lexware-office.oauth2.token_storage.driver', 'cache');
 
         $oauth2Service = LexwareOfficeFactory::createOAuth2Service(789);
 
@@ -81,7 +77,7 @@ class LexwareOfficeFactoryTest extends TestCase
 
     public function test_creates_oauth2_service_for_user_with_database_storage()
     {
-        Config::set('lexware-office.oauth2.token_storage', 'database');
+        Config::set('lexware-office.oauth2.token_storage.driver', 'database');
 
         $oauth2Service = LexwareOfficeFactory::createOAuth2Service(101112);
 
@@ -102,7 +98,7 @@ class LexwareOfficeFactoryTest extends TestCase
 
     public function test_throws_exception_for_invalid_token_storage_type()
     {
-        Config::set('lexware-office.oauth2.token_storage', 'invalid_storage');
+        Config::set('lexware-office.oauth2.token_storage.driver', 'invalid_storage');
 
         $this->expectException(LexwareOfficeApiException::class);
         $this->expectExceptionMessage('Invalid token storage type: invalid_storage');
@@ -117,9 +113,7 @@ class LexwareOfficeFactoryTest extends TestCase
         $this->assertInstanceOf(LexwareOffice::class, $lexware);
 
         // Verify API key is set correctly
-        $reflection = new \ReflectionClass($lexware);
-        $apiKeyProperty = $reflection->getProperty('apiKey');
-        $this->assertEquals('custom_api_key', $apiKeyProperty->getValue($lexware));
+        $this->assertEquals('custom_api_key', $lexware->getApiKey());
     }
 
     public function test_creates_instance_with_api_key_and_custom_base_url()
@@ -129,18 +123,14 @@ class LexwareOfficeFactoryTest extends TestCase
         $this->assertInstanceOf(LexwareOffice::class, $lexware);
 
         // Verify base URL is set correctly
-        $reflection = new \ReflectionClass($lexware);
-        $baseUrlProperty = $reflection->getProperty('baseUrl');
-        $this->assertEquals('https://custom.api.url', $baseUrlProperty->getValue($lexware));
+        $this->assertEquals('https://custom.api.url', $lexware->getBaseUrl());
     }
 
     public function test_uses_default_rate_limit_key_for_api_key_instances()
     {
         $lexware = LexwareOfficeFactory::withApiKey('custom_api_key');
 
-        $reflection = new \ReflectionClass($lexware);
-        $rateLimitKeyProperty = $reflection->getProperty('rateLimitKey');
-        $this->assertEquals('lexware_office_api', $rateLimitKeyProperty->getValue($lexware));
+        $this->assertEquals('lexware_office_api', $lexware->getRateLimitKey());
     }
 
     public function test_user_instances_have_isolated_rate_limiting()
@@ -148,11 +138,8 @@ class LexwareOfficeFactoryTest extends TestCase
         $lexware1 = LexwareOfficeFactory::forUser(111);
         $lexware2 = LexwareOfficeFactory::forUser(222);
 
-        $reflection = new \ReflectionClass($lexware1);
-        $rateLimitKeyProperty = $reflection->getProperty('rateLimitKey');
-
-        $key1 = $rateLimitKeyProperty->getValue($lexware1);
-        $key2 = $rateLimitKeyProperty->getValue($lexware2);
+        $key1 = $lexware1->getRateLimitKey();
+        $key2 = $lexware2->getRateLimitKey();
 
         $this->assertEquals('lexware_office_api_user_111', $key1);
         $this->assertEquals('lexware_office_api_user_222', $key2);
@@ -209,12 +196,9 @@ class LexwareOfficeFactoryTest extends TestCase
         $this->assertNotSame($lexware1, $lexware2);
 
         // But should have same configuration
-        $reflection = new \ReflectionClass($lexware1);
-        $rateLimitKeyProperty = $reflection->getProperty('rateLimitKey');
-
         $this->assertEquals(
-            $rateLimitKeyProperty->getValue($lexware1),
-            $rateLimitKeyProperty->getValue($lexware2)
+            $lexware1->getRateLimitKey(),
+            $lexware2->getRateLimitKey()
         );
     }
 
@@ -222,14 +206,12 @@ class LexwareOfficeFactoryTest extends TestCase
     {
         $lexware = LexwareOfficeFactory::forUser('user_abc_123');
 
-        $reflection = new \ReflectionClass($lexware);
-        $rateLimitKeyProperty = $reflection->getProperty('rateLimitKey');
-        $this->assertEquals('lexware_office_api_user_user_abc_123', $rateLimitKeyProperty->getValue($lexware));
+        $this->assertEquals('lexware_office_api_user_user_abc_123', $lexware->getRateLimitKey());
     }
 
     public function test_oauth2_service_handles_string_user_ids()
     {
-        Config::set('lexware-office.oauth2.token_storage', 'cache');
+        Config::set('lexware-office.oauth2.token_storage.driver', 'cache');
 
         $oauth2Service = LexwareOfficeFactory::createOAuth2Service('user_xyz_456');
 

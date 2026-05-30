@@ -8,7 +8,8 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Pirabyte\LaravelLexwareOffice\Enums\PostingCategoryType;
 use Pirabyte\LaravelLexwareOffice\Facades\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\PostingCategory;
+use Pirabyte\LaravelLexwareOffice\Dto\PostingCategories\PostingCategory;
+use Pirabyte\LaravelLexwareOffice\Mappers\PostingCategories\PostingCategoryMapper;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
 class PostingCategoryResourceTest extends TestCase
@@ -50,22 +51,21 @@ class PostingCategoryResourceTest extends TestCase
         $fixtureFile = __DIR__.'/../Fixtures/posting-categories/1_parse_posting_category_response.json';
         $fixtureContents = file_get_contents($fixtureFile);
         $fixtureData = json_decode($fixtureContents, true);
-        foreach ($fixtureData as $fixtureCategory) {
-            $postingCategory = PostingCategory::fromArray($fixtureCategory);
-            $this->validate_posting_category($postingCategory, $fixtureCategory);
+
+        $categories = PostingCategoryMapper::collectionFromJson($fixtureContents);
+        $this->assertCount(count($fixtureData), $categories);
+
+        foreach ($fixtureData as $index => $fixtureCategory) {
+            /** @var PostingCategory|null $postingCategory */
+            $postingCategory = $categories->get($index);
+            $this->assertNotNull($postingCategory);
+
+            $this->assertEquals($fixtureCategory['id'], $postingCategory->id);
+            $this->assertEquals($fixtureCategory['name'], $postingCategory->name);
+            $this->assertEquals($fixtureCategory['type'], $postingCategory->type->value);
+            $this->assertEquals($fixtureCategory['contactRequired'], $postingCategory->contactRequired);
+            $this->assertEquals($fixtureCategory['splitAllowed'], $postingCategory->splitAllowed);
+            $this->assertEquals($fixtureCategory['groupName'], $postingCategory->groupName);
         }
-    }
-
-    private function validate_posting_category(PostingCategory $postingCategory, array $fixtureData): void
-    {
-        $this->assertInstanceOf(PostingCategory::class, $postingCategory);
-
-        $this->assertEquals($postingCategory->getId(), $fixtureData['id']);
-        $this->assertEquals($postingCategory->getName(), $fixtureData['name']);
-        $this->assertEquals($postingCategory->getType(), $fixtureData['type']);
-        $this->assertEquals($postingCategory->getContactRequired(), $fixtureData['contactRequired']);
-        $this->assertEquals($postingCategory->getSplitAllowed(), $fixtureData['splitAllowed']);
-        $this->assertEquals($postingCategory->getGroupName(), $fixtureData['groupName']);
-
     }
 }

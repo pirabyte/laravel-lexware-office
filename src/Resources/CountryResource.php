@@ -1,48 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
-use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
-use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\Country;
+use Pirabyte\LaravelLexwareOffice\Collections\Countries\CountryCollection;
+use Pirabyte\LaravelLexwareOffice\Http\LexwareHttpClient;
+use Pirabyte\LaravelLexwareOffice\Mappers\Countries\CountryMapper;
 
 class CountryResource
 {
-    protected LexwareOffice $client;
+    public function __construct(private readonly LexwareHttpClient $http) {}
 
-    public function __construct(LexwareOffice $client)
+    public function all(): CountryCollection
     {
-        $this->client = $client;
-    }
+        $response = $this->http->get('countries');
 
-    /**
-     * Ruft alle verfügbaren Länder ab
-     *
-     * @return array Eine Liste aller Länder
-     *
-     * @throws LexwareOfficeApiException
-     */
-    public function all(): array
-    {
-        $response = $this->client->get('countries');
-
-        return $this->processCountriesResponse($response);
-    }
-
-    /**
-     * Verarbeitet die Antwort der Countries-API und erstellt daraus ein strukturiertes Array
-     *
-     * @param  array  $response  API-Antwort
-     * @return array Ein Array mit Country-Objekten
-     */
-    protected function processCountriesResponse(array $response): array
-    {
-        $countries = [];
-
-        foreach ($response as $countryData) {
-            $countries[] = Country::fromArray($countryData);
-        }
-
-        return $countries;
+        return CountryMapper::collectionFromJson($response->body);
     }
 }

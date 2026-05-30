@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice;
 
 use Illuminate\Support\ServiceProvider;
 use Pirabyte\LaravelLexwareOffice\OAuth2\CacheTokenStorage;
+use Pirabyte\LaravelLexwareOffice\OAuth2\DatabaseTokenStorage;
 use Pirabyte\LaravelLexwareOffice\OAuth2\LexwareOAuth2Service;
 
 class LexwareOfficeServiceProvider extends ServiceProvider
@@ -39,23 +42,27 @@ class LexwareOfficeServiceProvider extends ServiceProvider
                 return null;
             }
 
+            $oauthBaseUrl = self::removeV1Suffix($app['config']['lexware-office.base_url']);
+
             $oauth2Service = new LexwareOAuth2Service(
                 $config['client_id'],
                 $config['client_secret'],
                 $config['redirect_uri'],
-                rtrim($app['config']['lexware-office.base_url'], '/v1'), // Remove /v1 for OAuth endpoints
+                $oauthBaseUrl,
                 $config['scopes'] ?? []
             );
 
             // Set up token storage based on configuration
             $storageConfig = $config['token_storage'];
-            if ($storageConfig['driver'] === 'database') {
-                // For database storage, we'll need the user ID from the app
-                // This will be set up by the developer in their app
-                $tokenStorage = new CacheTokenStorage($storageConfig['cache_key']);
-            } else {
-                $tokenStorage = new CacheTokenStorage($storageConfig['cache_key']);
-            }
+            $driver = $storageConfig['driver'] ?? 'cache';
+            $tokenStorage = match ($driver) {
+                'database' => new DatabaseTokenStorage(
+                    $storageConfig['database_user_id'] ?? 0,
+                    $storageConfig['database_table'] ?? 'lexware_tokens',
+                    $storageConfig['user_column'] ?? 'user_id'
+                ),
+                default => new CacheTokenStorage($storageConfig['cache_key'] ?? 'lexware_office_token'),
+            };
 
             $oauth2Service->setTokenStorage($tokenStorage);
 
@@ -68,7 +75,8 @@ class LexwareOfficeServiceProvider extends ServiceProvider
                 $app['config']['lexware-office.base_url'],
                 $app['config']['lexware-office.api_key'],
                 $app['config']['lexware-office.rate_limit_key'] ?? 'lexware_office_api',
-                $app['config']['lexware-office.max_requests_per_minute'] ?? 50
+                $app['config']['lexware-office.max_requests_per_minute'] ?? 50,
+                (float) ($app['config']['lexware-office.timeout'] ?? 30)
             );
 
             // Set OAuth2 service if enabled
@@ -81,5 +89,12 @@ class LexwareOfficeServiceProvider extends ServiceProvider
 
             return $lexwareOffice;
         });
+    }
+
+    private static function removeV1Suffix(string $baseUrl): string
+    {
+        $baseUrl = rtrim($baseUrl, '/');
+
+        return preg_replace('~/v1$~', '', $baseUrl) ?: $baseUrl;
     }
 }

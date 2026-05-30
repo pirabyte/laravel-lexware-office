@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice\Exceptions;
 
-use Exception;
-
-class OptimisticLockingException extends LexwareOfficeApiException
+final class OptimisticLockingException extends LexwareOfficeApiException
 {
     /**
      * The current version from the server
@@ -35,7 +35,7 @@ class OptimisticLockingException extends LexwareOfficeApiException
         ?string $entityId = null,
         ?int $attemptedVersion = null,
         ?int $currentVersion = null,
-        ?Exception $previous = null
+        ?\Throwable $previous = null
     ) {
         $this->entityId = $entityId;
         $this->attemptedVersion = $attemptedVersion;

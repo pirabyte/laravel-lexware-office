@@ -1,37 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
-use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
-use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\FinancialAccount;
+use Pirabyte\LaravelLexwareOffice\Collections\Finance\FinancialAccountCollection;
+use Pirabyte\LaravelLexwareOffice\Dto\Finance\FinancialAccount;
+use Pirabyte\LaravelLexwareOffice\Dto\Finance\FinancialAccountCreate;
+use Pirabyte\LaravelLexwareOffice\Dto\Finance\FinancialAccountQuery;
+use Pirabyte\LaravelLexwareOffice\Http\JsonCodec;
+use Pirabyte\LaravelLexwareOffice\Http\LexwareHttpClient;
+use Pirabyte\LaravelLexwareOffice\Http\QueryParams;
+use Pirabyte\LaravelLexwareOffice\Mappers\Finance\FinancialAccountCreateMapper;
+use Pirabyte\LaravelLexwareOffice\Mappers\Finance\FinancialAccountMapper;
 
 class FinancialAccountResource
 {
-    protected LexwareOffice $client;
+    public function __construct(private readonly LexwareHttpClient $http) {}
 
-    public function __construct(LexwareOffice $client)
+    public function create(FinancialAccountCreate $financialAccount): FinancialAccount
     {
-        $this->client = $client;
-    }
+        $body = FinancialAccountCreateMapper::toJsonBody($financialAccount);
+        $response = $this->http->postJson('finance/financial-accounts', $body);
 
-    /**
-     * @throws LexwareOfficeApiException
-     */
-    public function create(FinancialAccount $financialAccount): FinancialAccount
-    {
-        $data = $financialAccount->jsonSerialize();
-        $response = $this->client->post('finance/financial-accounts', $data);
-
-        if (isset($response['financialAccountId'])) {
-            try {
-                return $this->get($response['financialAccountId']);
-            } catch (\Exception $e) {
-                // Fallback zur Datenzusammenführung wenn Get fehlschlägt
+        $decoded = JsonCodec::decode($response->body);
+        if (! array_is_list($decoded)) {
+            /** @var array<string, mixed> $decoded */
+            $id = $decoded['financialAccountId'] ?? null;
+            if (is_string($id) && $id !== '') {
+                return $this->get($id);
             }
         }
 
-        return FinancialAccount::fromArray($response);
+        return FinancialAccountMapper::fromJson($response->body);
     }
 
     /**
@@ -44,84 +45,25 @@ class FinancialAccountResource
      */
     public function get(string $id): FinancialAccount
     {
-        $response = $this->client->get("finance/accounts/{$id}");
+        $response = $this->http->get("finance/accounts/{$id}");
 
-        return FinancialAccount::fromArray($response);
+        return FinancialAccountMapper::fromJson($response->body);
     }
 
-    /**
-     * Finanzkonten nach verschiedenen Kriterien filtern
-     *
-     * @param  array  $filters  Filtermöglichkeiten:
-     *                          - iban: string
-     *                          - externalReference: string
-     * @return array<FinancialAccount> Liste der gefilterten Finanzkonten
-     *
-     * @throws LexwareOfficeApiException
-     */
-    public function filter(array $filters = []): array
+    public function filter(FinancialAccountQuery $filters = new FinancialAccountQuery()): FinancialAccountCollection
     {
-        $validFilters = [
-            'iban', 'externalReference',
-        ];
-
-        // HTTP-Query vorbereiten
-        $query = [];
-
-        // Nur gültige und nicht-leere Filter einbeziehen
-        foreach ($filters as $key => $value) {
-            // Leere oder ungültige Filter überspringen
-            if (! in_array($key, $validFilters) || $value === null || $value === '') {
-                continue;
-            }
-
-            // Multiple Werte für den gleichen Filter unterstützen
-            if (isset($query[$key])) {
-                // Wenn bereits ein Array, füge neuen Wert hinzu
-                if (is_array($query[$key])) {
-                    $query[$key][] = $value;
-                } else {
-                    // Sonst konvertiere zu Array mit beiden Werten
-                    $query[$key] = [$query[$key], $value];
-                }
-            } else {
-                // Bei einem neuen Filter-Key setzen wir den Wert einfach
-                $query[$key] = $value;
-            }
+        $query = QueryParams::empty();
+        if ($filters->iban !== null && $filters->iban !== '') {
+            $query = $query->with('iban', $filters->iban);
+        }
+        if ($filters->externalReference !== null && $filters->externalReference !== '') {
+            $query = $query->with('externalReference', $filters->externalReference);
         }
 
-        // API-Anfrage senden
-        $response = $this->client->get('finance/accounts', $query);
+        $response = $this->http->get('finance/accounts', $query);
 
-        return $this->processFinancialAccountsResponse($response);
-    }
-
-    /**
-     * Verarbeitet die Antwort der Financial-Accounts-API und erstellt daraus ein strukturiertes Array
-     *
-     * @param  array  $response  API-Antwort
-     * @return array Ein Array mit FinancialAccount-Objekten
-     */
-    protected function processFinancialAccountsResponse(array $response): array
-    {
-        $accounts = [];
-
-        // Unterstütze sowohl direkte Array-Antwort als auch content-Struktur
-        if (isset($response['content']) && is_array($response['content'])) {
-            // Antwort hat content-Struktur
-            foreach ($response['content'] as $accountData) {
-                $accounts[] = FinancialAccount::fromArray($accountData);
-            }
-        } elseif (is_array($response)) {
-            // Antwort ist direkt ein Array von Konten
-            foreach ($response as $accountData) {
-                if (is_array($accountData) && isset($accountData['financialAccountId'])) {
-                    $accounts[] = FinancialAccount::fromArray($accountData);
-                }
-            }
-        }
-
-        return $accounts;
+        // API returns a list.
+        return FinancialAccountMapper::collectionFromJson($response->body);
     }
 
     /**
@@ -137,23 +79,9 @@ class FinancialAccountResource
      */
     public function delete(string $id): bool
     {
-        try {
-            $this->client->delete("financial-accounts/{$id}");
+        // Let the HTTP layer surface API errors (including 406) as LexwareOfficeApiException.
+        $this->http->delete("financial-accounts/{$id}");
 
-            return true;
-        } catch (LexwareOfficeApiException $e) {
-            // 406 bedeutet, dass das Konto Transaktionen hat, die Belegen zugewiesen sind
-            if ($e->getCode() === 406) {
-                throw new LexwareOfficeApiException(
-                    'Das Finanzkonto kann nicht gelöscht werden, da es Transaktionen enthält, die Belegen zugewiesen sind. '.
-                    'Der Benutzer muss zuerst manuell in lexoffice die Zuweisungen aufheben.',
-                    406,
-                    $e
-                );
-            }
-
-            // Andere Fehler weiterleiten
-            throw $e;
-        }
+        return true;
     }
 }

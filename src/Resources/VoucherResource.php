@@ -1,246 +1,158 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice\Resources;
 
-use GuzzleHttp\Exception\GuzzleException;
+use Pirabyte\LaravelLexwareOffice\Collections\Page;
+use Pirabyte\LaravelLexwareOffice\Dto\Common\DownloadedFile;
+use Pirabyte\LaravelLexwareOffice\Dto\Vouchers\Voucher;
+use Pirabyte\LaravelLexwareOffice\Dto\Vouchers\VoucherDocument;
+use Pirabyte\LaravelLexwareOffice\Dto\Vouchers\VoucherWrite;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\Exceptions\OptimisticLockingException;
-use Pirabyte\LaravelLexwareOffice\LexwareOffice;
-use Pirabyte\LaravelLexwareOffice\Models\Voucher;
+use Pirabyte\LaravelLexwareOffice\Http\JsonBody;
+use Pirabyte\LaravelLexwareOffice\Http\JsonCodec;
+use Pirabyte\LaravelLexwareOffice\Http\LexwareHttpClient;
+use Pirabyte\LaravelLexwareOffice\Http\MultipartBody;
+use Pirabyte\LaravelLexwareOffice\Http\MultipartPart;
+use Pirabyte\LaravelLexwareOffice\Http\QueryParams;
+use Pirabyte\LaravelLexwareOffice\Mappers\Vouchers\VoucherDocumentMapper;
+use Pirabyte\LaravelLexwareOffice\Mappers\Vouchers\VoucherMapper;
+use Pirabyte\LaravelLexwareOffice\Mappers\Vouchers\VoucherPageMapper;
+use Pirabyte\LaravelLexwareOffice\Mappers\Vouchers\VoucherWriteMapper;
 use Psr\Http\Message\StreamInterface;
 
 class VoucherResource
 {
-    protected LexwareOffice $client;
+    public function __construct(private readonly LexwareHttpClient $http) {}
 
-    public function __construct(LexwareOffice $client)
+    public function create(VoucherWrite $voucher): Voucher
     {
-        $this->client = $client;
-    }
+        $body = VoucherWriteMapper::toJsonBody($voucher);
+        $response = $this->http->postJson('vouchers', $body);
 
-    /**
-     * Erstellt einen neuen Beleg
-     *
-     * @throws LexwareOfficeApiException
-     * @throws GuzzleException
-     */
-    public function create(Voucher $voucher): Voucher
-    {
-        $data = $voucher->jsonSerialize();
-        $response = $this->client->post('vouchers', $data);
-
-        // Holen des kompletten Belegs wenn ID vorhanden
-        if (isset($response['id'])) {
-            try {
-                return $this->get($response['id']);
-            } catch (\Exception $e) {
-                // Fallback zur Datenzusammenführung wenn Get fehlschlägt
+        $decoded = JsonCodec::decode($response->body);
+        if (! array_is_list($decoded)) {
+            /** @var array<string, mixed> $decoded */
+            $id = $decoded['id'] ?? null;
+            if (is_string($id) && $id !== '') {
+                return $this->get($id);
             }
         }
 
-        return Voucher::fromArray(array_merge($data, $response));
+        return VoucherMapper::fromJson($response->body);
     }
 
-    /**
-     * Ruft einen Beleg anhand der ID ab
-     *
-     * @throws LexwareOfficeApiException
-     */
     public function get(string $id): Voucher
     {
-        $response = $this->client->get("vouchers/{$id}");
+        $response = $this->http->get("vouchers/{$id}");
 
-        return Voucher::fromArray($response);
+        return VoucherMapper::fromJson($response->body);
     }
 
-    /**
-     * Aktualisiert einen bestehenden Beleg mit optimistic locking
-     *
-     * @throws LexwareOfficeApiException
-     * @throws OptimisticLockingException
-     * @throws GuzzleException
-     */
-    public function update(string $id, Voucher $voucher): Voucher
+    public function update(string $id, VoucherWrite $voucher): Voucher
     {
-        $data = $voucher->jsonSerialize();
-
-        // Include version for optimistic locking
-        $version = $voucher->getVersion();
-        if ($version !== null) {
-            $data['version'] = $version;
+        if ($voucher->version === null) {
+            throw new \InvalidArgumentException('VoucherWrite.version is required for updates (optimistic locking)');
         }
 
+        $body = VoucherWriteMapper::toJsonBody($voucher);
         try {
-            $response = $this->client->put("vouchers/{$id}", $data);
+            $response = $this->http->putJson("vouchers/{$id}", $body);
         } catch (LexwareOfficeApiException $e) {
-            // Check if this is a conflict error (409) indicating optimistic locking failure
             if ($e->isConflictError()) {
-                // Try to extract current version from error response
-                $currentVersion = $this->extractVersionFromErrorResponse($e);
-
                 throw new OptimisticLockingException(
                     'Voucher update failed due to version conflict',
                     $id,
-                    $version,
-                    $currentVersion,
+                    $voucher->version,
+                    self::extractVersionFromErrorResponse($e),
                     $e
                 );
             }
 
-            // Re-throw other API exceptions
             throw $e;
         }
 
-        // Holen des kompletten Belegs wenn erfolgreich
-        if (isset($response['id'])) {
-            try {
-                return $this->get($response['id']);
-            } catch (\Exception $e) {
-                // Fallback zur Datenzusammenführung wenn Get fehlschlägt
+        $decoded = JsonCodec::decode($response->body);
+        if (! array_is_list($decoded)) {
+            /** @var array<string, mixed> $decoded */
+            $returnedId = $decoded['id'] ?? null;
+            if (is_string($returnedId) && $returnedId !== '') {
+                return $this->get($returnedId);
             }
         }
 
-        return Voucher::fromArray(array_merge($data, $response));
+        return VoucherMapper::fromJson($response->body);
     }
 
-    /**
-     * Belege nach verschiedenen Kriterien filtern
-     *
-     * @param  string  $voucherNumber  Filterung nach Belegnummer
-     * @return array Liste der gefilterten Belege als Voucher-Objekte und Paginierungsinformationen
-     *
-     * @throws LexwareOfficeApiException
-     */
-    public function filter(string $voucherNumber): array
+    private static function extractVersionFromErrorResponse(LexwareOfficeApiException $e): ?int
     {
-        $query = [];
-
-        if (! empty($voucherNumber)) {
-            $query = [
-                'voucherNumber' => $voucherNumber,
-            ];
+        $responseData = json_decode($e->getError()->rawBody, true);
+        if (! is_array($responseData)) {
+            return null;
         }
 
-        // API-Anfrage senden
-        $response = $this->client->get('vouchers', $query);
-
-        return $this->processVouchersResponse($response);
-    }
-
-    /**
-     * Alle Belege abrufen mit Paginierung
-     *
-     * @param  int  $page  Seitennummer (beginnend bei 0)
-     * @param  int  $size  Anzahl der Ergebnisse pro Seite (max. 100)
-     * @return array Liste aller Belege als Voucher-Objekte und Paginierungsinformationen
-     *
-     * @throws LexwareOfficeApiException
-     */
-    public function all(int $page = 0, int $size = 25): array
-    {
-        $response = $this->client->get('vouchers', [
-            'page' => $page,
-            'size' => min($size, 100), // Maximal 100 Einträge pro Seite
-        ]);
-
-        return $this->processVouchersResponse($response);
-    }
-
-    /**
-     * Verarbeitet die Antwort der Belege-API und erstellt daraus ein strukturiertes Array
-     *
-     * @param  array  $response  API-Antwort
-     * @return array Strukturiertes Array mit Belegen und Paginierungsinformationen
-     */
-    protected function processVouchersResponse(array $response): array
-    {
-        $result = [
-            'content' => [],
-            'pagination' => [
-                'page' => $response['page'] ?? 0,
-                'size' => $response['size'] ?? 0,
-                'totalPages' => $response['totalPages'] ?? 0,
-                'totalElements' => $response['totalElements'] ?? 0,
-                'numberOfElements' => $response['numberOfElements'] ?? 0,
-            ],
-        ];
-
-        if (isset($response['content']) && is_array($response['content'])) {
-            foreach ($response['content'] as $voucherData) {
-                $result['content'][] = Voucher::fromArray($voucherData);
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Generiert ein Dokument (z.B. PDF) für einen Beleg
-     *
-     * @param  string  $id  Beleg-ID
-     * @return array Informationen zum generierten Dokument (fileId, fileName, mimeType, etc.)
-     *
-     * @throws LexwareOfficeApiException|GuzzleException
-     */
-    public function document(string $id): array
-    {
-        return $this->client->post("vouchers/{$id}/document", []);
-    }
-
-    /**
-     * Lädt ein Dokument für einen Beleg herunter
-     *
-     * @param  string  $voucherId  Beleg-ID
-     * @param  string  $fileId  Datei-ID
-     * @return array Dateiinhalt und Metadaten
-     *
-     * @throws LexwareOfficeApiException
-     */
-    public function downloadDocument(string $voucherId, string $fileId): array
-    {
-        return $this->client->get("vouchers/{$voucherId}/files/{$fileId}");
-    }
-
-    /**
-     * Fügt eine Datei an einen Beleg an
-     *
-     * @param  string  $id  Beleg-ID
-     * @param  StreamInterface  $stream  Datei-Inhalt als Stream
-     * @param  string  $filename  Optional: Name der Datei (Standard: voucher.pdf)
-     * @param  string  $type  Optional: Typ der Datei (Standard: voucher)
-     * @return array Informationen zur angehängten Datei
-     *
-     * @throws LexwareOfficeApiException
-     * @throws GuzzleException
-     */
-    public function attachFile(string $id, StreamInterface $stream, string $filename = 'voucher.pdf', string $type = 'voucher'): array
-    {
-        $multipartData = [
-            [
-                'name' => 'file',
-                'contents' => $stream,
-                'filename' => $filename,
-            ],
-            [
-                'name' => 'type',
-                'contents' => $type,
-            ],
-        ];
-
-        return $this->client->postMultipart("vouchers/{$id}/files", $multipartData);
-    }
-
-    /**
-     * Extract current version from API error response
-     */
-    protected function extractVersionFromErrorResponse(LexwareOfficeApiException $e): ?int
-    {
-        $responseData = $e->getResponseData();
-
-        // Try different possible fields where the current version might be returned
         return $responseData['currentVersion']
             ?? $responseData['version']
             ?? $responseData['lockVersion']
             ?? null;
+    }
+
+    /**
+     * @return Page<Voucher>
+     */
+    public function filter(string $voucherNumber, int $page = 0, int $size = 25): Page
+    {
+        $query = QueryParams::empty()
+            ->with('voucherNumber', $voucherNumber)
+            ->with('page', $page)
+            ->with('size', min($size, 100));
+
+        $response = $this->http->get('vouchers', $query);
+
+        return VoucherPageMapper::fromJson($response->body);
+    }
+
+    /**
+     * @return Page<Voucher>
+     */
+    public function all(int $page = 0, int $size = 25): Page
+    {
+        $query = QueryParams::empty()
+            ->with('page', $page)
+            ->with('size', min($size, 100));
+
+        $response = $this->http->get('vouchers', $query);
+
+        return VoucherPageMapper::fromJson($response->body);
+    }
+
+    public function document(string $id): VoucherDocument
+    {
+        $response = $this->http->postJson("vouchers/{$id}/document", new JsonBody('{}'));
+
+        return VoucherDocumentMapper::fromJson($response->body);
+    }
+
+    public function downloadDocument(string $voucherId, string $fileId): DownloadedFile
+    {
+        $response = $this->http->get("vouchers/{$voucherId}/files/{$fileId}");
+
+        return new DownloadedFile(
+            bytes: $response->body,
+            contentType: $response->headerLine('Content-Type'),
+        );
+    }
+
+    public function attachFile(string $id, StreamInterface $stream, string $filename = 'voucher.pdf', string $type = 'voucher'): VoucherDocument
+    {
+        $multipart = MultipartBody::empty()
+            ->withPart(new MultipartPart('file', $stream, $filename))
+            ->withPart(new MultipartPart('type', $type));
+
+        $response = $this->http->postMultipart("vouchers/{$id}/files", $multipart);
+
+        return VoucherDocumentMapper::fromJson($response->body);
     }
 }
