@@ -5,8 +5,10 @@ namespace Pirabyte\LaravelLexwareOffice\Resources;
 use GuzzleHttp\Exception\GuzzleException;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\Exceptions\OptimisticLockingException;
+use Pirabyte\LaravelLexwareOffice\Exceptions\VoucherFileAttachmentFailedException;
 use Pirabyte\LaravelLexwareOffice\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Voucher;
+use Pirabyte\LaravelLexwareOffice\Models\VoucherCreateWithFileResult;
 use Psr\Http\Message\StreamInterface;
 
 class VoucherResource
@@ -27,7 +29,7 @@ class VoucherResource
     public function create(Voucher $voucher): Voucher
     {
         $data = $voucher->jsonSerialize();
-        $response = $this->client->post('vouchers', $data);
+        $response = $this->createVoucherResponse($voucher);
 
         // Holen des kompletten Belegs wenn ID vorhanden
         if (isset($response['id'])) {
@@ -39,6 +41,75 @@ class VoucherResource
         }
 
         return Voucher::fromArray(array_merge($data, $response));
+    }
+
+    /**
+     * Create a voucher and immediately attach a file to it.
+     *
+     * This method intentionally uses the create response metadata directly instead
+     * of calling create(), because create() may perform an additional GET request.
+     * The operation is not transactional in Lexware Office: if the upload fails
+     * after voucher creation, a VoucherFileAttachmentFailedException is thrown
+     * and contains the created voucher metadata for recovery or retry.
+     *
+     * @param  Voucher  $voucher  Voucher payload to create.
+     * @param  StreamInterface  $stream  File contents to upload.
+     * @param  string  $filename  Uploaded file name sent in the multipart request.
+     * @param  string  $type  Lexware file type, defaults to voucher.
+     * @return VoucherCreateWithFileResult Created voucher metadata and uploaded file metadata.
+     *
+     * @throws VoucherFileAttachmentFailedException When voucher creation succeeded but file upload failed.
+     * @throws LexwareOfficeApiException When Lexware rejects voucher creation or rate limiting fails.
+     * @throws GuzzleException When the HTTP transport fails.
+     */
+    public function createAndAttachFile(
+        Voucher $voucher,
+        StreamInterface $stream,
+        string $filename = 'voucher.pdf',
+        string $type = 'voucher',
+    ): VoucherCreateWithFileResult {
+        $this->client->waitForRateLimitCapacity(2);
+
+        $createdVoucher = $this->createVoucherResponse($voucher);
+        $voucherId = $this->extractCreatedVoucherId($createdVoucher);
+
+        $this->client->waitForRateLimitCapacity(1);
+
+        try {
+            $file = $this->attachFile($voucherId, $stream, $filename, $type);
+        } catch (\Throwable $e) {
+            throw new VoucherFileAttachmentFailedException($createdVoucher, $e);
+        }
+
+        return new VoucherCreateWithFileResult($createdVoucher, $file);
+    }
+
+    /**
+     * @return array<string, mixed>
+     *
+     * @throws LexwareOfficeApiException|GuzzleException
+     */
+    protected function createVoucherResponse(Voucher $voucher): array
+    {
+        return $this->client->post('vouchers', $voucher->jsonSerialize());
+    }
+
+    /**
+     * @param  array<string, mixed>  $createdVoucher
+     *
+     * @throws LexwareOfficeApiException
+     */
+    protected function extractCreatedVoucherId(array $createdVoucher): string
+    {
+        $id = $createdVoucher['id'] ?? $createdVoucher['voucherId'] ?? null;
+
+        if (is_string($id) && $id !== '') {
+            return $id;
+        }
+
+        throw new LexwareOfficeApiException(json_encode([
+            'message' => 'Voucher creation response did not include an id',
+        ]), LexwareOfficeApiException::STATUS_SERVER_ERROR);
     }
 
     /**
