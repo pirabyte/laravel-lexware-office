@@ -8,21 +8,43 @@ on:
 
 jobs:
   test:
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+        laravel:
+          - name: '11'
+            version: '^11.0@stable'
+            testbench: '^9.0'
+            phpunit: '^10.5'
+            # Laravel 11 is security-EOL, so Composer blocks its stable releases.
+            composer_options: '--no-blocking'
+          - name: '12'
+            version: '^12.0@stable'
+            testbench: '^10.0'
+            phpunit: '^11.5'
+            composer_options: ''
+          - name: '13'
+            version: '^13.0@stable'
+            testbench: '^11.0'
+            phpunit: '^11.5'
+            composer_options: ''
     permissions:
       contents: read
       checks: write # For test results upload
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2 # For coverage comparisons
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
           coverage: xdebug
           ini-values: error_reporting=E_ALL
@@ -35,7 +57,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache Composer packages
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
@@ -43,13 +65,21 @@ jobs:
             ${{ runner.os }}-php-
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
+        run: >-
+          composer update
+          --with "orchestra/testbench:${{ matrix.laravel.testbench }}"
+          --with "laravel/framework:${{ matrix.laravel.version }}"
+          --with "phpunit/phpunit:${{ matrix.laravel.phpunit }}"
+          --prefer-dist
+          --no-interaction
+          --no-progress
+          ${{ matrix.laravel.composer_options }}
 
       - name: Execute tests
         run: vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit junit.xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: ./coverage.xml
           verbose: true     
