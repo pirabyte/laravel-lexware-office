@@ -123,10 +123,15 @@ class FinancialTransactionResource
     /**
      * Ruft die neueste Finanztransaktion für ein Konto ab
      *
-     * @param  string  $financialAccountId  Die ID des Finanzkontos
-     * @return FinancialTransaction|null Die neueste Transaktion oder null wenn keine vorhanden
+     * Achtung: Lexware kann für ein existierendes Finanzkonto ohne Transaktionen
+     * HTTP 404 zurückgeben. Dieser Status belegt deshalb nicht, dass das
+     * Finanzkonto selbst nicht mehr existiert. Das Konto muss bei Bedarf separat
+     * über FinancialAccountResource::get() geprüft werden.
      *
-     * @throws LexwareOfficeApiException
+     * @param  string  $financialAccountId  Die ID des Finanzkontos
+     * @return FinancialTransaction|null Die neueste Transaktion oder null bei einer erfolgreichen leeren Antwort
+     *
+     * @throws LexwareOfficeApiException Unter anderem bei der beschriebenen 404-Antwort
      */
     public function latest(string $financialAccountId): ?FinancialTransaction
     {
