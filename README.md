@@ -108,5 +108,18 @@ Wenn das Rate-Limit erreicht wird, wird eine `LexwareOfficeApiException` mit dem
 - Neueste Transaktionen abrufen
 - Belegzuweisungen abrufen
 
+#### Bekannte API-Eigenheit bei umsatzlosen Finanzkonten
+
+Der Endpunkt `finance/transactions/latest-transaction` kann mit HTTP 404 antworten,
+obwohl das angefragte Finanzkonto weiterhin in Lexware existiert. Dieses Verhalten
+wurde bei einem Finanzkonto ohne Transaktionen beobachtet. Ein 404 dieses Endpunkts
+darf daher nicht als alleiniger Nachweis verwendet werden, dass das Finanzkonto
+gelöscht wurde.
+
+`financialTransactions()->latest()` reicht diese 404-Antwort derzeit als
+`LexwareOfficeApiException` weiter. Nur eine erfolgreiche, aber leere Antwort wird
+als `null` zurückgegeben. Wenn die Existenz des Kontos relevant ist, muss sie separat
+über `financialAccounts()->get($financialAccountId)` geprüft werden.
+
 ### Transaktionszuweisungshinweise
 - Transaktionszuweisungshinweis erstellen
