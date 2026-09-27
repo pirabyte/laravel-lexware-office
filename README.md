@@ -99,7 +99,7 @@ $client->setRequestRateLimiter(new TokenBucketRateLimiter(
 ));
 ```
 
-Der Client reserviert vor jedem HTTP-Versuch Kapazität in allen konfigurierten Buckets. Der neue Limiter ersetzt für diesen Client das bisherige Minutenlimit. `perEndpoint` ist standardmäßig `false`. Mehrere Worker müssen denselben zentralen Laravel-Cache mit Unterstützung für `Cache::lock()` verwenden, zum Beispiel Redis. Auch direkte HTTP-Aufrufe können mit `$limiter->reserve('POST', 'vouchers')` dieselben Buckets nutzen.
+Der Client reserviert vor jedem HTTP-Versuch Kapazität in allen konfigurierten Buckets und folgt bei aktivem Limiter keinen HTTP-Weiterleitungen automatisch. Der neue Limiter ersetzt für diesen Client das bisherige Minutenlimit. `perEndpoint` ist standardmäßig `false`. Mehrere Worker müssen denselben zentralen Laravel-Cache mit Unterstützung für `Cache::lock()` verwenden, zum Beispiel Redis. Auch direkte HTTP-Aufrufe können mit `$limiter->reserve('POST', 'vouchers')` dieselben Buckets nutzen.
 
 Bei ausgeschöpfter Kapazität wirft der Client eine `LexwareOfficeApiException` mit Status 429 und einem positiven `getRetryAfter()`-Wert. Der Aufrufer entscheidet, wann er erneut versucht. Das bisherige `waitForRateLimitCapacity()` bleibt für das Minutenlimit verfügbar; mit dem Token-Bucket-Limiter erfolgt die Reservierung stattdessen direkt vor dem Request. Die OAuth-Autorisierungsserver-Grenzen sind davon unabhängig.
 

@@ -311,7 +311,7 @@ class LexwareOffice
     {
         try {
             // Hier müssen wir sicherstellen, dass Array-Parameter korrekt als separate Query-Parameter gesendet werden
-            $options = ['query' => $query];
+            $options = $this->requestOptions(['query' => $query]);
 
             return $this->makeRequest(function () use ($endpoint, $options) {
                 return $this->client->get($endpoint, $options);
@@ -330,9 +330,9 @@ class LexwareOffice
     {
         try {
             return $this->makeRequest(function () use ($endpoint, $data) {
-                return $this->client->post($endpoint, [
+                return $this->client->post($endpoint, $this->requestOptions([
                     'json' => $data,
-                ]);
+                ]));
             }, 'POST', $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
@@ -348,9 +348,9 @@ class LexwareOffice
     {
         try {
             return $this->makeRequest(function () use ($endpoint, $multipartData) {
-                return $this->client->post($endpoint, [
+                return $this->client->post($endpoint, $this->requestOptions([
                     'multipart' => $multipartData,
-                ]);
+                ]));
             }, 'POST', $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
@@ -411,9 +411,9 @@ class LexwareOffice
     {
         try {
             return $this->makeRequest(function () use ($endpoint, $data) {
-                return $this->client->put($endpoint, [
+                return $this->client->put($endpoint, $this->requestOptions([
                     'json' => $data,
-                ]);
+                ]));
             }, 'PUT', $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
@@ -429,7 +429,7 @@ class LexwareOffice
     {
         try {
             $this->makeRequest(function () use ($endpoint) {
-                return $this->client->delete($endpoint);
+                return $this->client->delete($endpoint, $this->requestOptions());
             }, 'DELETE', $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
@@ -439,6 +439,15 @@ class LexwareOffice
     // endregion Requests
 
     // region Helper
+
+    private function requestOptions(array $options = []): array
+    {
+        if ($this->requestRateLimiter !== null) {
+            $options['allow_redirects'] = false;
+        }
+
+        return $options;
+    }
 
     /**
      * Bereitet die Basis-URI für API-Requests vor.

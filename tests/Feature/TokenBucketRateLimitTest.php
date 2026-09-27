@@ -171,6 +171,48 @@ class TokenBucketRateLimitTest extends TestCase
         }
     }
 
+    public function test_limited_requests_do_not_follow_redirects_without_another_reservation(): void
+    {
+        $requests = [
+            'GET' => fn (LexwareOffice $client): array => $client->get('contacts'),
+            'POST' => fn (LexwareOffice $client): array => $client->post('contacts', []),
+            'MULTIPART' => fn (LexwareOffice $client): array => $client->postMultipart('vouchers/files', []),
+            'PUT' => fn (LexwareOffice $client): array => $client->put('contacts/123', []),
+            'DELETE' => function (LexwareOffice $client): void {
+                $client->delete('contacts/123');
+            },
+        ];
+
+        foreach ($requests as $method => $send) {
+            $handler = new MockHandler([
+                new Response(302, ['Location' => 'https://api.lexware.io/v1/contacts'], ''),
+                new Response(200, [], '{}'),
+            ]);
+            $client = new LexwareOffice('https://api.lexware.io/v1', 'test-key');
+            $client->setClient(new Client(['handler' => HandlerStack::create($handler)]));
+            $client->setRequestRateLimiter(new TokenBucketRateLimiter(
+                new RateLimitBucket('connection', 'redirect-'.$method, 1, 1),
+            ));
+
+            $send($client);
+
+            $this->assertCount(1, $handler, $method.' followed a redirect without another reservation.');
+        }
+    }
+
+    public function test_existing_client_still_follows_redirects(): void
+    {
+        $handler = new MockHandler([
+            new Response(302, ['Location' => 'https://api.lexware.io/v1/contacts'], ''),
+            new Response(200, [], '{}'),
+        ]);
+        $client = new LexwareOffice('https://api.lexware.io/v1', 'test-key', maxRequestsPerMinute: 0);
+        $client->setClient(new Client(['handler' => HandlerStack::create($handler)]));
+
+        $this->assertSame([], $client->get('contacts'));
+        $this->assertCount(0, $handler);
+    }
+
     private function clientWithResponses(Response|RequestException ...$responses): LexwareOffice
     {
         $client = new LexwareOffice('https://api.lexware.io/v1', 'test-key');
