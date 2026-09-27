@@ -18,6 +18,9 @@ This document shows various examples of how to create and retrieve contacts usin
 - The API supports a maximum of ONE phone number per type (business, office, mobile, private, fax, other)
 - It's possible to retrieve contacts with multiple phone numbers of the same type, but when updating such contacts, some data might be lost
 
+**Contact Numbers:**
+- Lexware Office assigns customer and vendor numbers. They cannot be set when creating a contact.
+
 ## Creating a Simple Person Contact
 
 ```php
@@ -28,7 +31,7 @@ use Pirabyte\LaravelLexwareOffice\Models\Contact;
 $contact = Contact::createPerson('Max', 'Mustermann', 'Herr');
 
 // Add a customer role
-$contact->setAsCustomer(['number' => 'K-12345']);
+$contact->setAsCustomer();
 
 // Save the contact
 $savedContact = LexwareOffice::contacts()->create($contact);
@@ -79,7 +82,7 @@ use Pirabyte\LaravelLexwareOffice\Models\Contact;
 $contact = Contact::createCompany('Musterfirma GmbH');
 
 // Add vendor role and address
-$contact->setAsVendor(['number' => 'L-789'])
+$contact->setAsVendor()
     ->addAddress([
         'street' => 'Industriestraße 42',
         'zip' => '54321',
@@ -166,8 +169,8 @@ $contactsByName = LexwareOffice::contacts()->filter(['name' => 'Muster']);
 // Search by email
 $contactsByEmail = LexwareOffice::contacts()->filter(['email' => 'example.com']);
 
-// Search by customer/vendor number
-$contactsByNumber = LexwareOffice::contacts()->filter(['number' => 'K-12345']);
+// Search by a customer/vendor number assigned by Lexware Office
+$contactsByNumber = LexwareOffice::contacts()->filter(['number' => 12345]);
 
 // Pagination
 $page2 = LexwareOffice::contacts()->filter([
