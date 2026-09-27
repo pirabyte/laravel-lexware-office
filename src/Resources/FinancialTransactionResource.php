@@ -148,7 +148,7 @@ class FinancialTransactionResource
      * Ruft die Belegzuweisungen für eine Finanztransaktion ab
      *
      * @param  string  $id  Die ID der Finanztransaktion
-     * @return array Liste der Belegzuweisungen
+     * @return array<VoucherAssignment> Liste der Belegzuweisungen
      *
      * @throws LexwareOfficeApiException
      */
@@ -182,16 +182,14 @@ class FinancialTransactionResource
      * Verarbeitet die Antwort der Assignments-API und erstellt daraus ein strukturiertes Array
      *
      * @param  array  $response  API-Antwort
-     * @return array Ein Array mit VoucherAssignment-Objekten
+     * @return array<VoucherAssignment> Ein Array mit VoucherAssignment-Objekten
      */
     protected function processVoucherAssignmentsResponse(array $response): array
     {
         $assignments = [];
 
-        if (isset($response['assignments']) && is_array($response['assignments'])) {
-            foreach ($response['assignments'] as $assignmentData) {
-                $assignments[] = VoucherAssignment::fromArray($assignmentData);
-            }
+        foreach ($response as $assignmentData) {
+            $assignments[] = VoucherAssignment::fromArray($assignmentData);
         }
 
         return $assignments;
