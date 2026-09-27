@@ -70,14 +70,38 @@ Diese Ressourcen und Methoden sind derzeit im Paket implementiert:
 
 ## Rate-Limit
 
-Der Client prüft vor Anfragen ein lokales Laravel Rate-Limit von standardmäßig 50 Anfragen pro Minute. Bei erreichtem Limit wirft er eine `LexwareOfficeApiException` mit Status 429. Das Limit kannst du in `config/lexware-office.php` über `max_requests_per_minute` oder am Client ändern:
+Der bisherige Client prüft aus Kompatibilitätsgründen ein lokales Limit von standardmäßig 50 Anfragen pro Minute. Dieses Limit allein bildet die [aktuellen API-Grenzen von Lexware](https://developers.lexware.io/#api-rate-limits) nicht ab. Du kannst es weiterhin in `config/lexware-office.php` über `max_requests_per_minute` oder am Client ändern:
 
 ```php
 $client = app('lexware-office');
 $client->setRateLimit(10);
 ```
 
-Das lokale Limit garantiert keine freien Kapazitäten bei der Lexware Office API. Für Abläufe mit mehreren Anfragen bietet der Client `waitForRateLimitCapacity()` an.
+Für ein Token-Bucket-Limit kannst du einen `TokenBucketRateLimiter` verwenden. Das Beispiel zeigt zwei getrennte Grenzen für eine Verbindung und einen API-Client. Prüfe die aktuell für deinen Zugang geltenden Werte und ob Lexware die Grenzen pro Endpunkt oder über alle Endpunkte hinweg anwendet:
+
+```php
+use Pirabyte\LaravelLexwareOffice\RateLimiting\RateLimitBucket;
+use Pirabyte\LaravelLexwareOffice\RateLimiting\TokenBucketRateLimiter;
+
+$limiter = new TokenBucketRateLimiter(
+    new RateLimitBucket('connection', $connectionId, 2, 5, perEndpoint: true),
+    new RateLimitBucket('client', $apiClientId, 5, 5, perEndpoint: true),
+);
+
+$client->setRequestRateLimiter($limiter);
+```
+
+Für einen API-Schlüssel mit einer Grenze über alle Endpunkte hinweg genügt ein Bucket:
+
+```php
+$client->setRequestRateLimiter(new TokenBucketRateLimiter(
+    new RateLimitBucket('api-key', $apiKey, 2, 2),
+));
+```
+
+Der Client reserviert vor jedem HTTP-Versuch Kapazität in allen konfigurierten Buckets und folgt bei aktivem Limiter keinen HTTP-Weiterleitungen automatisch. Der neue Limiter ersetzt für diesen Client das bisherige Minutenlimit. `perEndpoint` ist standardmäßig `false`. Mehrere Worker müssen denselben zentralen Laravel-Cache mit Unterstützung für `Cache::lock()` verwenden, zum Beispiel Redis. Auch direkte HTTP-Aufrufe können mit `$limiter->reserve('POST', 'vouchers')` dieselben Buckets nutzen.
+
+Bei ausgeschöpfter Kapazität wirft der Client eine `LexwareOfficeApiException` mit Status 429 und einem positiven `getRetryAfter()`-Wert. Der Aufrufer entscheidet, wann er erneut versucht. Das bisherige `waitForRateLimitCapacity()` bleibt für das Minutenlimit verfügbar; mit dem Token-Bucket-Limiter erfolgt die Reservierung stattdessen direkt vor dem Request. Die OAuth-Autorisierungsserver-Grenzen sind davon unabhängig.
 
 ## Im Einsatz bei
 

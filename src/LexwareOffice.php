@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\RateLimiter;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\OAuth2\LexwareOAuth2Service;
+use Pirabyte\LaravelLexwareOffice\RateLimiting\TokenBucketRateLimiter;
 use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
 use Pirabyte\LaravelLexwareOffice\Resources\CountryResource;
 use Pirabyte\LaravelLexwareOffice\Resources\FinancialAccountResource;
@@ -52,6 +53,8 @@ class LexwareOffice
 
     protected ?LexwareOAuth2Service $oauth2Service = null;
 
+    protected ?TokenBucketRateLimiter $requestRateLimiter = null;
+
     public function __construct(
         string $baseUrl,
         string $apiKey,
@@ -94,6 +97,13 @@ class LexwareOffice
     public function setRateLimitKey(string $key): void
     {
         $this->rateLimitKey = $key;
+    }
+
+    public function setRequestRateLimiter(TokenBucketRateLimiter $rateLimiter): static
+    {
+        $this->requestRateLimiter = $rateLimiter;
+
+        return $this;
     }
 
     // region Contacts
@@ -301,11 +311,11 @@ class LexwareOffice
     {
         try {
             // Hier müssen wir sicherstellen, dass Array-Parameter korrekt als separate Query-Parameter gesendet werden
-            $options = ['query' => $query];
+            $options = $this->requestOptions(['query' => $query]);
 
             return $this->makeRequest(function () use ($endpoint, $options) {
                 return $this->client->get($endpoint, $options);
-            });
+            }, 'GET', $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -320,10 +330,10 @@ class LexwareOffice
     {
         try {
             return $this->makeRequest(function () use ($endpoint, $data) {
-                return $this->client->post($endpoint, [
+                return $this->client->post($endpoint, $this->requestOptions([
                     'json' => $data,
-                ]);
-            });
+                ]));
+            }, 'POST', $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -338,10 +348,10 @@ class LexwareOffice
     {
         try {
             return $this->makeRequest(function () use ($endpoint, $multipartData) {
-                return $this->client->post($endpoint, [
+                return $this->client->post($endpoint, $this->requestOptions([
                     'multipart' => $multipartData,
-                ]);
-            });
+                ]));
+            }, 'POST', $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -352,7 +362,8 @@ class LexwareOffice
      *
      * This only coordinates the package's local limiter. It does not reserve
      * capacity and does not guarantee that Lexware's remote token bucket will
-     * accept the following request.
+     * accept the following request. A configured request limiter reserves capacity
+     * at the HTTP boundary instead, so this compatibility preflight is skipped.
      *
      * @param  int  $requiredAttempts  Number of upcoming HTTP attempts to wait for.
      * @param  int|null  $maxWaitSeconds  Maximum seconds to wait before throwing a local rate-limit exception.
@@ -362,7 +373,7 @@ class LexwareOffice
      */
     public function waitForRateLimitCapacity(int $requiredAttempts, ?int $maxWaitSeconds = 120, ?int $maxAttempts = null): void
     {
-        if ($this->maxRequestsPerMinute <= 0 || $requiredAttempts <= 0) {
+        if ($this->requestRateLimiter !== null || $this->maxRequestsPerMinute <= 0 || $requiredAttempts <= 0) {
             return;
         }
 
@@ -400,10 +411,10 @@ class LexwareOffice
     {
         try {
             return $this->makeRequest(function () use ($endpoint, $data) {
-                return $this->client->put($endpoint, [
+                return $this->client->put($endpoint, $this->requestOptions([
                     'json' => $data,
-                ]);
-            });
+                ]));
+            }, 'PUT', $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -418,8 +429,8 @@ class LexwareOffice
     {
         try {
             $this->makeRequest(function () use ($endpoint) {
-                return $this->client->delete($endpoint);
-            });
+                return $this->client->delete($endpoint, $this->requestOptions());
+            }, 'DELETE', $endpoint);
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
@@ -428,6 +439,15 @@ class LexwareOffice
     // endregion Requests
 
     // region Helper
+
+    private function requestOptions(array $options = []): array
+    {
+        if ($this->requestRateLimiter !== null) {
+            $options['allow_redirects'] = false;
+        }
+
+        return $options;
+    }
 
     /**
      * Bereitet die Basis-URI für API-Requests vor.
@@ -525,10 +545,10 @@ class LexwareOffice
      *
      * @throws LexwareOfficeApiException
      */
-    protected function makeRequest(callable $callback)
+    protected function makeRequest(callable $callback, string $method, string $endpoint)
     {
-        if ($this->maxRequestsPerMinute <= 0) {
-            return $this->executeRequest($callback);
+        if ($this->requestRateLimiter !== null || $this->maxRequestsPerMinute <= 0) {
+            return $this->executeRequest($callback, $method, $endpoint);
         }
 
         // Check if we've exceeded our self-imposed rate limit
@@ -548,7 +568,7 @@ class LexwareOffice
             );
         }
 
-        return $this->executeRequest($callback);
+        return $this->executeRequest($callback, $method, $endpoint);
     }
 
     /**
@@ -558,17 +578,19 @@ class LexwareOffice
      *
      * @throws LexwareOfficeApiException
      */
-    protected function executeRequest(callable $callback): array
+    protected function executeRequest(callable $callback, string $method, string $endpoint): array
     {
         // Ensure valid OAuth2 token if OAuth2 is configured
         $this->ensureValidToken();
 
         try {
+            $this->requestRateLimiter?->reserve($method, $endpoint);
+
             // Execute the request
             $response = $callback();
 
             // Track the request for our rate limiter
-            if ($this->maxRequestsPerMinute > 0) {
+            if ($this->requestRateLimiter === null && $this->maxRequestsPerMinute > 0) {
                 RateLimiter::hit($this->rateLimitKey, 60);
             }
 
@@ -588,8 +610,9 @@ class LexwareOffice
                 // Try to refresh token and retry request once
                 if ($this->refreshTokenAndRetry()) {
                     try {
+                        $this->requestRateLimiter?->reserve($method, $endpoint);
                         $response = $callback();
-                        if ($this->maxRequestsPerMinute > 0) {
+                        if ($this->requestRateLimiter === null && $this->maxRequestsPerMinute > 0) {
                             RateLimiter::hit($this->rateLimitKey, 60);
                         }
 

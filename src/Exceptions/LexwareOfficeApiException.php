@@ -4,6 +4,7 @@ namespace Pirabyte\LaravelLexwareOffice\Exceptions;
 
 use Exception;
 use GuzzleHttp\Exception\RequestException;
+use Throwable;
 
 class LexwareOfficeApiException extends Exception
 {
@@ -63,7 +64,7 @@ class LexwareOfficeApiException extends Exception
      *
      * @param  string  $message  The error message or raw response body
      * @param  int  $statusCode  The HTTP status code
-     * @param  RequestException|null  $previous  The previous exception
+     * @param  Throwable|null  $previous  The previous exception
      */
     public function __construct($message, $statusCode = 500, $previous = null)
     {
@@ -76,6 +77,13 @@ class LexwareOfficeApiException extends Exception
         // Parse the response body
         $responseData = json_decode($message, true);
         $this->responseData = $responseData ?: ['message' => $message];
+
+        if ($statusCode === self::STATUS_RATE_LIMITED && is_array($responseData)) {
+            $retryAfter = $responseData['retryAfter'] ?? null;
+            if (is_int($retryAfter) && $retryAfter >= 0) {
+                $this->retryAfter = $retryAfter;
+            }
+        }
 
         // Extract the error message
         $errorMessage = is_array($responseData) && isset($responseData['message'])
