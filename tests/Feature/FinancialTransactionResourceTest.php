@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 use OutOfRangeException;
 use Pirabyte\LaravelLexwareOffice\Facades\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\FinancialTransaction;
+use Pirabyte\LaravelLexwareOffice\Models\VoucherAssignment;
 use Pirabyte\LaravelLexwareOffice\Responses\UpdateResponse;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
 
@@ -190,6 +191,26 @@ class FinancialTransactionResourceTest extends TestCase
         $this->assertEquals(-22.33, $result->getAmount());
         $this->assertEquals('ebb47780-f417-4652-8d7d-727fd00e3a5f', $result->getFinancialAccountId());
         $this->assertEquals(1, $result->getLockVersion());
+    }
+
+    public function test_it_returns_voucher_assignments_from_a_list_response()
+    {
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                ['id' => 'voucher-1', 'type' => 'voucher'],
+                ['id' => 'voucher-2', 'type' => 'voucher'],
+            ])),
+        ]);
+        $instance = app('lexware-office');
+        $instance->setClient(new Client(['handler' => HandlerStack::create($mock)]));
+
+        $assignments = LexwareOffice::financialTransactions()->getVoucherAssignments('transaction-1');
+
+        $this->assertCount(2, $assignments);
+        $this->assertInstanceOf(VoucherAssignment::class, $assignments[0]);
+        $this->assertSame('voucher-1', $assignments[0]->getId());
+        $this->assertSame('voucher', $assignments[0]->getType());
+        $this->assertSame('voucher-2', $assignments[1]->getId());
     }
 
     public function test_it_returns_null_when_no_latest_transaction_found()
