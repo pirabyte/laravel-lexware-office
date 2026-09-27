@@ -1,20 +1,11 @@
-![Pirabyte Lexware Office Hero Image](/public/img/og-image.png)
+![Laravel Lexware Office](public/img/og-image.png)
 
-<p align="center">
-  <h1 align="center">Laravel Lexware Office API Client</h1>
-</p>
+# Laravel Lexware Office
 
-<p align="center">
-  <a href="https://github.com/pirabyte/laravel-lexware-office/actions/workflows/tests.yml"><img src="https://github.com/pirabyte/laravel-lexware-office/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
-  <a href="https://codecov.io/github/pirabyte/laravel-lexware-office"><img src="https://codecov.io/github/pirabyte/laravel-lexware-office/branch/main/graph/badge.svg?token=KIpGNZLpn6" alt="codecov"></a>
-</p>
+[![Tests](https://github.com/pirabyte/laravel-lexware-office/actions/workflows/tests.yml/badge.svg)](https://github.com/pirabyte/laravel-lexware-office/actions/workflows/tests.yml)
+[![Code coverage](https://codecov.io/github/pirabyte/laravel-lexware-office/branch/main/graph/badge.svg?token=KIpGNZLpn6)](https://codecov.io/github/pirabyte/laravel-lexware-office)
 
-<p align="center">Laravel package für die Lexware Office API.</p>
-
-## Activity
-
-![Activity](https://repobeats.axiom.co/api/embed/16887d0c9893217d57bf64ff3fc706ad01a3c91f.svg "Repobeats analytics image")
-
+Laravel-Client für die Lexware Office API mit typisierten Modellen, OAuth2-Unterstützung und lokalem Rate-Limit. Unterstützt PHP ab 8.3 sowie Laravel 11 bis 13.
 
 ## Installation
 
@@ -22,91 +13,76 @@
 composer require pirabyte/laravel-lexware-office
 ```
 
+Trage deinen API-Key in `.env` ein:
+
+```dotenv
+LEXWARE_OFFICE_API_KEY=dein-api-key
+```
+
+Laravel lädt die Paketkonfiguration automatisch. Wenn du sie anpassen möchtest, veröffentliche sie mit:
+
 ```bash
 php artisan vendor:publish --provider="Pirabyte\LaravelLexwareOffice\LexwareOfficeServiceProvider" --tag="lexware-office-config"
 ```
 
-Der Service Provider registriert die folgenden Tags:
-```bash
-  * lexware-office-config: Nur für die Konfigurationsdatei.
-  * lexware-office-migration: Nur für die Migrationsdatei.
-  * lexware-office: Für die Konfigurations- und Migrationsdatei zusammen.
-```
+Für die Speicherung von OAuth2-Tokens in der Datenbank kannst du zusätzlich die Migration mit `--tag="lexware-office-migration"` veröffentlichen. `--tag="lexware-office"` veröffentlicht Konfiguration und Migration zusammen.
+
 ## Verwendung
 
-### Mit Facade (Standard)
+Mit dem konfigurierten API-Key nutzt du die Facade:
 
 ```php
 use Pirabyte\LaravelLexwareOffice\Facades\LexwareOffice;
 
-// API-Methoden nutzen
-$contact = LexwareOffice::contacts()->get('kontakt-id-hier');
+$contact = LexwareOffice::contacts()->get($contactId);
 ```
 
-### Direkte Instanzierung (z.B. für Multi-Tenant oder dynamische API-Keys)
+Für einen anderen API-Key erstellst du einen eigenen Client:
 
 ```php
-use Pirabyte\LaravelLexwareOffice\LexwareOffice;
+use Pirabyte\LaravelLexwareOffice\LexwareOfficeFactory;
 
-// Instanz mit benutzerdefiniertem API-Key erstellen
-$client = new LexwareOffice(
-    'https://api.lexoffice.de/', 
-    'Ihr-API-Key-Hier' // z.B. aus Benutzereinstellungen oder Datenbank
-);
-
-// API-Methoden nutzen
-$contact = $client->contacts()->get('kontakt-id-hier');
+$client = LexwareOfficeFactory::withApiKey($apiKey);
+$contact = $client->contacts()->get($contactId);
 ```
 
-## Features
+Weitere Beispiele: [Kontakte](examples/contacts.md), [OAuth2](examples/oauth2-authentication.md), [Fehlerbehandlung](examples/error-handling.md) und [Partner-Integrationen](examples/partner-integrations.md).
 
-- Strong Typed API-Methoden
-- Automatisches Rate-Limiting (50 Anfragen pro Minute)
-- Auto-Paging Iterator für effiziente Paginierung
+## Implementierungsstand
 
-## Rate-Limiting
+Diese Ressourcen und Methoden sind derzeit im Paket implementiert:
 
-Die Lexware Office API limitiert die Anzahl der Anfragen auf 50 pro Minute. Dieses Package implementiert automatisch ein Rate-Limiting, um die API-Grenzen einzuhalten und 429 Too Many Requests Fehler zu vermeiden.
+| Bereich | Zugriff | Methoden |
+| --- | --- | --- |
+| Kontakte | `contacts()` | `create`, `get`, `update`, `filter`, `all`, `count`, `getAutoPagingIterator` |
+| Belege | `vouchers()` | `create`, `createAndAttachFile`, `get`, `update`, `filter`, `all`, `document`, `downloadDocument`, `attachFile` |
+| Länder | `countries()` | `all` |
+| Finanzkonten | `financialAccounts()` | `create`, `get`, `filter`, `delete` |
+| Finanztransaktionen | `financialTransactions()` | `create`, `get`, `update`, `delete`, `latest`, `getVoucherAssignments` |
+| Buchungskategorien | `postingCategories()` | `get` |
+| Profil | `profile()` | `get` |
+| Transaktionszuweisungshinweise | `transactionAssignmentHints()` | `create` |
+| Partner-Integrationen | `partnerIntegrations()` | `get`, `update` |
+
+### Besonderheit bei der neuesten Finanztransaktion
+
+`financialTransactions()->latest($financialAccountId)` kann bei einem bestehenden Finanzkonto ohne Transaktionen eine 404-Antwort von Lexware erhalten. Die Methode gibt nur bei einer erfolgreichen, leeren Antwort `null` zurück. Wenn du prüfen musst, ob das Konto existiert, nutze zusätzlich `financialAccounts()->get($financialAccountId)`.
+
+## Rate-Limit
+
+Der Client prüft vor Anfragen ein lokales Laravel Rate-Limit von standardmäßig 50 Anfragen pro Minute. Bei erreichtem Limit wirft er eine `LexwareOfficeApiException` mit Status 429. Das Limit kannst du in `config/lexware-office.php` über `max_requests_per_minute` oder am Client ändern:
 
 ```php
-// Standardmäßig sind 50 Anfragen pro Minute erlaubt
-$lexwareOffice = app('lexware-office');
-
-// Optional: Benutzerdefiniertes Rate-Limit setzen
-$lexwareOffice->setRateLimit(10); // Beschränkt auf 10 Anfragen pro Minute
+$client = app('lexware-office');
+$client->setRateLimit(10);
 ```
 
-Wenn das Rate-Limit erreicht wird, wird eine `LexwareOfficeApiException` mit dem Statuscode 429 und einer entsprechenden Fehlermeldung geworfen, die angibt, wie lange gewartet werden muss, bevor die nächste Anfrage gesendet werden kann.
+Das lokale Limit garantiert keine freien Kapazitäten bei der Lexware Office API. Für Abläufe mit mehreren Anfragen bietet der Client `waitForRateLimitCapacity()` an.
 
-## Implementierte API-Endpunkte
+## Im Einsatz bei
 
-### Kontakte
-- Kontakt erstellen
-- Kontakt abrufen
-- Kontakte auflisten
-- Kontakt aktualisieren
+[Envoix](https://envoix.de/) nutzt dieses Paket für seine Lexware Office Anbindung. Die Anwendung bereitet Stripe-Zahlungen, Gebühren und Belege für Lexware Office vor. [So funktioniert die Stripe-Integration](https://envoix.de/stripe-lexware).
 
-### Belege
-- Beleg erstellen
-- Beleg abrufen
-- Belege auflisten
-- Beleg aktualisieren
-- Beleg-Dokument generieren
+## Lizenz
 
-### Länder
-- Länder auflisten
-
-### Finanzkonten
-- Finanzkonto abrufen
-- Finanzkonten filtern
-- Finanzkonto löschen
-
-### Finanztransaktionen
-- Transaktion abrufen
-- Transaktion aktualisieren
-- Transaktion löschen
-- Neueste Transaktionen abrufen
-- Belegzuweisungen abrufen
-
-### Transaktionszuweisungshinweise
-- Transaktionszuweisungshinweis erstellen
+[MIT](LICENSE)
