@@ -41,7 +41,7 @@ class ContactApiTest extends TestCase
     {
         // Kontakt erstellen
         $contact = Contact::createPerson('Max', 'Mustermann', 'Herr');
-        $contact->setAsCustomer(['number' => 'K-12345']);
+        $contact->setAsCustomer();
 
         // Kontakt speichern
         $savedContact = LexwareOffice::contacts()->create($contact);
@@ -51,7 +51,7 @@ class ContactApiTest extends TestCase
         $this->assertEquals('Herr', $savedContact->getPerson()->getSalutation());
         $this->assertEquals('Max', $savedContact->getPerson()->getFirstName());
         $this->assertEquals('Mustermann', $savedContact->getPerson()->getLastName());
-        $this->assertEquals('K-12345', $savedContact->getRoles()['customer']['number']);
+        $this->assertSame(12345, $savedContact->getRoles()['customer']['number']);
     }
 
     /** @test */
@@ -226,7 +226,7 @@ class ContactApiTest extends TestCase
 
         // Firmenkontakt erstellen
         $contact = Contact::createCompany('Musterfirma GmbH');
-        $contact->setAsVendor(['number' => 'L-789'])
+        $contact->setAsVendor()
             ->addBillingAddress(
                 'Industriestraße 42',
                 '54321',
@@ -239,7 +239,7 @@ class ContactApiTest extends TestCase
 
         $this->assertEquals('87654321-abcd-1234-efgh-987654321987', $savedContact->getId());
         $this->assertEquals('Musterfirma GmbH', $savedContact->getCompany()->getName());
-        $this->assertEquals('L-789', $savedContact->getRoles()['vendor']['number']);
+        $this->assertSame(789, $savedContact->getRoles()['vendor']['number']);
         $billingAddress = $savedContact->getAddress('billing');
         $this->assertEquals('DE', $billingAddress->countryCode);
     }

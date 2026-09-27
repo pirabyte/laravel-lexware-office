@@ -3,7 +3,7 @@
     "version": 1,
     "roles": {
         "customer": {
-            "number": "K-12345"
+            "number": 12345
         }
     },
     "person": {

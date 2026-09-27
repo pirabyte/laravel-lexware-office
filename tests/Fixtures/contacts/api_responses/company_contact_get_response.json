@@ -3,7 +3,7 @@
     "version": 1,
     "roles": {
         "vendor": {
-            "number": "L-789"
+            "number": 789
         }
     },
     "company": {
