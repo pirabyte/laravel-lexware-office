@@ -3,6 +3,7 @@
 namespace Pirabyte\LaravelLexwareOffice\Facades;
 
 use Illuminate\Support\Facades\Facade;
+use Pirabyte\LaravelLexwareOffice\RateLimiting\TokenBucketRateLimiter;
 use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
 use Pirabyte\LaravelLexwareOffice\Resources\CountryResource;
 use Pirabyte\LaravelLexwareOffice\Resources\FinancialAccountResource;
@@ -22,6 +23,7 @@ use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
  * @method static FinancialTransactionResource financialTransactions()
  * @method static TransactionAssignmentHintResource transactionAssignmentHints()
  * @method setRateLimitKey(string $key)
+ * @method static \Pirabyte\LaravelLexwareOffice\LexwareOffice setRequestRateLimiter(TokenBucketRateLimiter $rateLimiter)
  */
 class LexwareOffice extends Facade
 {
