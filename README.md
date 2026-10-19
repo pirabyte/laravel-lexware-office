@@ -48,6 +48,14 @@ $contact = $client->contacts()->get($contactId);
 
 Weitere Beispiele: [Kontakte](examples/contacts.md), [OAuth2](examples/oauth2-authentication.md), [Fehlerbehandlung](examples/error-handling.md) und [Partner-Integrationen](examples/partner-integrations.md).
 
+## Zuverlässiger OAuth2-Refresh
+
+Automatische und explizite Token-Refreshes nutzen denselben Cache-Lock und laden danach die aktuellen Zugangsdaten erneut. Nach einer API-401 wird ein bereits ersetztes Token verwendet oder einmal erneuert und die Anfrage einmal wiederholt. Neue Token-Paare werden vor der Rückgabe gespeichert.
+
+Alle Worker müssen denselben gemeinsamen Lock-Store nutzen, etwa Redis oder einen Datenbank-Cache. Array- und Datei-Stores eignen sich nicht für diese Koordination. Konfiguriere die URL des OAuth-Servers separat über `LEXWARE_OFFICE_OAUTH2_BASE_URL` und den Lock-Store über `LEXWARE_OFFICE_OAUTH2_LOCK_STORE`.
+
+Die [Refresh-Dokumentation](examples/reliable-oauth-refresh.md) erklärt Konfiguration, Fehlerkategorien, Scheduler-Aufrufe mit größerem Zeitfenster, verschlüsselte eigene Storages und die Verhaltensänderungen für das nächste Upgrade. Bestehende `LexwareTokenStorage`-Implementierungen bleiben nutzbar. Die optionale Schnittstelle `RefreshTokenStorage` ergänzt atomaren Schutz vor veralteten Schreibzugriffen.
+
 ## Implementierungsstand
 
 Diese Ressourcen und Methoden sind derzeit im Paket implementiert:
