@@ -124,6 +124,7 @@ class OAuth2ServiceTest extends TestCase
         $httpClientProperty = $reflection->getProperty('httpClient');
         $httpClientProperty->setValue($this->oauth2Service, $client);
 
+        $this->oauth2Service->getTokenStorage()->storeToken(new LexwareAccessToken('old_access_token', 'Bearer', 3600, 'old_refresh_token'));
         $token = $this->oauth2Service->refreshToken('old_refresh_token');
 
         $this->assertEquals('new_access_token_123', $token->getAccessToken());
@@ -378,6 +379,7 @@ class OAuth2ServiceTest extends TestCase
         $this->expectException(LexwareOfficeApiException::class);
         $this->expectExceptionMessage('Failed to refresh token');
 
+        $this->oauth2Service->getTokenStorage()->storeToken(new LexwareAccessToken('old_access_token', 'Bearer', 3600, 'invalid_refresh_token'));
         $this->oauth2Service->refreshToken('invalid_refresh_token');
     }
 

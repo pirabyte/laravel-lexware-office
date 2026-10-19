@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice;
 
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
@@ -33,14 +35,15 @@ class LexwareOfficeFactory
         $clientSecret = $clientSecret ?: config('lexware-office.oauth2.client_secret');
         $redirectUri = $redirectUri ?: config('lexware-office.oauth2.redirect_uri');
         $scopes = $scopes ?: config('lexware-office.oauth2.scopes', []);
-        $tokenStorage = $tokenStorage ?: config('lexware-office.oauth2.token_storage', 'cache');
+        $storageConfig = config('lexware-office.oauth2.token_storage', 'cache');
+        $tokenStorage = $tokenStorage ?: (is_array($storageConfig) ? ($storageConfig['driver'] ?? 'cache') : $storageConfig);
 
         // Create LexwareOffice instance
         $lexwareOffice = new LexwareOffice(
             config('lexware-office.base_url'),
             config('lexware-office.api_key'), // Fallback API key
             config('lexware-office.rate_limit_key', 'lexware_office_api').'_user_'.$userId,
-            config('lexware-office.max_requests_per_minute', 50)
+            (int) config('lexware-office.max_requests_per_minute', 50)
         );
 
         // Create OAuth2 service if credentials are available
@@ -49,7 +52,7 @@ class LexwareOfficeFactory
                 $clientId,
                 $clientSecret,
                 $redirectUri,
-                rtrim(config('lexware-office.base_url'), '/v1'), // Remove /v1 for OAuth endpoints
+                config('lexware-office.oauth2.base_url') ?: preg_replace('~/v1/?$~', '', rtrim(config('lexware-office.base_url'), '/')),
                 $scopes
             );
 
@@ -80,7 +83,7 @@ class LexwareOfficeFactory
             $baseUrl ?: config('lexware-office.base_url'),
             $apiKey,
             $rateLimitKey,
-            config('lexware-office.max_requests_per_minute', 50)
+            (int) config('lexware-office.max_requests_per_minute', 50)
         );
     }
 
@@ -107,13 +110,14 @@ class LexwareOfficeFactory
         $clientSecret = $clientSecret ?: config('lexware-office.oauth2.client_secret');
         $redirectUri = $redirectUri ?: config('lexware-office.oauth2.redirect_uri');
         $scopes = $scopes ?: config('lexware-office.oauth2.scopes', []);
-        $tokenStorage = $tokenStorage ?: config('lexware-office.oauth2.token_storage', 'cache');
+        $storageConfig = config('lexware-office.oauth2.token_storage', 'cache');
+        $tokenStorage = $tokenStorage ?: (is_array($storageConfig) ? ($storageConfig['driver'] ?? 'cache') : $storageConfig);
 
         $oauth2Service = new LexwareOAuth2Service(
             $clientId,
             $clientSecret,
             $redirectUri,
-            rtrim(config('lexware-office.base_url'), '/v1'),
+            config('lexware-office.oauth2.base_url') ?: preg_replace('~/v1/?$~', '', rtrim(config('lexware-office.base_url'), '/')),
             $scopes
         );
 
@@ -138,7 +142,8 @@ class LexwareOfficeFactory
                 config('lexware-office.oauth2.token_storage.user_column', 'user_id')
             ),
             'cache' => new CacheTokenStorage(
-                config('lexware-office.oauth2.token_storage.cache_key', 'lexware_office_token').'_user_'.$userId
+                config('lexware-office.oauth2.token_storage.cache_key', 'lexware_office_token').'_user_'.$userId,
+                config('lexware-office.oauth2.token_storage.cache_store')
             ),
             default => throw new LexwareOfficeApiException("Invalid token storage type: {$driver}")
         };

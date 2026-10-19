@@ -23,6 +23,15 @@ return [
 
     // OAuth2 Configuration (optional, for automatic token management)
     'oauth2' => [
+        // Null preserves the legacy resource URL fallback. Set the authorization server URL explicitly.
+        'base_url' => env('LEXWARE_OFFICE_OAUTH2_BASE_URL'),
+        'refresh' => [
+            'lock_store' => env('LEXWARE_OFFICE_OAUTH2_LOCK_STORE'),
+            'lock_ttl' => 90,
+            'lock_wait' => 10,
+            'http_timeout' => 20,
+            'minimum_remaining_seconds' => 30,
+        ],
         'enabled' => env('LEXWARE_OFFICE_OAUTH2_ENABLED', false),
         'client_id' => env('LEXWARE_OFFICE_OAUTH2_CLIENT_ID'),
         'client_secret' => env('LEXWARE_OFFICE_OAUTH2_CLIENT_SECRET'),
@@ -35,6 +44,8 @@ return [
         // Token Storage Configuration
         'token_storage' => [
             'driver' => env('LEXWARE_OFFICE_TOKEN_STORAGE', 'cache'), // 'cache' or 'database'
+            'cache_store' => env('LEXWARE_OFFICE_TOKEN_CACHE_STORE'),
+            'refresh_token_ttl' => 31536000, // Retain the pair independently of access token expiry.
             'cache_key' => 'lexware_office_token',
             'database_table' => 'lexware_tokens',
             'user_column' => 'user_id',

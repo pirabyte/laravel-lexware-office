@@ -1,12 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice\OAuth2;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOAuthException;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
+use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareTokenPersistenceException;
+use Psr\Http\Message\ResponseInterface;
 
 class LexwareOAuth2Service
 {
@@ -25,11 +33,12 @@ class LexwareOAuth2Service
     protected ?LexwareTokenStorage $tokenStorage = null;
 
     public function __construct(
-        string $clientId,
-        string $clientSecret,
+        #[\SensitiveParameter] string $clientId,
+        #[\SensitiveParameter] string $clientSecret,
         string $redirectUri,
         string $baseUrl = 'https://api.lexoffice.io',
-        array $scopes = []
+        array $scopes = [],
+        protected ?string $connectionKey = null
     ) {
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
@@ -105,7 +114,7 @@ class LexwareOAuth2Service
      *
      * @throws LexwareOfficeApiException
      */
-    public function exchangeCodeForToken(string $code, string $state): LexwareAccessToken
+    public function exchangeCodeForToken(#[\SensitiveParameter] string $code, string $state): LexwareAccessToken
     {
         $codeVerifier = $this->retrievePkceData($state);
 
@@ -113,126 +122,265 @@ class LexwareOAuth2Service
             throw new LexwareOfficeApiException('Invalid or expired state parameter', 400);
         }
 
-        $params = [
+        $accessToken = $this->requestToken([
             'grant_type' => 'authorization_code',
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
             'code' => $code,
             'redirect_uri' => $this->redirectUri,
             'code_verifier' => $codeVerifier,
-        ];
+        ], 'Failed to exchange authorization code');
 
-        try {
-            $response = $this->httpClient->post($this->baseUrl.'/oauth2/token', [
-                'form_params' => $params,
-            ]);
+        $this->persistToken($accessToken);
+        $this->cleanupPkceData($state);
 
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new LexwareOfficeApiException('Invalid JSON response from token endpoint', 500);
-            }
-
-            $accessToken = LexwareAccessToken::fromArray($data);
-
-            // Store the token
-            $this->getTokenStorage()->storeToken($accessToken);
-
-            // Clean up PKCE data
-            $this->cleanupPkceData($state);
-
-            return $accessToken;
-
-        } catch (GuzzleException $e) {
-            throw new LexwareOfficeApiException(
-                'Failed to exchange authorization code: '.$e->getMessage(),
-                $e->getCode() ?: 500,
-                $e
-            );
-        }
+        return $accessToken;
     }
 
     /**
-     * Refresh an access token using refresh token
+     * Force a refresh, reusing a newer pair if another worker refreshed while waiting.
      *
-     * @param  string|null  $refreshToken  Optional specific refresh token, otherwise uses stored token
-     *
-     * @throws LexwareOfficeApiException
+     * @param  string|null  $refreshToken  Deprecated and ignored. Stored credentials are always authoritative.
      */
-    public function refreshToken(?string $refreshToken = null): LexwareAccessToken
+    public function refreshToken(#[\SensitiveParameter] ?string $refreshToken = null): LexwareAccessToken
     {
-        if (! $refreshToken) {
-            $currentToken = $this->getTokenStorage()->getToken();
-            if (! $currentToken || ! $currentToken->getRefreshToken()) {
-                throw new LexwareOfficeApiException('No refresh token available', 400);
-            }
-            $refreshToken = $currentToken->getRefreshToken();
-        }
-
-        $params = [
-            'grant_type' => 'refresh_token',
-            'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret,
-            'refresh_token' => $refreshToken,
-        ];
-
-        try {
-            $response = $this->httpClient->post($this->baseUrl.'/oauth2/token', [
-                'form_params' => $params,
-            ]);
-
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new LexwareOfficeApiException('Invalid JSON response from token refresh', 500);
-            }
-
-            $accessToken = LexwareAccessToken::fromArray($data);
-
-            // Store the new token
-            $this->getTokenStorage()->storeToken($accessToken);
-
-            return $accessToken;
-
-        } catch (GuzzleException $e) {
-            throw new LexwareOfficeApiException(
-                'Failed to refresh token: '.$e->getMessage(),
-                $e->getCode() ?: 500,
-                $e
-            );
-        }
-    }
-
-    /**
-     * Get current valid access token (refreshes automatically if needed)
-     *
-     * @throws LexwareOfficeApiException
-     */
-    public function getValidAccessToken(): ?LexwareAccessToken
-    {
-        $token = $this->getTokenStorage()->getToken();
+        $token = $this->refreshCurrentToken(0, true);
 
         if (! $token) {
-            return null;
+            throw new LexwareOAuthException('No refresh token available', OAuthErrorCategory::ClientConfiguration);
         }
 
-        // If token is not expired and not expiring soon, return it
-        if (! $token->isExpired() && ! $token->isExpiringSoon()) {
-            return $token;
-        }
-
-        // If token is expired or expiring soon, try to refresh it
-        if ($token->getRefreshToken()) {
-            return $this->refreshToken($token->getRefreshToken());
-        }
-
-        // If token is expired but no refresh token, return null
-        if ($token->isExpired()) {
-            return null;
-        }
-
-        // Token is expiring soon but no refresh token, return current token
         return $token;
+    }
+
+    public function getValidAccessToken(?int $minimumRemainingSeconds = null): ?LexwareAccessToken
+    {
+        $minimumRemainingSeconds ??= (int) config('lexware-office.oauth2.refresh.minimum_remaining_seconds', 30);
+        if ($minimumRemainingSeconds < 0) {
+            throw new \InvalidArgumentException('Minimum remaining lifetime must not be negative.');
+        }
+
+        return $this->refreshCurrentToken($minimumRemainingSeconds);
+    }
+
+    /** Recover from an API 401 without rotating a pair another worker already replaced. */
+    public function refreshAfterUnauthorized(#[\SensitiveParameter] string $rejectedAccessToken): ?LexwareAccessToken
+    {
+        return $this->refreshCurrentToken(0, true, $rejectedAccessToken);
+    }
+
+    public function getRefreshLockKey(): string
+    {
+        $storage = $this->getTokenStorage();
+        $identity = $this->connectionKey ?? ($storage instanceof RefreshTokenStorage ? $storage->getRefreshLockKey() : 'default');
+
+        return 'lexware-oauth-refresh:'.hash('sha256', json_encode([
+            config('app.env'), $this->baseUrl, $this->clientId, $identity,
+        ], JSON_THROW_ON_ERROR));
+    }
+
+    private function refreshCurrentToken(
+        int $minimumRemainingSeconds,
+        bool $force = false,
+        #[\SensitiveParameter] ?string $rejectedAccessToken = null
+    ): ?LexwareAccessToken {
+        $observed = $this->readToken();
+        if (! $force && (! $observed || ! $observed->isExpiringSoon($minimumRemainingSeconds))) {
+            return $observed;
+        }
+
+        $ttl = (int) config('lexware-office.oauth2.refresh.lock_ttl', 90);
+        $wait = (int) config('lexware-office.oauth2.refresh.lock_wait', 10);
+        $timeout = (int) config('lexware-office.oauth2.refresh.http_timeout', 20);
+        if ($timeout < 1 || $ttl < $timeout + 10 || $wait < 0) {
+            throw new LexwareOAuthException('Invalid OAuth refresh lock or timeout configuration.', OAuthErrorCategory::ClientConfiguration);
+        }
+
+        $lock = Cache::store(config('lexware-office.oauth2.refresh.lock_store'))->lock($this->getRefreshLockKey(), $ttl);
+
+        try {
+            return $lock->block($wait, function () use ($observed, $force, $minimumRemainingSeconds, $rejectedAccessToken): ?LexwareAccessToken {
+                $current = $this->readToken();
+                if (! $current) {
+                    return null;
+                }
+
+                $replaced = $observed && $current->getRefreshToken() !== $observed->getRefreshToken();
+                $rejectedTokenReplaced = $rejectedAccessToken !== null && $current->getAccessToken() !== $rejectedAccessToken;
+                if (($replaced || $rejectedTokenReplaced) && ! $current->isExpired(0)) {
+                    return $current;
+                }
+                if (! $force && ! $current->isExpiringSoon($minimumRemainingSeconds)) {
+                    return $current;
+                }
+                if (! $current->getRefreshToken()) {
+                    return ! $force && ! $current->isExpired(0) ? $current : null;
+                }
+
+                try {
+                    $token = $this->requestToken([
+                        'grant_type' => 'refresh_token',
+                        'refresh_token' => $current->getRefreshToken(),
+                    ], 'Failed to refresh token');
+                } catch (LexwareOAuthException $e) {
+                    if ($e->category === OAuthErrorCategory::InvalidGrant) {
+                        $latest = $this->readToken();
+                        if ($latest?->getRefreshToken() !== $current->getRefreshToken()) {
+                            if ($latest && ! $latest->isExpired(0)) {
+                                return $latest;
+                            }
+
+                            throw new LexwareOAuthException('OAuth credentials changed during refresh.', OAuthErrorCategory::OutcomeUnknown);
+                        }
+                    }
+
+                    throw $e;
+                }
+
+                $this->persistToken($token, $current->getRefreshToken());
+
+                return $token;
+            });
+        } catch (LockTimeoutException) {
+            // block() releases only after acquisition. A timed-out waiter must never release the holder.
+            throw new LexwareOAuthException('Timed out waiting for OAuth refresh lock.', OAuthErrorCategory::Transient);
+        }
+    }
+
+    private function readToken(): ?LexwareAccessToken
+    {
+        try {
+            return $this->getTokenStorage()->getToken();
+        } catch (\Throwable) {
+            throw new LexwareOAuthException('Unable to read stored OAuth credentials.', OAuthErrorCategory::ClientConfiguration);
+        }
+    }
+
+    private function persistToken(
+        #[\SensitiveParameter] LexwareAccessToken $token,
+        #[\SensitiveParameter] ?string $previousRefreshToken = null
+    ): void {
+        $storage = $this->getTokenStorage();
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            try {
+                if ($previousRefreshToken === null) {
+                    $storage->storeToken($token);
+
+                    return;
+                }
+
+                // An acknowledged write may have succeeded before the storage transport failed.
+                $current = $storage->getToken();
+                if ($current?->getRefreshToken() === $token->getRefreshToken()
+                    && $current->getAccessToken() === $token->getAccessToken()) {
+                    return;
+                }
+
+                if ($storage instanceof RefreshTokenStorage) {
+                    $stored = $storage->storeTokenIfCurrent($token, $previousRefreshToken);
+                } else {
+                    // Legacy implementations are protected by the refresh lock, but cannot offer atomic CAS.
+                    $stored = $current?->getRefreshToken() === $previousRefreshToken;
+                    if ($stored) {
+                        $storage->storeToken($token);
+                    }
+                }
+
+            } catch (\Throwable) {
+                // Retry only the local write with the response already received, never the rotating grant.
+                continue;
+            }
+
+            if (! $stored) {
+                throw new LexwareOAuthException('Stored OAuth credentials changed during refresh; refusing a stale write.', OAuthErrorCategory::OutcomeUnknown, 200);
+            }
+
+            return;
+        }
+
+        throw new LexwareTokenPersistenceException($token);
+    }
+
+    private function requestToken(#[\SensitiveParameter] array $params, string $failureMessage): LexwareAccessToken
+    {
+        try {
+            $response = $this->httpClient->post($this->baseUrl.'/oauth2/token', [
+                'auth' => [$this->clientId, $this->clientSecret, 'basic'],
+                'form_params' => $params,
+                'http_errors' => false,
+                'allow_redirects' => false,
+                'timeout' => (int) config('lexware-office.oauth2.refresh.http_timeout', 20),
+                'connect_timeout' => 5,
+            ]);
+        } catch (GuzzleException $e) {
+            if ($e instanceof RequestException && $e->getResponse()) {
+                throw $this->tokenResponseException($e->getResponse(), $failureMessage);
+            }
+
+            $context = $e instanceof ConnectException || $e instanceof RequestException ? $e->getHandlerContext() : [];
+            // Only DNS resolution and connection refusal prove the request did not reach the server.
+            $category = in_array($context['errno'] ?? null, [6, 7], true)
+                ? OAuthErrorCategory::Transient : OAuthErrorCategory::OutcomeUnknown;
+
+            throw new LexwareOAuthException($failureMessage.': transport failure.', $category);
+        }
+
+        if ($response->getStatusCode() !== 200) {
+            throw $this->tokenResponseException($response, $failureMessage);
+        }
+
+        $data = json_decode((string) $response->getBody(), true);
+        if (! is_array($data)
+            || ! is_string($data['access_token'] ?? null) || $data['access_token'] === ''
+            || preg_match('/[\x00-\x20\x7f]/', $data['access_token'])
+            || ! is_string($data['refresh_token'] ?? null) || $data['refresh_token'] === ''
+            || preg_match('/[\x00-\x20\x7f]/', $data['refresh_token'])
+            || ! is_int($data['expires_in'] ?? null) || $data['expires_in'] <= 0
+            || (array_key_exists('token_type', $data) && (! is_string($data['token_type']) || strcasecmp($data['token_type'], 'Bearer') !== 0))
+            || (array_key_exists('scope', $data) && ! is_string($data['scope']))
+        ) {
+            throw new LexwareOAuthException($failureMessage.': invalid token response.', OAuthErrorCategory::ClientConfiguration, 200);
+        }
+
+        try {
+            $token = LexwareAccessToken::fromArray($data);
+            $token->getExpiresAt();
+
+            return $token;
+        } catch (\Throwable) {
+            throw new LexwareOAuthException($failureMessage.': invalid token lifetime.', OAuthErrorCategory::ClientConfiguration, 200);
+        }
+    }
+
+    private function tokenResponseException(#[\SensitiveParameter] ResponseInterface $response, string $message): LexwareOAuthException
+    {
+        $status = $response->getStatusCode();
+        $data = json_decode((string) $response->getBody(), true);
+        $descriptions = [
+            'invalid_grant' => 'The current grant is invalid or expired.',
+            'invalid_client' => 'Client authentication failed.',
+            'unauthorized_client' => 'The OAuth client is not authorized.',
+            'invalid_request' => 'The OAuth request is malformed.',
+            'unsupported_grant_type' => 'The grant type is not supported.',
+            'invalid_scope' => 'The requested scope is invalid.',
+        ];
+        $error = is_array($data) && is_string($data['error'] ?? null) && isset($descriptions[$data['error']]) ? $data['error'] : null;
+        $category = match (true) {
+            $status === 429 || $status >= 500 => OAuthErrorCategory::Transient,
+            $error === 'invalid_grant' => OAuthErrorCategory::InvalidGrant,
+            default => OAuthErrorCategory::ClientConfiguration,
+        };
+
+        $retryAfter = $response->getHeaderLine('Retry-After');
+        $retrySeconds = ctype_digit($retryAfter) ? min((int) $retryAfter, PHP_INT_MAX) : null;
+        if ($retrySeconds === null && $retryAfter !== '') {
+            $date = strtotime($retryAfter);
+            $retrySeconds = $date === false ? null : max(0, $date - time());
+        }
+
+        // Server prose can echo arbitrary credentials. Expose only bounded canonical descriptions.
+        $description = isset($data['error_description']) && is_string($data['error_description'])
+            ? ($descriptions[$error] ?? 'The token endpoint returned an unrecognized error.') : null;
+
+        return new LexwareOAuthException($message.'.', $category, $status, $error, $description, $retrySeconds);
     }
 
     /**
@@ -252,11 +400,8 @@ class LexwareOAuth2Service
 
         try {
             $this->httpClient->post($this->baseUrl.'/oauth2/revoke', [
-                'form_params' => [
-                    'token' => $token,
-                    'client_id' => $this->clientId,
-                    'client_secret' => $this->clientSecret,
-                ],
+                'auth' => [$this->clientId, $this->clientSecret, 'basic'],
+                'form_params' => ['token' => $token],
             ]);
 
             // Clear stored token

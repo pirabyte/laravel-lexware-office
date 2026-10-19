@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice\OAuth2;
 
 use Illuminate\Support\Facades\DB;
 
-class DatabaseTokenStorage implements LexwareTokenStorage
+class DatabaseTokenStorage implements RefreshTokenStorage
 {
     protected string $table;
 
@@ -25,9 +27,9 @@ class DatabaseTokenStorage implements LexwareTokenStorage
     /**
      * Store an access token in database
      */
-    public function storeToken(LexwareAccessToken $token): void
+    private function tokenData(#[\SensitiveParameter] LexwareAccessToken $token): array
     {
-        $data = [
+        return [
             $this->userColumn => $this->userId,
             'access_token' => $token->getAccessToken(),
             'token_type' => $token->getTokenType(),
@@ -38,10 +40,30 @@ class DatabaseTokenStorage implements LexwareTokenStorage
             'updated_at' => now(),
         ];
 
+    }
+
+    public function getRefreshLockKey(): string
+    {
+        return 'database:'.DB::connection()->getName().':'.DB::connection()->getDatabaseName()
+            .':'.$this->table.':'.$this->userColumn.':'.$this->userId;
+    }
+
+    public function storeToken(#[\SensitiveParameter] LexwareAccessToken $token): void
+    {
         DB::table($this->table)->updateOrInsert(
             [$this->userColumn => $this->userId],
-            $data
+            $this->tokenData($token)
         );
+    }
+
+    public function storeTokenIfCurrent(
+        #[\SensitiveParameter] LexwareAccessToken $token,
+        #[\SensitiveParameter] string $refreshToken
+    ): bool {
+        return DB::table($this->table)
+            ->where($this->userColumn, $this->userId)
+            ->where('refresh_token', $refreshToken)
+            ->update($this->tokenData($token)) === 1;
     }
 
     /**
@@ -61,15 +83,13 @@ class DatabaseTokenStorage implements LexwareTokenStorage
             return new LexwareAccessToken(
                 $record->access_token,
                 $record->token_type ?? 'Bearer',
-                $record->expires_in ?? 3600,
+                (int) ($record->expires_in ?? 3600),
                 $record->refresh_token,
                 json_decode($record->scopes ?? '[]', true) ?: [],
                 new \DateTime($record->created_at)
             );
         } catch (\Exception $e) {
-            // If token data is corrupted, clear it
-            $this->clearToken();
-
+            // Do not delete credentials that another worker may have replaced.
             return null;
         }
     }
