@@ -399,10 +399,15 @@ class LexwareOAuth2Service
         }
 
         try {
-            $this->httpClient->post($this->baseUrl.'/oauth2/revoke', [
+            $response = $this->httpClient->post($this->baseUrl.'/oauth2/revoke', [
                 'auth' => [$this->clientId, $this->clientSecret, 'basic'],
                 'form_params' => ['token' => $token],
+                'allow_redirects' => false,
             ]);
+
+            if ($response->getStatusCode() >= 300 && $response->getStatusCode() < 400) {
+                return false;
+            }
 
             // Clear stored token
             $this->getTokenStorage()->clearToken();
