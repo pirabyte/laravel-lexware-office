@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Pirabyte\LaravelLexwareOffice\Tests\Feature;
 
-use Fiber;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Handler\MockHandler;
@@ -54,7 +53,6 @@ class ReliableTokenRefreshTest extends TestCase
         $calls = 0;
         $handler = function () use (&$calls): Response {
             $calls++;
-            Fiber::suspend('refresh-in-flight');
 
             return $this->tokenResponse();
         };
@@ -65,24 +63,32 @@ class ReliableTokenRefreshTest extends TestCase
             'explicit' => $service->refreshToken('ignored-stale-input'),
             'unauthorized' => $service->refreshAfterUnauthorized('sample-old-access'),
         };
-        $holder = new Fiber(fn () => $invoke($first));
-        $waiter = new Fiber(fn () => $invoke($second));
+        $holder = Cache::lock($first->getRefreshLockKey(), 90);
+        $this->assertTrue($holder->get());
+        $holderToken = null;
         Sleep::fake();
-        Sleep::whenFakingSleep(fn () => Fiber::suspend('waiting-for-lock'));
+        // Stage the holder's refresh inside the wait, without switching fibers in Sleep's destructor.
+        Sleep::whenFakingSleep(function () use ($holder, $invoke, $first, $storage, &$calls, &$holderToken): void {
+            $this->assertTrue($holder->isOwnedByCurrentProcess());
+            $this->assertSame(0, $calls);
+            $this->assertSame('sample-old-refresh', $storage->getToken()->getRefreshToken());
+            $holder->release();
+            $holderToken = $invoke($first);
+            $this->assertSame('sample-new-refresh', $storage->getToken()->getRefreshToken());
+        });
 
-        $this->assertSame('refresh-in-flight', $holder->start());
-        $this->assertSame('waiting-for-lock', $waiter->start());
-        $this->assertSame(1, $calls);
-        $this->assertSame('sample-old-refresh', $storage->getToken()->getRefreshToken());
-        $holder->resume();
-        $this->assertSame('sample-new-refresh', $storage->getToken()->getRefreshToken());
-        $waiter->resume();
+        try {
+            $waiterToken = $invoke($second);
+        } finally {
+            $holder->release();
+        }
 
-        $this->assertTrue($holder->isTerminated());
-        $this->assertTrue($waiter->isTerminated());
+        Sleep::assertSleptTimes(1);
         $this->assertSame(1, $calls);
-        $this->assertSame('sample-new-access', $holder->getReturn()->getAccessToken());
-        $this->assertSame('sample-new-access', $waiter->getReturn()->getAccessToken());
+        $this->assertSame('sample-new-access', $holderToken->getAccessToken());
+        $this->assertSame('sample-new-refresh', $holderToken->getRefreshToken());
+        $this->assertSame('sample-new-access', $waiterToken->getAccessToken());
+        $this->assertSame('sample-new-refresh', $waiterToken->getRefreshToken());
     }
 
     public function test_timed_out_waiter_does_not_release_the_holders_lock(): void
