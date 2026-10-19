@@ -325,7 +325,7 @@ class AutomaticTokenRefreshTest extends TestCase
         $this->setMockHttpClient($lexware, $mock);
 
         // Get valid token should trigger proactive refresh
-        $validToken = $lexware->getValidOAuth2Token();
+        $validToken = $lexware->getValidOAuth2Token(300);
         $this->assertEquals('proactively_refreshed_token', $validToken->getAccessToken());
 
         // Subsequent API call should use the fresh token
@@ -396,7 +396,7 @@ class AutomaticTokenRefreshTest extends TestCase
         $this->assertFalse($updatedToken->isExpiringSoon());
     }
 
-    public function test_concurrent_requests_handle_refresh_gracefully()
+    public function test_sequential_requests_reuse_a_refreshed_token()
     {
         $userId = 'refresh_user_8';
         $lexware1 = LexwareOfficeFactory::forUser($userId);

@@ -2,6 +2,7 @@
 
 namespace Pirabyte\LaravelLexwareOffice\Tests\Unit;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Pirabyte\LaravelLexwareOffice\OAuth2\CacheTokenStorage;
@@ -35,6 +36,38 @@ class TokenStorageTest extends TestCase
         Cache::flush();
         DB::getSchemaBuilder()->dropIfExists('lexware_tokens');
         parent::tearDown();
+    }
+
+    public function test_cache_storage_keeps_refresh_token_after_access_token_expiry(): void
+    {
+        $storage = new CacheTokenStorage('long-lived');
+        $storage->storeToken(new LexwareAccessToken('sample-access', 'Bearer', 60, 'sample-refresh'));
+
+        $this->travel(2)->days();
+
+        $this->assertSame('sample-refresh', $storage->getToken()->getRefreshToken());
+    }
+
+    public function test_cache_storage_rejects_stale_conditional_writes(): void
+    {
+        $storage = new CacheTokenStorage('conditional');
+        $storage->storeToken(new LexwareAccessToken('first-access', 'Bearer', 3600, 'first-refresh'));
+        $newer = new LexwareAccessToken('newer-access', 'Bearer', 3600, 'newer-refresh');
+
+        $this->assertTrue($storage->storeTokenIfCurrent($newer, 'first-refresh'));
+        $this->assertFalse($storage->storeTokenIfCurrent(new LexwareAccessToken('stale-access', 'Bearer', 3600, 'stale-refresh'), 'first-refresh'));
+        $this->assertSame('newer-refresh', $storage->getToken()->getRefreshToken());
+    }
+
+    public function test_database_storage_rejects_stale_conditional_writes(): void
+    {
+        $storage = new DatabaseTokenStorage('conditional');
+        $storage->storeToken(new LexwareAccessToken('first-access', 'Bearer', 3600, 'first-refresh'));
+        $newer = new LexwareAccessToken('newer-access', 'Bearer', 3600, 'newer-refresh');
+
+        $this->assertTrue($storage->storeTokenIfCurrent($newer, 'first-refresh'));
+        $this->assertFalse($storage->storeTokenIfCurrent(new LexwareAccessToken('stale-access', 'Bearer', 3600, 'stale-refresh'), 'first-refresh'));
+        $this->assertSame('newer-refresh', $storage->getToken()->getRefreshToken());
     }
 
     // Cache Token Storage Tests
@@ -313,7 +346,7 @@ class TokenStorageTest extends TestCase
         $this->assertNotNull($record, 'Record should exist in database');
         $this->assertNotNull($record->updated_at, 'updated_at should not be null');
 
-        $updatedAt = \Carbon\Carbon::parse($record->updated_at);
+        $updatedAt = Carbon::parse($record->updated_at);
 
         $this->assertTrue($updatedAt->between($beforeStore, $afterStore));
     }

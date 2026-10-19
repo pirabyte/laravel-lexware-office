@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pirabyte\LaravelLexwareOffice;
 
 use GuzzleHttp\Client;
@@ -7,6 +9,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\RateLimiter;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
+use Pirabyte\LaravelLexwareOffice\OAuth2\LexwareAccessToken;
 use Pirabyte\LaravelLexwareOffice\OAuth2\LexwareOAuth2Service;
 use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
 use Pirabyte\LaravelLexwareOffice\Resources\CountryResource;
@@ -267,13 +270,13 @@ class LexwareOffice
     /**
      * Get valid OAuth2 token
      */
-    public function getValidOAuth2Token()
+    public function getValidOAuth2Token(?int $minimumRemainingSeconds = null)
     {
         if (! $this->oauth2Service) {
             throw new LexwareOfficeApiException('OAuth2 service not configured');
         }
 
-        return $this->oauth2Service->getValidAccessToken();
+        return $this->oauth2Service->getValidAccessToken($minimumRemainingSeconds);
     }
 
     /**
@@ -586,7 +589,7 @@ class LexwareOffice
             // Check if this is an authentication error and we have OAuth2
             if ($this->oauth2Service && $e->getResponse() && $e->getResponse()->getStatusCode() === 401) {
                 // Try to refresh token and retry request once
-                if ($this->refreshTokenAndRetry()) {
+                if ($this->refreshTokenAndRetry(preg_replace('/^Bearer /i', '', $e->getRequest()->getHeaderLine('Authorization')))) {
                     try {
                         $response = $callback();
                         if ($this->maxRequestsPerMinute > 0) {
@@ -602,8 +605,8 @@ class LexwareOffice
 
                         return $data;
                     } catch (RequestException $retryException) {
-                        // If retry also fails, throw the original exception
-                        throw $this->handleRequestException($e);
+                        // Surface the response from the one permitted retry.
+                        throw $this->handleRequestException($retryException);
                     }
                 }
             }
@@ -685,46 +688,30 @@ class LexwareOffice
         $token = $this->oauth2Service->getValidAccessToken();
 
         if ($token) {
-            // Update client with fresh token
-            $this->client = $this->client->getConfig('handler') ?
-                new Client(array_merge($this->client->getConfig(), [
-                    'headers' => array_merge($this->client->getConfig('headers') ?? [], [
-                        'Authorization' => $token->getAuthorizationHeader(),
-                    ]),
-                ])) :
-                new Client([
-                    'base_uri' => $this->client->getConfig('base_uri'),
-                    'headers' => array_merge($this->client->getConfig('headers') ?? [], [
-                        'Authorization' => $token->getAuthorizationHeader(),
-                    ]),
-                ]);
+            $this->useAccessToken($token);
         }
     }
 
-    /**
-     * Try to refresh token and update client
-     */
-    protected function refreshTokenAndRetry(): bool
+    protected function useAccessToken(#[\SensitiveParameter] LexwareAccessToken $token): void
     {
-        if (! $this->oauth2Service) {
+        $this->client = new Client(array_merge($this->client->getConfig(), [
+            'headers' => array_merge($this->client->getConfig('headers') ?? [], [
+                'Authorization' => $token->getAuthorizationHeader(),
+            ]),
+        ]));
+        $this->httpClient = $this->client;
+    }
+
+    protected function refreshTokenAndRetry(#[\SensitiveParameter] string $rejectedAccessToken): bool
+    {
+        $token = $this->oauth2Service?->refreshAfterUnauthorized($rejectedAccessToken);
+        if (! $token) {
             return false;
         }
 
-        try {
-            $token = $this->oauth2Service->refreshToken();
+        $this->useAccessToken($token);
 
-            if ($token) {
-                // Update client with new token
-                $this->ensureValidToken();
-
-                return true;
-            }
-        } catch (LexwareOfficeApiException $e) {
-            // Token refresh failed, can't retry
-            return false;
-        }
-
-        return false;
+        return true;
     }
 
     // endregion Helper

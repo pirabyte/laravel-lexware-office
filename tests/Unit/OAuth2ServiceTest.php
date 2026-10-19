@@ -6,9 +6,11 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\OAuth2\CacheTokenStorage;
 use Pirabyte\LaravelLexwareOffice\OAuth2\LexwareAccessToken;
@@ -124,6 +126,7 @@ class OAuth2ServiceTest extends TestCase
         $httpClientProperty = $reflection->getProperty('httpClient');
         $httpClientProperty->setValue($this->oauth2Service, $client);
 
+        $this->oauth2Service->getTokenStorage()->storeToken(new LexwareAccessToken('old_access_token', 'Bearer', 3600, 'old_refresh_token'));
         $token = $this->oauth2Service->refreshToken('old_refresh_token');
 
         $this->assertEquals('new_access_token_123', $token->getAccessToken());
@@ -309,6 +312,44 @@ class OAuth2ServiceTest extends TestCase
         $this->assertNull($tokenStorage->getToken());
     }
 
+    public static function revocationRedirects(): array
+    {
+        return [
+            '307 with stored access token' => [307, false],
+            '308 with stored access token' => [308, false],
+            '307 with explicit refresh token' => [307, true],
+            '308 with explicit refresh token' => [308, true],
+        ];
+    }
+
+    #[DataProvider('revocationRedirects')]
+    public function test_revocation_redirect_fails_without_following_or_clearing_stored_token(int $status, bool $revokeRefreshToken): void
+    {
+        $existingToken = new LexwareAccessToken('stored_access_token', 'Bearer', 3600, 'stored_refresh_token');
+        $tokenStorage = new CacheTokenStorage('test_key');
+        $tokenStorage->storeToken($existingToken);
+        $this->oauth2Service->setTokenStorage($tokenStorage);
+
+        $mock = new MockHandler([
+            new Response($status, ['Location' => 'https://example.com/redirect-target']),
+            new Response(200),
+        ]);
+        $history = [];
+        $handlerStack = HandlerStack::create($mock);
+        $handlerStack->push(Middleware::history($history));
+        $client = new Client(['handler' => $handlerStack]);
+        $reflection = new \ReflectionClass($this->oauth2Service);
+        $reflection->getProperty('httpClient')->setValue($this->oauth2Service, $client);
+
+        $result = $this->oauth2Service->revokeToken($revokeRefreshToken ? 'stored_refresh_token' : null);
+
+        $this->assertCount(1, $history);
+        $this->assertSame('https://api.lexoffice.de/oauth2/revoke', (string) $history[0]['request']->getUri());
+        $this->assertFalse($result);
+        $this->assertSame('stored_access_token', $tokenStorage->getToken()?->getAccessToken());
+        $this->assertSame('stored_refresh_token', $tokenStorage->getToken()?->getRefreshToken());
+    }
+
     public function test_clears_token_even_when_revocation_fails()
     {
         $existingToken = new LexwareAccessToken(
@@ -378,6 +419,7 @@ class OAuth2ServiceTest extends TestCase
         $this->expectException(LexwareOfficeApiException::class);
         $this->expectExceptionMessage('Failed to refresh token');
 
+        $this->oauth2Service->getTokenStorage()->storeToken(new LexwareAccessToken('old_access_token', 'Bearer', 3600, 'invalid_refresh_token'));
         $this->oauth2Service->refreshToken('invalid_refresh_token');
     }
 
