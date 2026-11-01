@@ -6,17 +6,26 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\RateLimiter;
+use Pirabyte\LaravelLexwareOffice\Enums\FileFormat;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\OAuth2\LexwareOAuth2Service;
 use Pirabyte\LaravelLexwareOffice\Resources\ContactResource;
 use Pirabyte\LaravelLexwareOffice\Resources\CountryResource;
+use Pirabyte\LaravelLexwareOffice\Resources\CreditNoteResource;
+use Pirabyte\LaravelLexwareOffice\Resources\EventSubscriptionResource;
+use Pirabyte\LaravelLexwareOffice\Resources\FileResource;
 use Pirabyte\LaravelLexwareOffice\Resources\FinancialAccountResource;
 use Pirabyte\LaravelLexwareOffice\Resources\FinancialTransactionResource;
+use Pirabyte\LaravelLexwareOffice\Resources\InvoiceResource;
 use Pirabyte\LaravelLexwareOffice\Resources\PartnerIntegrationResource;
+use Pirabyte\LaravelLexwareOffice\Resources\PaymentResource;
 use Pirabyte\LaravelLexwareOffice\Resources\PostingCategoryResource;
+use Pirabyte\LaravelLexwareOffice\Resources\PrintLayoutResource;
 use Pirabyte\LaravelLexwareOffice\Resources\ProfileResource;
 use Pirabyte\LaravelLexwareOffice\Resources\TransactionAssignmentHintResource;
 use Pirabyte\LaravelLexwareOffice\Resources\VoucherResource;
+use Pirabyte\LaravelLexwareOffice\Responses\FileDownload;
+use Psr\Http\Message\ResponseInterface;
 
 class LexwareOffice
 {
@@ -31,6 +40,18 @@ class LexwareOffice
     protected string $rateLimitKey = 'lexware_office_api';
 
     protected int $maxRequestsPerMinute = 50;
+
+    protected InvoiceResource $invoices;
+
+    protected CreditNoteResource $creditNotes;
+
+    protected PrintLayoutResource $printLayouts;
+
+    protected PaymentResource $payments;
+
+    protected EventSubscriptionResource $eventSubscriptions;
+
+    protected FileResource $files;
 
     protected ContactResource $contacts;
 
@@ -77,6 +98,12 @@ class LexwareOffice
         // Alias for tests that use reflection to access httpClient
         $this->httpClient = $this->client;
 
+        $this->invoices = new InvoiceResource($this);
+        $this->creditNotes = new CreditNoteResource($this);
+        $this->printLayouts = new PrintLayoutResource($this);
+        $this->payments = new PaymentResource($this);
+        $this->eventSubscriptions = new EventSubscriptionResource($this);
+        $this->files = new FileResource($this);
         $this->contacts = new ContactResource($this);
         $this->vouchers = new VoucherResource($this);
         $this->profile = new ProfileResource($this);
@@ -94,6 +121,36 @@ class LexwareOffice
     public function setRateLimitKey(string $key): void
     {
         $this->rateLimitKey = $key;
+    }
+
+    public function invoices(): InvoiceResource
+    {
+        return $this->invoices;
+    }
+
+    public function creditNotes(): CreditNoteResource
+    {
+        return $this->creditNotes;
+    }
+
+    public function printLayouts(): PrintLayoutResource
+    {
+        return $this->printLayouts;
+    }
+
+    public function payments(): PaymentResource
+    {
+        return $this->payments;
+    }
+
+    public function eventSubscriptions(): EventSubscriptionResource
+    {
+        return $this->eventSubscriptions;
+    }
+
+    public function files(): FileResource
+    {
+        return $this->files;
     }
 
     // region Contacts
@@ -316,17 +373,33 @@ class LexwareOffice
      *
      * @throws LexwareOfficeApiException|GuzzleException
      */
-    public function post(string $endpoint, array $data): array
+    public function post(string $endpoint, array $data, array $query = []): array
     {
         try {
-            return $this->makeRequest(function () use ($endpoint, $data) {
-                return $this->client->post($endpoint, [
-                    'json' => $data,
-                ]);
+            return $this->makeRequest(function () use ($endpoint, $data, $query) {
+                $options = ['json' => $data];
+                if ($query !== []) {
+                    $options['query'] = $query;
+                }
+
+                return $this->client->post($endpoint, $options);
             });
         } catch (RequestException $e) {
             throw $this->handleRequestException($e);
         }
+    }
+
+    public function download(string $endpoint, FileFormat $format = FileFormat::DEFAULT): FileDownload
+    {
+        $this->ensureRateLimitAvailable();
+        $response = $this->executeResponse(function () use ($endpoint, $format) {
+            return $this->client->get($endpoint, [
+                'headers' => ['Accept' => $format->value],
+                'stream' => true,
+            ]);
+        });
+
+        return FileDownload::fromResponse($response);
     }
 
     /**
@@ -527,90 +600,57 @@ class LexwareOffice
      */
     protected function makeRequest(callable $callback)
     {
-        if ($this->maxRequestsPerMinute <= 0) {
-            return $this->executeRequest($callback);
-        }
-
-        // Check if we've exceeded our self-imposed rate limit
-        if (RateLimiter::tooManyAttempts($this->rateLimitKey, $this->maxRequestsPerMinute)) {
-            $seconds = RateLimiter::availableIn($this->rateLimitKey);
-
-            // Create a properly structured rate limit error
-            $errorData = [
-                'message' => 'Rate limit exceeded',
-                'details' => "Too many requests. Please wait {$seconds} seconds before retrying.",
-                'retryAfter' => $seconds,
-            ];
-
-            throw new LexwareOfficeApiException(
-                json_encode($errorData),
-                LexwareOfficeApiException::STATUS_RATE_LIMITED
-            );
-        }
+        $this->ensureRateLimitAvailable();
 
         return $this->executeRequest($callback);
     }
 
-    /**
-     * Execute the HTTP callback and decode its response.
-     *
-     * @return array<string, mixed>
-     *
-     * @throws LexwareOfficeApiException
-     */
+    protected function ensureRateLimitAvailable(): void
+    {
+        if ($this->maxRequestsPerMinute > 0 && RateLimiter::tooManyAttempts($this->rateLimitKey, $this->maxRequestsPerMinute)) {
+            $seconds = RateLimiter::availableIn($this->rateLimitKey);
+
+            throw new LexwareOfficeApiException(json_encode([
+                'message' => 'Rate limit exceeded',
+                'details' => "Too many requests. Please wait {$seconds} seconds before retrying.",
+                'retryAfter' => $seconds,
+            ]), LexwareOfficeApiException::STATUS_RATE_LIMITED);
+        }
+    }
+
+    /** @return array<string, mixed> */
     protected function executeRequest(callable $callback): array
     {
-        // Ensure valid OAuth2 token if OAuth2 is configured
+        $content = $this->executeResponse($callback)->getBody()->getContents();
+        $data = json_decode($content, true);
+
+        return json_last_error() === JSON_ERROR_NONE ? $data : ['raw' => $content];
+    }
+
+    protected function executeResponse(callable $callback): ResponseInterface
+    {
         $this->ensureValidToken();
 
         try {
-            // Execute the request
             $response = $callback();
-
-            // Track the request for our rate limiter
-            if ($this->maxRequestsPerMinute > 0) {
-                RateLimiter::hit($this->rateLimitKey, 60);
-            }
-
-            // Parse and return the response data
-            $content = $response->getBody()->getContents();
-            $data = json_decode($content, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                // Handle non-JSON responses
-                return ['raw' => $content];
-            }
-
-            return $data;
         } catch (RequestException $e) {
-            // Check if this is an authentication error and we have OAuth2
-            if ($this->oauth2Service && $e->getResponse() && $e->getResponse()->getStatusCode() === 401) {
-                // Try to refresh token and retry request once
-                if ($this->refreshTokenAndRetry()) {
-                    try {
-                        $response = $callback();
-                        if ($this->maxRequestsPerMinute > 0) {
-                            RateLimiter::hit($this->rateLimitKey, 60);
-                        }
-
-                        $content = $response->getBody()->getContents();
-                        $data = json_decode($content, true);
-
-                        if (json_last_error() !== JSON_ERROR_NONE) {
-                            return ['raw' => $content];
-                        }
-
-                        return $data;
-                    } catch (RequestException $retryException) {
-                        // If retry also fails, throw the original exception
-                        throw $this->handleRequestException($e);
-                    }
-                }
+            if (! $this->oauth2Service || $e->getResponse()?->getStatusCode() !== 401 || ! $this->refreshTokenAndRetry()) {
+                throw $this->handleRequestException($e);
             }
 
-            // Handle request exceptions (HTTP errors, etc.)
-            throw $this->handleRequestException($e);
+            try {
+                $response = $callback();
+            } catch (RequestException $retryException) {
+                // Preserve the existing JSON transport's retry error behavior.
+                throw $this->handleRequestException($e);
+            }
         }
+
+        if ($this->maxRequestsPerMinute > 0) {
+            RateLimiter::hit($this->rateLimitKey, 60);
+        }
+
+        return $response;
     }
 
     /**

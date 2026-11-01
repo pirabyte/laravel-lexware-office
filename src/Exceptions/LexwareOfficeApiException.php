@@ -78,9 +78,17 @@ class LexwareOfficeApiException extends Exception
         $this->responseData = $responseData ?: ['message' => $message];
 
         // Extract the error message
-        $errorMessage = is_array($responseData) && isset($responseData['message'])
+        $errorMessage = is_array($responseData) && array_key_exists('message', $responseData)
             ? $responseData['message']
             : $message;
+
+        if (! is_string($errorMessage) || trim($errorMessage) === '') {
+            $errorMessage = "Lexware Office API request failed (HTTP {$statusCode})";
+            if ($previous instanceof RequestException) {
+                $request = $previous->getRequest();
+                $errorMessage .= ' for '.$request->getMethod().' '.$request->getUri()->getPath();
+            }
+        }
 
         // Extract error type from response headers if available
         if ($previous instanceof RequestException && $previous->getResponse()) {

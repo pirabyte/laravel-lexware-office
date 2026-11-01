@@ -1,0 +1,1 @@
+Die Invoice- und Credit-Note-Fixtures stammen aus den Beispielen der offiziellen [Lexware API-Dokumentation](https://developers.lexware.io/docs/#invoices-properties), abgerufen am 01.11.2026. Sie enthalten ausschließlich dort veröffentlichte Beispieldaten. Vertragstests ergänzen gezielt Profile, Status und Verknüpfungen; es werden keine Live-Anfragen ausgeführt.
