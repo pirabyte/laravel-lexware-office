@@ -154,6 +154,40 @@ class FileDownloadTest extends TestCase
         $this->assertSame('finalize=true', $history[2]['request']->getUri()->getQuery());
     }
 
+    #[DataProvider('emptyErrorMessages')]
+    public function test_empty_error_messages_fall_back_to_status_and_endpoint(string $body, int $status, bool $download): void
+    {
+        $client = $this->clientWith(HandlerStack::create(new MockHandler([
+            new Response($status, ['Content-Type' => 'application/json'], $body),
+        ])));
+        $endpoint = 'invoices/invoice-id/file?access_token=query-secret';
+
+        try {
+            if ($download) {
+                $client->download($endpoint, FileFormat::XML);
+            } else {
+                $client->get($endpoint);
+            }
+            $this->fail('Expected API exception');
+        } catch (LexwareOfficeApiException $e) {
+            $this->assertSame("Lexware Office API request failed (HTTP {$status}) for GET /v1/invoices/invoice-id/file", $e->getMessage());
+            $this->assertSame($status, $e->getStatusCode());
+            $this->assertSame($e->getRequestException(), $e->getPrevious());
+        }
+    }
+
+    public static function emptyErrorMessages(): array
+    {
+        return [
+            'empty download response' => ['', 404, true],
+            'empty JSON message' => ['{"message":""}', 404, true],
+            'whitespace response' => [" \n ", 500, true],
+            'whitespace message with sensitive details' => ['{"message":"  ","details":"body-secret"}', 404, true],
+            'null message' => ['{"message":null}', 404, true],
+            'empty JSON transport response' => ['', 500, false],
+        ];
+    }
+
     private function clientWith(HandlerStack $handler): LexwareOffice
     {
         $client = new LexwareOffice('https://api.lexware.io', 'test-key', maxRequestsPerMinute: 0);
