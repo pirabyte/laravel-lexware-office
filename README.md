@@ -142,7 +142,7 @@ Die Adresse kann einen Kontakt referenzieren (`SalesVoucherAddress::fromContact(
 
 ### E-Rechnungen herunterladen
 
-`electronicDocument($id)` lädt das Profil per GET und wählt die E-Rechnungsdatei für Rechnungen und Rechnungskorrekturen:
+`electronicDocument($id)` lädt das Profil per GET und wählt die E-Rechnungsdatei für finalisierte Rechnungen und Rechnungskorrekturen. Entwürfe haben noch keine Datei; die Methode wirft dafür eine `LexwareOfficeApiException` mit Status 409 und einem Hinweis zur Finalisierung in Lexware:
 
 | Profil | Verhalten von `electronicDocument($id)` |
 | --- | --- |

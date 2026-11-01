@@ -4,6 +4,7 @@ namespace Pirabyte\LaravelLexwareOffice\Traits;
 
 use Pirabyte\LaravelLexwareOffice\Enums\ElectronicDocumentProfile;
 use Pirabyte\LaravelLexwareOffice\Enums\FileFormat;
+use Pirabyte\LaravelLexwareOffice\Enums\VoucherStatus;
 use Pirabyte\LaravelLexwareOffice\Exceptions\ElectronicDocumentNotAvailableException;
 use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\Models\SalesVoucher;
@@ -22,7 +23,15 @@ trait DownloadsElectronicDocuments
      */
     public function electronicDocument(string $id): FileDownload
     {
-        $profile = $this->get($id)->electronicDocumentProfile;
+        $voucher = $this->get($id);
+        if ($voucher->voucherStatus === VoucherStatus::DRAFT) {
+            throw new LexwareOfficeApiException(
+                'Draft vouchers do not have a document. Finalize the voucher in Lexware before downloading its electronic document.',
+                LexwareOfficeApiException::STATUS_CONFLICT,
+            );
+        }
+
+        $profile = $voucher->electronicDocumentProfile;
         $format = match ($profile) {
             ElectronicDocumentProfile::XRECHNUNG => FileFormat::XML,
             ElectronicDocumentProfile::EN16931 => FileFormat::PDF,

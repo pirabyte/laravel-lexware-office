@@ -130,6 +130,26 @@ class ElectronicDocumentDownloadTest extends TestCase
         $this->assertSame('/v1/'.$endpoint.'/voucher-id', $this->history[0]['request']->getUri()->getPath());
     }
 
+    #[DataProvider('resources')]
+    public function test_draft_electronic_documents_report_a_conflict_instead_of_a_missing_format(string $resource, string $endpoint): void
+    {
+        $response = $this->voucher($resource, ElectronicDocumentProfile::NONE);
+        $data = json_decode((string) $response->getBody(), true);
+        $data['voucherStatus'] = 'draft';
+        $client = $this->clientWith([new Response(200, [], json_encode($data))]);
+
+        try {
+            $client->{$resource}()->electronicDocument('draft-id');
+            $this->fail('Expected draft conflict');
+        } catch (LexwareOfficeApiException $e) {
+            $this->assertNotInstanceOf(ElectronicDocumentNotAvailableException::class, $e);
+            $this->assertSame(409, $e->getStatusCode());
+            $this->assertSame('Draft vouchers do not have a document. Finalize the voucher in Lexware before downloading its electronic document.', $e->getMessage());
+        }
+        $this->assertCount(1, $this->history);
+        $this->assertSame('/v1/'.$endpoint.'/draft-id', $this->history[0]['request']->getUri()->getPath());
+    }
+
     public static function resources(): array
     {
         return [['invoices', 'invoices'], ['creditNotes', 'credit-notes']];
@@ -172,6 +192,7 @@ class ElectronicDocumentDownloadTest extends TestCase
         $fixture = $resource === 'invoices' ? 'invoice' : 'credit-note';
         $data = json_decode(file_get_contents(__DIR__.'/../Fixtures/invoicing/'.$fixture.'.json'), true);
         $data['electronicDocumentProfile'] = $profile->value;
+        $data['voucherStatus'] = 'open';
 
         return new Response(200, ['Content-Type' => 'application/json'], json_encode($data));
     }
