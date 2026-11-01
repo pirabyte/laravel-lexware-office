@@ -8,9 +8,12 @@ use Pirabyte\LaravelLexwareOffice\Models\Invoice;
 use Pirabyte\LaravelLexwareOffice\Requests\InvoiceCreateRequest;
 use Pirabyte\LaravelLexwareOffice\Responses\FileDownload;
 use Pirabyte\LaravelLexwareOffice\Responses\UpdateResponse;
+use Pirabyte\LaravelLexwareOffice\Traits\DownloadsElectronicDocuments;
 
 class InvoiceResource
 {
+    use DownloadsElectronicDocuments;
+
     public function __construct(protected LexwareOffice $client) {}
 
     public function create(InvoiceCreateRequest $request, bool $finalize = false): UpdateResponse
@@ -27,6 +30,6 @@ class InvoiceResource
 
     public function file(string $id, FileFormat $format = FileFormat::DEFAULT): FileDownload
     {
-        return $this->client->download('invoices/'.rawurlencode($id).'/file', $format);
+        return $this->downloadDocumentFile($id, 'invoices/'.rawurlencode($id).'/file', $format);
     }
 }

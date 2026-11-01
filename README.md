@@ -56,8 +56,8 @@ Diese Ressourcen und Methoden sind derzeit im Paket implementiert:
 | --- | --- | --- |
 | Kontakte | `contacts()` | `create`, `get`, `update`, `filter`, `all`, `count`, `getAutoPagingIterator` |
 | Belege | `vouchers()` | `create`, `createAndAttachFile`, `get`, `update`, `filter`, `all`, `document`, `downloadDocument`, `attachFile` |
-| Rechnungen | `invoices()` | `create`, `get`, `file` |
-| Rechnungskorrekturen | `creditNotes()` | `create`, `get`, `file` |
+| Rechnungen | `invoices()` | `create`, `get`, `file`, `electronicDocument` |
+| Rechnungskorrekturen | `creditNotes()` | `create`, `get`, `file`, `electronicDocument` |
 | Drucklayouts | `printLayouts()` | `all` |
 | Zahlungsinformationen | `payments()` | `get` |
 | Event-Abonnements | `eventSubscriptions()` | `create`, `all`, `get`, `delete` |
@@ -139,6 +139,32 @@ $file = $client->creditNotes()->file($creditNote->id, FileFormat::PDF);
 Die Adresse kann einen Kontakt referenzieren (`SalesVoucherAddress::fromContact($contact)`) oder eine einmalige Anschrift enthalten. Vorhandene `Contact`- und `XRechnung`-Models bleiben nutzbar. Die Invoice-DTO akzeptiert `XRechnung` über `xRechnung:`. Positionen, Preise, Steuer-, Zahlungs- und Leistungsbedingungen sind typisiert. Schreibgeschützte Werte wie Belegnummer, berechnete Summen und E-Rechnungsprofil gelangen nicht in Create-Payloads. Lexware prüft die fachliche Gültigkeit; unterstützt werden derzeit EUR und höchstens 300 Positionen.
 
 `electronicDocumentProfile` ist eine Antwort von Lexware (`NONE`, `EN16931`, `XRechnung`), keine Formatwahl beim Erstellen. ZUGFeRD kommt als PDF mit eingebettetem XML. Bei XRechnung liefert das Standardformat XML; `FileFormat::PDF` liefert lediglich eine Vorschau und keine gültige E-Rechnung. `FileFormat::XML` fordert ausdrücklich XML an. Das tatsächliche Profil und die Voraussetzungen müssen in der Anwendung geprüft werden. [Offizielle API-Dokumentation](https://developers.lexware.io/docs/#download-an-invoice-file).
+
+### E-Rechnungen herunterladen
+
+`electronicDocument($id)` lädt das Profil per GET und wählt die E-Rechnungsdatei für Rechnungen und Rechnungskorrekturen:
+
+| Profil | Verhalten von `electronicDocument($id)` |
+| --- | --- |
+| `XRechnung` | XML-Download |
+| `EN16931` (ZUGFeRD) | PDF-Download mit eingebettetem XML |
+| `NONE` | `ElectronicDocumentNotAvailableException`: kein elektronisches Format verfügbar |
+
+```php
+use Pirabyte\LaravelLexwareOffice\Exceptions\ElectronicDocumentNotAvailableException;
+
+try {
+    $file = $client->invoices()->electronicDocument($invoiceId);
+    // Für Korrekturbelege: $client->creditNotes()->electronicDocument($creditNoteId)
+} catch (ElectronicDocumentNotAvailableException $e) {
+    $profile = $e->profile; // ElectronicDocumentProfile
+    $message = $e->getMessage();
+}
+```
+
+Ein separates XML gibt es nur bei XRechnung. Bei einem XML-Download mit `file($id, FileFormat::XML)` und HTTP 404 fragt das Paket deshalb das Profil nachträglich ab. Für `EN16931` erklärt die Exception, dass das XML im PDF steckt und Standard- oder PDF-Download verwendet werden soll. Für `NONE` nennt sie die zu prüfenden Voraussetzungen: aktivierte E-Rechnung in Lexware, Firmenkontakt als Empfänger und vollständige Firmendaten einschließlich Bankverbindung. Die Meldungen sind wie andere Paketfehler auf Englisch.
+
+Bei `XRechnung` bleibt die ursprüngliche 404-Exception erhalten. Schlägt das Nachladen des Profils fehl, bleibt ebenfalls der ursprüngliche Downloadfehler erhalten. Erfolgreiche `file()`-Downloads und andere Statuscodes lösen keine zusätzliche Profilabfrage aus. `electronicDocument()` gibt Fehler seiner anfänglichen Profilabfrage direkt weiter.
 
 Weitere Ressourcen:
 

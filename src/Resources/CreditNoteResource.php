@@ -8,9 +8,12 @@ use Pirabyte\LaravelLexwareOffice\Models\CreditNote;
 use Pirabyte\LaravelLexwareOffice\Requests\CreditNoteCreateRequest;
 use Pirabyte\LaravelLexwareOffice\Responses\FileDownload;
 use Pirabyte\LaravelLexwareOffice\Responses\UpdateResponse;
+use Pirabyte\LaravelLexwareOffice\Traits\DownloadsElectronicDocuments;
 
 class CreditNoteResource
 {
+    use DownloadsElectronicDocuments;
+
     public function __construct(protected LexwareOffice $client) {}
 
     public function create(CreditNoteCreateRequest $request, bool $finalize = false, ?string $precedingSalesVoucherId = null): UpdateResponse
@@ -30,6 +33,6 @@ class CreditNoteResource
 
     public function file(string $id, FileFormat $format = FileFormat::DEFAULT): FileDownload
     {
-        return $this->client->download('credit-notes/'.rawurlencode($id).'/file', $format);
+        return $this->downloadDocumentFile($id, 'credit-notes/'.rawurlencode($id).'/file', $format);
     }
 }

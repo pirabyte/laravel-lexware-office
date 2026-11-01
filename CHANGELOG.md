@@ -2,6 +2,7 @@
 
 ## 0.5.0 (unveröffentlicht)
 
+- E-Rechnungen profilabhängig über `electronicDocument()` laden; bei XML-404 für ZUGFeRD und Profil NONE verständliche Hinweise mit `ElectronicDocumentNotAvailableException` liefern.
 - Bei leeren API-Fehlermeldungen HTTP-Status und Endpoint als Fallback ausgeben, ohne Query-Parameter oder Antwortinhalte zu übernehmen.
 - Rechnungen und Rechnungskorrekturen mit typisierten Create-DTOs erstellen, lesen und direkt herunterladen.
 - Finalisierung und Verknüpfung von Rechnungskorrekturen über POST-Query-Parameter unterstützen.
