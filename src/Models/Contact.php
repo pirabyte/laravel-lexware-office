@@ -601,12 +601,12 @@ class Contact implements \JsonSerializable
 
     public function getCustomerNumber(): ?int
     {
-        return $this->roles['customer']['number'] ?? null;
+        return is_array($this->roles['customer'] ?? null) ? ($this->roles['customer']['number'] ?? null) : null;
     }
 
     public function getVendorNumber(): ?int
     {
-        return $this->roles['vendor']['number'] ?? null;
+        return is_array($this->roles['vendor'] ?? null) ? ($this->roles['vendor']['number'] ?? null) : null;
     }
 
     public function isCustomer(): bool

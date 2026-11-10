@@ -39,7 +39,7 @@ class ContactResource
             }
         }
 
-        return Contact::fromArray($response);
+        return Contact::fromArray(array_merge($data, $response));
     }
 
     /**
@@ -101,7 +101,7 @@ class ContactResource
             }
         }
 
-        return Contact::fromArray($response);
+        return Contact::fromArray(array_merge($data, $response));
     }
 
     /**
