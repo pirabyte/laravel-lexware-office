@@ -8,6 +8,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use Pirabyte\LaravelLexwareOffice\Exceptions\LexwareOfficeApiException;
 use Pirabyte\LaravelLexwareOffice\Facades\LexwareOffice;
 use Pirabyte\LaravelLexwareOffice\Models\Contact;
 use Pirabyte\LaravelLexwareOffice\Tests\TestCase;
@@ -242,5 +243,72 @@ class ContactApiTest extends TestCase
         $this->assertSame(789, $savedContact->getRoles()['vendor']['number']);
         $billingAddress = $savedContact->getAddress('billing');
         $this->assertEquals('DE', $billingAddress->countryCode);
+    }
+
+    /** @test */
+    public function it_preserves_sent_contact_fields_when_the_follow_up_get_fails(): void
+    {
+        foreach (['create', 'update'] as $method) {
+            $contact = Contact::createCompany('Fallback GmbH')->setAsCustomer()
+                ->addBillingAddress('Teststr. 1', '12345', 'Berlin', 'DE');
+            $metadata = [
+                'id' => 'saved-contact',
+                'version' => 7,
+                'resourceUri' => 'https://api.lexware.io/v1/contacts/saved-contact',
+                'createdDate' => '2026-11-10T10:00:00.000+01:00',
+                'updatedDate' => '2026-11-10T11:00:00.000+01:00',
+            ];
+            $mock = new MockHandler([
+                new Response(201, [], json_encode($metadata)),
+                new Response(503, [], '{"message":"Unavailable"}'),
+            ]);
+            app('lexware-office')->setClient(new Client(['handler' => HandlerStack::create($mock)]));
+
+            $saved = $method === 'create'
+                ? LexwareOffice::contacts()->create($contact)
+                : LexwareOffice::contacts()->update('saved-contact', $contact);
+
+            $this->assertSame('saved-contact', $saved->getId());
+            $this->assertSame(7, $saved->getVersion());
+            $this->assertSame($contact->getRoles(), $saved->getRoles());
+            $this->assertTrue($saved->isCustomer());
+            $this->assertNull($saved->getCustomerNumber());
+            $this->assertNull(Contact::createCompany('Vendor GmbH')->setAsVendor()->getVendorNumber());
+            $this->assertSame('Fallback GmbH', $saved->getCompany()->getName());
+            $this->assertSame('Teststr. 1', $saved->getBillingAddress()->street);
+            $this->assertSame(0, $mock->count());
+        }
+    }
+
+    /** @test */
+    public function it_prefers_response_fields_in_the_contact_fallback(): void
+    {
+        $mock = new MockHandler([
+            new Response(201, [], json_encode([
+                'id' => 'saved-contact',
+                'company' => ['name' => 'Server GmbH'],
+                'roles' => ['vendor' => ['number' => 123]],
+            ])),
+            new Response(404, [], '{"message":"Not found"}'),
+        ]);
+        app('lexware-office')->setClient(new Client(['handler' => HandlerStack::create($mock)]));
+
+        $saved = LexwareOffice::contacts()->create(Contact::createCompany('Request GmbH')->setAsCustomer());
+
+        $this->assertSame('Server GmbH', $saved->getCompany()->getName());
+        $this->assertFalse($saved->isCustomer());
+        $this->assertSame(123, $saved->getVendorNumber());
+    }
+
+    /** @test */
+    public function it_propagates_contact_post_errors(): void
+    {
+        $mock = new MockHandler([new Response(400, [], '{"message":"Invalid contact"}')]);
+        app('lexware-office')->setClient(new Client(['handler' => HandlerStack::create($mock)]));
+
+        $this->expectException(LexwareOfficeApiException::class);
+        $this->expectExceptionMessage('Invalid contact');
+
+        LexwareOffice::contacts()->create(Contact::createCompany('Invalid GmbH'));
     }
 }

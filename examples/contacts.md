@@ -196,3 +196,9 @@ foreach ($iterator as $contact) {
     // This automatically fetches more pages as needed
 }
 ```
+
+### Rückgabe bei fehlgeschlagenem Nachladen
+
+Nach `create()` und `update()` lädt das SDK den vollständigen Kontakt per GET.
+Schlägt dieser GET fehl, enthält die Rückgabe die gesendeten Felder zusammen mit den Antwortdaten des Schreibaufrufs. Antwortfelder haben Vorrang.
+Serverseitig vergebene Kunden- und Lieferantennummern sind dann gegebenenfalls unbekannt: `getCustomerNumber()` und `getVendorNumber()` liefern `null`. Ein späterer `get()` kann sie nachladen.
